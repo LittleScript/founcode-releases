@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+out/
+release/
+
+# Electron
+*.exe
+*.blockmap
+
+# Env & secrets
+.env
+.env.*
+
+# Founcode runtime artifacts (in user projects)
+.founcode/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Logs
+*.log
