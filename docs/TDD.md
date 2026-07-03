@@ -56,7 +56,7 @@
 | UI | **React 18 + TypeScript** | Keahlian existing Koko |
 | Styling | **Tailwind CSS** | Kecepatan; konsisten dengan project 21Kent lain |
 | State (renderer) | **Zustand** | Ringan, tanpa boilerplate |
-| DB | **better-sqlite3** (main process) | Sinkron, cepat, zero-config, tanpa server |
+| DB | **node:sqlite** (`DatabaseSync`, main process) | Bawaan Node yang di-bundle Electron — **zero native module**: tanpa node-gyp/VS Build Tools di mesin siapa pun, tanpa masalah dual-ABI Electron vs Node saat vitest. *(Keputusan direvisi 3 Jul 2026: awalnya better-sqlite3, gagal — tidak ada prebuilt untuk Electron 43 ABI v148 dan mesin dev tanpa VS Build Tools. API keduanya hampir identik.)* |
 | IPC | **contextBridge + typed channels** (`electron-toolkit` pattern) | Keamanan (contextIsolation on) + type safety |
 | Git ops | **simple-git** + CLI git langsung untuk worktree | Worktree butuh git CLI; simple-git untuk query |
 | Markdown render | **react-markdown + remark-gfm** | Render plan & laporan verifikasi |

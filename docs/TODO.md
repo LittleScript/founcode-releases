@@ -9,17 +9,18 @@ Basis: PRD v1.0 + TDD v1.0. Terakhir diperbarui: 3 Juli 2026.
 
 ## Fase 0 — Scaffold & Fondasi
 
-- [ ] Init repo git + `.gitignore` (node, electron, `.founcode/`)
-- [ ] Scaffold electron-vite (React + TS template)
-- [ ] Setup Tailwind CSS, Biome, Vitest
-- [ ] Struktur folder sesuai TDD §3 (main/preload/renderer/shared, prompts/)
-- [ ] Electron hardening: contextIsolation, sandbox, CSP (TDD §7.1)
-- [ ] IPC contract skeleton (`shared/ipc-contract.ts`) + contextBridge preload
-- [ ] SQLite init + sistem migrasi + migration 001 (skema TDD §5.1)
-- [ ] Window shell: layout dasar app (sidebar + main area), dark theme default
+- [x] Init repo git + `.gitignore` (node, electron, `.founcode/`)
+- [x] Scaffold electron-vite (React + TS template) — *manual scaffold (create CLI interaktif); electron-vite 5 + vite 7 + electron 43 + react 19 + ts 6*
+- [x] Setup Tailwind CSS (v4, @theme tokens), Biome, Vitest
+- [x] Struktur folder sesuai TDD §3 (main/preload/renderer/shared; prompts/ menyusul di Fase 2)
+- [x] Electron hardening: contextIsolation, sandbox, CSP, windowOpenHandler deny (TDD §7.1)
+- [x] IPC contract skeleton (`shared/ipc-contract.ts`) + contextBridge preload dengan channel allowlist
+- [x] SQLite init + sistem migrasi + migration 001 (skema TDD §5.1) — *pakai `node:sqlite`, bukan better-sqlite3 (lihat TDD §2)*
+- [x] Window shell: layout dasar app (sidebar + board 7 kolom), dark theme default
 - [ ] GitHub repo private `LittleScript/founcode` + push pertama
 
 **Exit criteria:** `npm run dev` membuka window; `npm test` hijau; DB terbuat di userData dengan skema v1.
+**Status 3 Jul 2026: TERPENUHI** — window tampil (IPC connected, schema v1 di footer), 5 unit test pass, typecheck & lint bersih, `%APPDATA%\founcode\founcode.db` terverifikasi berisi semua tabel. Sisa: push GitHub.
 
 ## Fase 1 — Project & Task Management (F1)
 
