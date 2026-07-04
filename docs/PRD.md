@@ -125,7 +125,8 @@ Founcode adalah **desktop app Windows-first** yang menjadi lapisan orkestrasi di
 - Parallel tasks dengan monitoring board multi-task.
 - Template plan per jenis task (bugfix, feature, refactor).
 - Riwayat & pencarian task/plan.
-- **Multi-Agent Workspace ("tabs")** *(ide Koko 4 Jul 2026, terinspirasi Traycer)*: dalam satu project, beberapa task berjalan paralel dengan agen BERBEDA per task (tab 1 Claude, tab 2 Codex, tab 3 GLM/DeepSeek via OpenCode, dst.), masing-masing punya penugasan sendiri dari user. Fondasi sudah ada: task = unit kerja dengan `agentId` sendiri + worktree terisolasi. Yang perlu dibangun: UI tab/split untuk memantau beberapa task live sekaligus + penjadwalan paralel (lepas batasan 1 task aktif untuk Pro).
+- **Multi-Agent Workspace ("tabs")** *(ide Koko 4 Jul 2026, terinspirasi Traycer)*: dalam satu project, beberapa task berjalan paralel dengan agen BERBEDA per task (tab 1 Claude, tab 2 Codex, tab 3 GLM/DeepSeek via OpenCode, dst.), masing-masing punya penugasan sendiri dari user. Fondasi sudah ada: task = unit kerja dengan `agentId` sendiri + worktree terisolasi. Yang perlu dibangun: UI tab/split untuk memantau beberapa task live sekaligus + penjadwalan paralel.
+  **Catatan pricing (4 Jul)**: Traycer menggratiskan BYOA/multi-agent — kita ikut: SEMUA adapter agen tersedia di Free. Yang dibayar bukan kemampuan multi-agen, melainkan **kapasitas paralel** (Free = 1 task aktif; Pro = N task berjalan bersamaan) + unlimited projects. Konsisten dengan model kapasitas Traycer, tapi di harga lebih rendah.
 
 ### 5.3 P2 — Roadmap (v2+)
 
