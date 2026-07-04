@@ -72,9 +72,11 @@ Founcode adalah **desktop app Windows-first** yang menjadi lapisan orkestrasi di
 
 ### Tiga pilar diferensiasi
 
-1. **Windows-first.** Dibangun, diuji, dan dirilis untuk Windows 11 sejak hari pertama. macOS/Linux menyusul.
-2. **Lebih murah.** Local-first tanpa server = struktur biaya nol infra → harga bisa di bawah Traycer secara signifikan.
-3. **Fitur unik** (akan ditentukan & diperbarui — placeholder resmi: kandidat meliputi integrasi ekosistem lokal, template plan per-stack, verifikasi berbasis test-runner otomatis). *Direvisi bersama Koko sebelum public launch.*
+*(Direvisi 4 Jul 2026 berdasarkan riset kompetitif — lihat docs/COMPETITORS.md.)*
+
+1. **Verification-first.** Pasar penuh "session managers" gratis (Nimbalyst, Vibe Kanban, dll) yang menjawab *"apa yang sedang dikerjakan agenku?"*. Hanya Traycer & Founcode yang menjawab *"bisakah saya percaya hasilnya?"* — plan approval gate + verifikasi independen dengan verdict terstruktur per kriteria + fix loop terbatas. Ini pilar produk utama, bukan fitur pelengkap.
+2. **Windows-first.** Dibangun, diuji, dan dirilis untuk Windows 11 sejak hari pertama (Traycer belum ada; mayoritas kompetitor Mac/terminal-only). macOS/Linux menyusul.
+3. **Harga masuk akal untuk solo dev.** Local-first tanpa server = biaya infra nol → Free tier fungsional penuh + Pro $8–12/bln (vs Traycer $20 entry, Superset Pro $15).
 
 ### Value proposition satu kalimat
 

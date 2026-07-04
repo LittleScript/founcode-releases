@@ -65,7 +65,7 @@ Mulai M4, semua task pengembangan Founcode sendiri dijalankan lewat Founcode (Pl
 
 | Keputusan | Deadline | Catatan |
 |---|---|---|
-| Fitur unik ketiga (diferensiasi #3, PRD §4) | Sebelum M6 | Brainstorm ulang setelah dogfooding M4 — insight nyata akan muncul dari pemakaian |
+| ~~Fitur unik ketiga (diferensiasi #3, PRD §4)~~ | ~~Sebelum M6~~ | **SELESAI 4 Jul 2026**: verification-first dipromosikan jadi pilar #1 (riset kompetitif, docs/COMPETITORS.md). Konsekuensi: Fase 4 (Verify) = fase kualitas tertinggi, jangan dikompromikan |
 | Lemon Squeezy vs Paddle | Awal Fase 5 | Bandingkan fee, payout ke Indonesia, dukungan subscription |
 | Nama domain | Sebelum M6 | Cek founcode.com / .dev / .app |
 | Harga final Pro | Sebelum M6 | Range terkunci $8–12/bln |
