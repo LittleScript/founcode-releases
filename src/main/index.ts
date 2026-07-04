@@ -32,6 +32,17 @@ function createWindow(): void {
   })
 
   if (process.env.ELECTRON_RENDERER_URL) {
+    // Dev aid: surface renderer console + load failures in the terminal,
+    // otherwise a renderer crash is just a silent blank window.
+    win.webContents.on('console-message', (_event, level, message, line, sourceId) => {
+      console.log(`[renderer:${level}] ${message} (${sourceId}:${line})`)
+    })
+    win.webContents.on('did-fail-load', (_event, code, desc, url) => {
+      console.error(`[renderer] failed to load ${url}: ${code} ${desc}`)
+    })
+    win.webContents.on('render-process-gone', (_event, details) => {
+      console.error(`[renderer] process gone: ${details.reason}`)
+    })
     win.loadURL(process.env.ELECTRON_RENDERER_URL)
   } else {
     win.loadFile(join(__dirname, '../renderer/index.html'))

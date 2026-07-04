@@ -41,6 +41,11 @@ interface LogState {
   append: (taskId: string, event: AgentEvent) => void
 }
 
+// Stable empty reference: selectors must NOT allocate a fresh array per
+// call (`?? []` in a selector = new snapshot every render = infinite
+// re-render loop and a blank window).
+export const NO_LINES: LogLine[] = []
+
 export const useLogStore = create<LogState>((set) => ({
   logs: {},
   append: (taskId, event) => {

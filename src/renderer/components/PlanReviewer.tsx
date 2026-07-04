@@ -3,10 +3,10 @@ import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { Task } from '../../shared/types'
 import { useAppStore } from '../stores/appStore'
-import { useLogStore } from '../stores/logStore'
+import { NO_LINES, useLogStore } from '../stores/logStore'
 
 function PlanningProgress({ task }: { task: Task }) {
-  const lines = useLogStore((s) => s.logs[task.id] ?? [])
+  const lines = useLogStore((s) => s.logs[task.id] ?? NO_LINES)
   const [now, setNow] = useState(Date.now())
 
   useEffect(() => {

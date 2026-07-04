@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { type LogLine, useLogStore } from '../stores/logStore'
+import { type LogLine, NO_LINES, useLogStore } from '../stores/logStore'
 
 const COLORS: Record<LogLine['kind'], string> = {
   text: 'text-slate-300',
@@ -10,7 +10,7 @@ const COLORS: Record<LogLine['kind'], string> = {
 }
 
 export function LogViewer({ taskId, storedLog }: { taskId: string; storedLog: string | null }) {
-  const lines = useLogStore((s) => s.logs[taskId] ?? [])
+  const lines = useLogStore((s) => s.logs[taskId] ?? NO_LINES)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: autoscroll must re-run whenever a line is appended
