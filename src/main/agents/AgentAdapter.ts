@@ -3,11 +3,16 @@
 
 import type { AgentEvent } from '../../shared/types'
 
+// Capability mode per phase:
+//   read   — Plan: only reads/searches files, cannot write or run commands
+//   write  — Execute: edits files and runs commands
+//   verify — Verify: reads files and runs commands (tests), cannot edit
+export type AgentRunMode = 'read' | 'write' | 'verify'
+
 export interface AgentRunOptions {
   cwd: string
   prompt: string
-  // Plan phase runs read-only: the agent must not write files.
-  readOnly: boolean
+  mode: AgentRunMode
   abortSignal: AbortSignal
 }
 

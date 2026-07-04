@@ -11,6 +11,7 @@ interface TaskRow {
   state: string
   branch: string | null
   worktree: string | null
+  base_ref: string | null
   retry_count: number
   created_at: number
   updated_at: number
@@ -26,6 +27,7 @@ function toTask(row: TaskRow): Task {
     state: row.state as TaskState,
     branch: row.branch,
     worktree: row.worktree,
+    baseRef: row.base_ref,
     retryCount: row.retry_count,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -53,6 +55,7 @@ export class TaskRepo {
       state: 'BACKLOG',
       branch: null,
       worktree: null,
+      baseRef: null,
       retryCount: 0,
       createdAt: now,
       updatedAt: now,
@@ -100,10 +103,17 @@ export class TaskRepo {
       .run(state, Date.now(), id)
   }
 
-  setWorktree(id: string, branch: string | null, worktree: string | null): void {
+  setWorktree(
+    id: string,
+    branch: string | null,
+    worktree: string | null,
+    baseRef: string | null = null,
+  ): void {
     this.db
-      .prepare('UPDATE tasks SET branch = ?, worktree = ?, updated_at = ? WHERE id = ?')
-      .run(branch, worktree, Date.now(), id)
+      .prepare(
+        'UPDATE tasks SET branch = ?, worktree = ?, base_ref = ?, updated_at = ? WHERE id = ?',
+      )
+      .run(branch, worktree, baseRef, Date.now(), id)
   }
 
   incrementRetry(id: string): number {

@@ -71,11 +71,12 @@ async function planAndApprove(): Promise<string> {
 }
 
 describe('execution flow (mock agent + real git)', () => {
-  it('full happy path: approve -> EXECUTING -> diff artifact -> VERIFYING', async () => {
+  it('full happy path: approve -> EXECUTING -> diff artifact -> auto-verify -> REVIEW', async () => {
     const taskId = await planAndApprove()
     expect(tasks.get(taskId)?.state).toBe('EXECUTING')
 
-    await vi.waitFor(() => expect(tasks.get(taskId)?.state).toBe('VERIFYING'), { timeout: 10000 })
+    // Verify now auto-runs after execution (Phase 4), landing in REVIEW.
+    await vi.waitFor(() => expect(tasks.get(taskId)?.state).toBe('REVIEW'), { timeout: 15000 })
 
     const task = tasks.get(taskId)
     expect(task?.branch).toBe(`founcode/task-${taskId}`)

@@ -10,7 +10,14 @@ import type { AgentEvent } from '../../../shared/types'
 import type { AgentAdapter, AgentRunOptions } from '../AgentAdapter'
 
 function buildValidPlan(prompt: string): string {
-  const intentLine = prompt.split('\n').find((l) => l.trim().length > 0) ?? 'the requested change'
+  // The real plan prompt wraps the user's intent under an "Intent:"
+  // header; quote the actual intent so downstream phases (and their
+  // [mock:*] markers) see it.
+  const intentMatch = prompt.match(/Intent:\s*\n([^\n]+)/)
+  const intentLine =
+    intentMatch?.[1]?.trim() ??
+    prompt.split('\n').find((l) => l.trim().length > 0) ??
+    'the requested change'
   return [
     '# Plan: Mock implementation plan',
     '',
@@ -62,13 +69,34 @@ export class MockAgentAdapter implements AgentAdapter {
       return
     }
 
-    if (!opts.readOnly) {
+    if (opts.mode === 'write') {
       // Execution mode: actually produce a change so the diff pipeline
       // has something real to show.
       const file = join(opts.cwd, 'mock-execution.txt')
       writeFileSync(file, `Mock execution output\nPrompt excerpt: ${opts.prompt.slice(0, 80)}\n`)
       yield { type: 'file_change', path: file, kind: 'create' }
       const resultText = 'Implemented the plan: created mock-execution.txt as requested.'
+      yield { type: 'text', content: resultText }
+      yield { type: 'done', exitCode: 0, costUsd: 0, resultText }
+      return
+    }
+
+    if (opts.mode === 'verify') {
+      const fail = opts.prompt.includes('[mock:verify-fail]')
+      const verdict = {
+        verdict: fail ? 'fail' : 'pass',
+        criteria: [
+          {
+            criterion: 'The requested change is present',
+            status: fail ? 'fail' : 'pass',
+            note: fail ? 'Mock simulated failure' : 'Mock verified',
+          },
+          { criterion: 'All existing tests still pass', status: 'pass' },
+        ],
+        tests: { detected: false },
+        ...(fail ? { fix_instructions: 'Mock fix instructions: correct the change.' } : {}),
+      }
+      const resultText = `# Verification Report\n\nMock verification complete.\n\n\`\`\`json\n${JSON.stringify(verdict, null, 2)}\n\`\`\`\n`
       yield { type: 'text', content: resultText }
       yield { type: 'done', exitCode: 0, costUsd: 0, resultText }
       return

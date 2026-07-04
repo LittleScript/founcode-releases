@@ -23,6 +23,9 @@ export interface IpcInvokeMap {
   'task:approvePlan': { args: { taskId: string; editedPlan?: string }; result: Task }
   'task:cancel': { args: { taskId: string }; result: Task }
   'task:retry': { args: { taskId: string }; result: Task }
+  'task:merge': { args: { taskId: string }; result: Task }
+  'task:sendBack': { args: { taskId: string; feedback: string }; result: Task }
+  'task:discard': { args: { taskId: string }; result: Task }
   'task:artifacts': { args: { taskId: string }; result: Artifact[] }
   'agent:listInstalled': { args: undefined; result: AgentInfo[] }
 }
@@ -43,6 +46,9 @@ export const IPC_INVOKE_CHANNELS: readonly IpcInvokeChannel[] = [
   'task:approvePlan',
   'task:cancel',
   'task:retry',
+  'task:merge',
+  'task:sendBack',
+  'task:discard',
   'task:artifacts',
   'agent:listInstalled',
 ]

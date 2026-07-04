@@ -119,6 +119,14 @@ export function registerIpcHandlers(db: Database, dbPath: string, services: Main
 
   handle('task:retry', ({ taskId }) => services.orchestrator.applyAction(taskId, 'retry'))
 
+  handle('task:merge', ({ taskId }) => services.orchestrator.merge(taskId))
+
+  handle('task:sendBack', ({ taskId, feedback }) =>
+    services.orchestrator.sendBack(taskId, feedback),
+  )
+
+  handle('task:discard', ({ taskId }) => services.orchestrator.discard(taskId))
+
   handle('task:artifacts', ({ taskId }) => services.artifacts.listByTask(taskId))
 
   handle('agent:listInstalled', () => services.registry.listInstalled())

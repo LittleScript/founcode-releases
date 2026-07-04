@@ -74,23 +74,26 @@ export class ClaudeCodeAdapter implements AgentAdapter {
       return
     }
 
-    // Read-only enforcement uses a tool allowlist rather than
+    // Capability enforcement uses tool allowlists rather than
     // `--permission-mode plan`: plan mode hijacks the output into Claude
     // Code's own ExitPlanMode flow (and spawns explore subagents),
-    // breaking the Founcode Plan format contract. With an allowlist,
-    // non-listed tools are auto-denied in headless mode and the final
-    // response stays plain text.
+    // breaking the Founcode Plan format contract. Non-listed tools are
+    // auto-denied in headless mode.
+    const modeArgs: Record<string, string[]> = {
+      read: ['--allowedTools', 'Read', 'Glob', 'Grep'],
+      // Execute: auto-accept edits and allow shell commands so the agent
+      // can run tests/build inside the isolated worktree.
+      write: ['--permission-mode', 'acceptEdits', '--allowedTools', 'Bash'],
+      // Verify: may read and run tests, but cannot edit files.
+      verify: ['--allowedTools', 'Read', 'Glob', 'Grep', 'Bash'],
+    }
     const args = [
       ...cmd.prefixArgs,
       '-p',
       '--output-format',
       'stream-json',
       '--verbose',
-      ...(opts.readOnly
-        ? ['--allowedTools', 'Read', 'Glob', 'Grep']
-        : // Execution: auto-accept edits and allow shell commands so the
-          // agent can run tests/build inside the isolated worktree.
-          ['--permission-mode', 'acceptEdits', '--allowedTools', 'Bash']),
+      ...(modeArgs[opts.mode] ?? modeArgs.read),
     ]
 
     const child = spawn(cmd.file, args, {

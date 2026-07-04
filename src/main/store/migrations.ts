@@ -52,4 +52,10 @@ export const MIGRATIONS: Migration[] = [
       CREATE INDEX idx_task_events_task ON task_events(task_id);
     `,
   },
+  {
+    version: 2,
+    // Fix loop needs the execution base commit to recompute diffs
+    // without recreating the worktree.
+    sql: 'ALTER TABLE tasks ADD COLUMN base_ref TEXT;',
+  },
 ]

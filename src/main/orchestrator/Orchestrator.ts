@@ -1,8 +1,11 @@
-// The only component allowed to change task state. Owns the phase
-// runners: Plan (this phase), Execute and Verify (Phase 3/4).
+// The only component allowed to change task state. Owns the three
+// phase runners: Plan, Execute, and Verify.
 
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 import executeTemplate from '../../../prompts/execute.md?raw'
 import planTemplate from '../../../prompts/plan.md?raw'
+import verifyTemplate from '../../../prompts/verify.md?raw'
 import type { AgentEvent, Task } from '../../shared/types'
 import type { AgentAdapter, AgentRunOptions } from '../agents/AgentAdapter'
 import type { AgentRegistry } from '../agents/AgentRegistry'
@@ -11,10 +14,12 @@ import type { ArtifactRepo } from '../store/repositories/ArtifactRepo'
 import type { ProjectRepo } from '../store/repositories/ProjectRepo'
 import type { TaskRepo } from '../store/repositories/TaskRepo'
 import { validatePlan } from './planParser'
-import { type TaskAction, transition } from './TaskStateMachine'
+import { MAX_VERIFY_RETRIES, type TaskAction, transition } from './TaskStateMachine'
+import { parseVerdict } from './verdictParser'
 
 export const PLAN_TIMEOUT_MS = 15 * 60 * 1000
 export const EXEC_TIMEOUT_MS = 30 * 60 * 1000
+export const VERIFY_TIMEOUT_MS = 15 * 60 * 1000
 
 export interface OrchestratorDeps {
   projects: ProjectRepo
@@ -76,9 +81,62 @@ export class Orchestrator {
       this.deps.artifacts.add(taskId, 'plan', editedPlan)
       this.deps.tasks.recordEvent(taskId, 'plan_edited_by_user')
     }
+    this.writePlanCopy(taskId)
     const updated = this.applyAction(taskId, 'approve_plan')
     void this.runExecution(taskId)
     return updated
+  }
+
+  merge(taskId: string): Task {
+    const task = this.deps.tasks.get(taskId)
+    const project = task ? this.deps.projects.get(task.projectId) : undefined
+    if (!task || !project) throw new Error(`Task not found: ${taskId}`)
+    if (task.state !== 'REVIEW') throw new Error('Only tasks in Review can be merged')
+
+    // Merge first (throws on dirty repo / conflict, leaving everything
+    // untouched), only then advance state and clean up.
+    this.deps.worktrees.merge(project.path, taskId)
+    const updated = this.applyAction(taskId, 'merge')
+    this.cleanupWorktree(taskId)
+    return updated
+  }
+
+  discard(taskId: string): Task {
+    const updated = this.applyAction(taskId, 'discard')
+    this.cleanupWorktree(taskId)
+    return updated
+  }
+
+  sendBack(taskId: string, feedback: string): Task {
+    const updated = this.applyAction(taskId, 'send_back')
+    void this.runExecution(taskId, feedback)
+    return updated
+  }
+
+  // Approved plans are also written into the project as plain files so
+  // they survive outside Founcode. Ignored via .git/info/exclude (repo-
+  // local, never touches the user's tracked .gitignore).
+  private writePlanCopy(taskId: string): void {
+    try {
+      const task = this.deps.tasks.get(taskId)
+      const project = task ? this.deps.projects.get(task.projectId) : undefined
+      const plan = this.deps.artifacts.latest(taskId, 'plan')
+      if (!task || !project || !plan) return
+
+      const plansDir = join(project.path, '.founcode', 'plans')
+      mkdirSync(plansDir, { recursive: true })
+      writeFileSync(join(plansDir, `${taskId}.md`), plan.content)
+
+      const excludePath = join(project.path, '.git', 'info', 'exclude')
+      const current = existsSync(excludePath) ? readFileSync(excludePath, 'utf8') : ''
+      if (!current.includes('.founcode/')) {
+        appendFileSync(excludePath, `${current.endsWith('\n') || !current ? '' : '\n'}.founcode/\n`)
+      }
+    } catch (error) {
+      this.deps.tasks.recordEvent(taskId, 'plan_copy_failed', {
+        message: (error as Error).message,
+      })
+    }
   }
 
   cancel(taskId: string): Task {
@@ -120,7 +178,10 @@ export class Orchestrator {
     }
   }
 
-  private async runExecution(taskId: string): Promise<void> {
+  // fixInstructions is set on verify-fail retries and user send-backs:
+  // the existing worktree is reused so the agent fixes its previous
+  // attempt instead of starting over.
+  private async runExecution(taskId: string, fixInstructions?: string): Promise<void> {
     const task = this.deps.tasks.get(taskId)
     if (!task) return
     const project = this.deps.projects.get(task.projectId)
@@ -144,15 +205,33 @@ export class Orchestrator {
     const timeout = setTimeout(() => controller.abort(), EXEC_TIMEOUT_MS)
 
     try {
-      const { branch, worktreePath, baseRef } = this.deps.worktrees.create(project.path, taskId)
-      this.deps.tasks.setWorktree(taskId, branch, worktreePath)
-      this.deps.tasks.recordEvent(taskId, 'worktree_created', { branch, worktreePath, baseRef })
+      let worktreePath: string
+      let baseRef: string
+      if (fixInstructions && task.worktree && task.baseRef) {
+        worktreePath = task.worktree
+        baseRef = task.baseRef
+        this.deps.tasks.recordEvent(taskId, 'fix_iteration', { fixInstructions })
+      } else {
+        const created = this.deps.worktrees.create(project.path, taskId)
+        worktreePath = created.worktreePath
+        baseRef = created.baseRef
+        this.deps.tasks.setWorktree(taskId, created.branch, worktreePath, baseRef)
+        this.deps.tasks.recordEvent(taskId, 'worktree_created', {
+          branch: created.branch,
+          worktreePath,
+          baseRef,
+        })
+      }
 
-      const prompt = executeTemplate.replace('{{plan}}', plan.content)
+      let prompt = executeTemplate.replace('{{plan}}', plan.content)
+      if (fixInstructions) {
+        prompt += `\n\n## Fix required\nYour previous attempt is already in this worktree. Do NOT start over — fix it according to these findings:\n\n${fixInstructions}\n`
+      }
+
       const result = await this.collect(taskId, adapter, {
         cwd: worktreePath,
         prompt,
-        readOnly: false,
+        mode: 'write',
         abortSignal: controller.signal,
       })
       this.deps.artifacts.add(taskId, 'log', result.log)
@@ -176,8 +255,10 @@ export class Orchestrator {
       if (!diff.trim()) {
         this.deps.tasks.recordEvent(taskId, 'empty_diff')
       }
-      // Phase 4 wires the verify runner onto this transition.
       this.applyActionSafe(taskId, 'execution_finished')
+      if (this.deps.tasks.get(taskId)?.state === 'VERIFYING') {
+        void this.runVerify(taskId)
+      }
     } catch (error) {
       if (!controller.signal.aborted) {
         this.deps.tasks.recordEvent(taskId, 'agent_error', { message: (error as Error).message })
@@ -186,6 +267,108 @@ export class Orchestrator {
     } finally {
       clearTimeout(timeout)
       this.active.delete(taskId)
+    }
+  }
+
+  private async runVerify(taskId: string): Promise<void> {
+    const task = this.deps.tasks.get(taskId)
+    if (!task?.worktree) return
+    const adapter = this.deps.registry.get(task.agentId)
+    const plan = this.deps.artifacts.latest(taskId, 'plan')
+    const diff = this.deps.artifacts.latest(taskId, 'diff')
+    if (!adapter || !plan || !diff) {
+      this.applyActionSafe(taskId, 'verify_failed_final')
+      return
+    }
+
+    const controller = new AbortController()
+    this.active.set(taskId, controller)
+    const timeout = setTimeout(() => controller.abort(), VERIFY_TIMEOUT_MS)
+
+    try {
+      const basePrompt = verifyTemplate
+        .replace('{{plan}}', plan.content)
+        .replace('{{diff}}', diff.content.slice(0, 200_000))
+
+      let lastRaw: string | undefined
+      let parseErrors: string[] = []
+
+      // Attempt 1 + one corrective re-prompt on an unparseable verdict.
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const prompt =
+          attempt === 0
+            ? basePrompt
+            : `${basePrompt}\n\n## Format correction required\nYour previous report's json verdict failed validation:\n${parseErrors.map((e) => `- ${e}`).join('\n')}\nReply with the FULL report again, ending with a valid \`\`\`json verdict fence.`
+
+        const result = await this.collect(taskId, adapter, {
+          cwd: task.worktree,
+          prompt,
+          mode: 'verify',
+          abortSignal: controller.signal,
+        })
+        this.deps.artifacts.add(taskId, 'log', result.log)
+
+        if (controller.signal.aborted) return
+
+        if (result.exitCode !== 0 || !result.resultText) {
+          this.deps.tasks.recordEvent(taskId, 'agent_error', { exitCode: result.exitCode })
+          this.applyActionSafe(taskId, 'verify_failed_final')
+          return
+        }
+
+        lastRaw = result.resultText
+        const parsed = parseVerdict(result.resultText)
+        if (parsed.verdict) {
+          this.deps.artifacts.add(
+            taskId,
+            'verify_report',
+            JSON.stringify({ report: result.resultText, verdict: parsed.verdict }),
+          )
+          this.settleVerdict(taskId, parsed.verdict)
+          return
+        }
+        parseErrors = parsed.errors
+        this.deps.tasks.recordEvent(taskId, 'verdict_format_retry', { errors: parseErrors })
+      }
+
+      // Unparseable after retry: surface the raw report and hand the
+      // decision to the user in Review (TDD §8).
+      this.deps.artifacts.add(
+        taskId,
+        'verify_report',
+        JSON.stringify({ report: lastRaw ?? '', verdict: null }),
+      )
+      this.deps.tasks.recordEvent(taskId, 'verdict_unparseable', { errors: parseErrors })
+      this.applyActionSafe(taskId, 'verify_passed')
+    } catch (error) {
+      if (!controller.signal.aborted) {
+        this.deps.tasks.recordEvent(taskId, 'agent_error', { message: (error as Error).message })
+        this.applyActionSafe(taskId, 'verify_failed_final')
+      }
+    } finally {
+      clearTimeout(timeout)
+      this.active.delete(taskId)
+    }
+  }
+
+  private settleVerdict(
+    taskId: string,
+    verdict: { verdict: string; fix_instructions?: string },
+  ): void {
+    if (verdict.verdict === 'pass' || verdict.verdict === 'pass_with_warnings') {
+      this.applyActionSafe(taskId, 'verify_passed')
+      return
+    }
+    // Fail: bounded automatic fix loop, then require the user.
+    const task = this.deps.tasks.get(taskId)
+    if (!task) return
+    if (task.retryCount < MAX_VERIFY_RETRIES) {
+      this.deps.tasks.incrementRetry(taskId)
+      this.applyActionSafe(taskId, 'verify_failed_retry')
+      void this.runExecution(taskId, verdict.fix_instructions ?? 'Verification failed; see report.')
+    } else {
+      this.deps.tasks.recordEvent(taskId, 'fix_loop_exhausted', { retries: task.retryCount })
+      this.applyActionSafe(taskId, 'verify_failed_final')
     }
   }
 
@@ -217,7 +400,7 @@ export class Orchestrator {
         const result = await this.collect(taskId, adapter, {
           cwd: project.path,
           prompt,
-          readOnly: true,
+          mode: 'read',
           abortSignal: controller.signal,
         })
         this.deps.artifacts.add(taskId, 'log', result.log)

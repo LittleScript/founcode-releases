@@ -68,16 +68,17 @@ Basis: PRD v1.0 + TDD v1.0. Terakhir diperbarui: 3 Juli 2026.
 
 ## Fase 4 — Fase VERIFY + Finalisasi (F4)
 
-- [ ] Template `prompts/verify.md` (kriteria dari plan + diff + deteksi test runner; output format Founcode Verdict)
-- [ ] Verdict parser (JSON dalam fence; unit test + auto-retry 1x jika unparseable)
-- [ ] Orchestrator: eksekusi selesai → spawn sesi agen BARU untuk verify
-- [ ] Loop perbaikan: verdict fail → kirim `fix_instructions` balik ke Execute, max 2 iterasi, lalu wajib intervensi user
-- [ ] UI: Verify Report (per kriteria pass/fail/warning, hasil test, verdict badge)
-- [ ] `WorktreeManager.merge()`: merge branch task ke branch user (konflik → surface ke UI, tidak pernah auto-resolve)
-- [ ] UI: aksi finalisasi Merge / Send back / Discard + cleanup worktree setelah DONE/DISCARDED
-- [ ] Tulis salinan plan approved ke `<project>/.founcode/plans/` (opsional, default gitignored)
+- [x] Template `prompts/verify.md` (kriteria dari plan + diff + deteksi test runner; output format Founcode Verdict)
+- [x] Verdict parser (JSON dalam fence terakhir; unit test + auto-retry 1x jika unparseable; fallback raw → REVIEW, user memutuskan)
+- [x] Orchestrator: eksekusi selesai → spawn sesi agen BARU untuk verify (mode `verify`: Read/Glob/Grep/Bash — bisa run test, tak bisa edit)
+- [x] Loop perbaikan: verdict fail → `fix_instructions` balik ke Execute (worktree DIPAKAI ULANG, bukan dari nol), max 2 iterasi (`retry_count` + migration 002 `base_ref`), lalu FAILED
+- [x] UI: Verify Report (badge verdict, kriteria pass/fail/warning + note, hasil test, full report collapsible)
+- [x] `WorktreeManager.merge()`: merge `--no-ff` ke branch user; repo kotor ditolak; konflik → abort total + pesan jelas (tidak pernah auto-resolve/partial)
+- [x] UI: aksi finalisasi Merge / Send back (dengan feedback) / Discard + cleanup worktree & branch setelah DONE/DISCARDED
+- [x] Tulis salinan plan approved ke `<project>/.founcode/plans/` + ignore via `.git/info/exclude` (tidak menyentuh .gitignore user)
 
 **Exit criteria:** siklus penuh Plan → Execute → Verify → Merge berhasil pada task nyata di repo nyata dengan Claude Code asli, di Windows 11.
+**Status kode 4 Jul 2026: selesai, 64 test pass (termasuk merge conflict abort, fix-loop cap, send-back). Menunggu verifikasi manual E2E.**
 
 ## Fase 5 — Licensing, Packaging, Polish (F6)
 

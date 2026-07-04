@@ -31,6 +31,7 @@ export interface Task {
   state: TaskState
   branch: string | null
   worktree: string | null
+  baseRef: string | null
   retryCount: number
   createdAt: number
   updatedAt: number
@@ -53,6 +54,22 @@ export interface AgentInfo {
   displayName: string
   installed: boolean
   version?: string
+}
+
+// Founcode Verdict — output of the Verify phase. TDD §5.4.
+export type VerdictStatus = 'pass' | 'pass_with_warnings' | 'fail'
+
+export interface VerdictCriterion {
+  criterion: string
+  status: 'pass' | 'fail' | 'warning'
+  note?: string
+}
+
+export interface Verdict {
+  verdict: VerdictStatus
+  criteria: VerdictCriterion[]
+  tests?: { detected: boolean; command?: string; passed?: number; failed?: number }
+  fix_instructions?: string
 }
 
 export interface AppInfo {

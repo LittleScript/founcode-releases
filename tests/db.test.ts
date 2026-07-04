@@ -3,6 +3,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { type Database, getSchemaVersion, migrate, openDatabase } from '../src/main/store/db'
+import { MIGRATIONS } from '../src/main/store/migrations'
+
+const LATEST_VERSION = MIGRATIONS.at(-1)?.version ?? 0
 
 describe('database bootstrap', () => {
   let dir: string
@@ -19,7 +22,7 @@ describe('database bootstrap', () => {
   })
 
   it('applies all migrations and records schema version', () => {
-    expect(getSchemaVersion(db)).toBe(1)
+    expect(getSchemaVersion(db)).toBe(LATEST_VERSION)
   })
 
   it('creates the full schema', () => {
@@ -34,7 +37,7 @@ describe('database bootstrap', () => {
 
   it('is idempotent — migrating twice is a no-op', () => {
     expect(() => migrate(db)).not.toThrow()
-    expect(getSchemaVersion(db)).toBe(1)
+    expect(getSchemaVersion(db)).toBe(LATEST_VERSION)
   })
 
   it('enforces foreign keys', () => {

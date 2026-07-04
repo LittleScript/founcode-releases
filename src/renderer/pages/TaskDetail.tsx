@@ -4,6 +4,7 @@ import { DiffViewer } from '../components/DiffViewer'
 import { LogViewer } from '../components/LogViewer'
 import { PlanReviewer } from '../components/PlanReviewer'
 import { StateBadge } from '../components/StateBadge'
+import { VerifyReport } from '../components/VerifyReport'
 import { useAppStore } from '../stores/appStore'
 
 const ACTIVE_STATES = ['PLANNING', 'EXECUTING', 'VERIFYING'] as const
@@ -94,11 +95,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
       {tab === 'Plan' && <PlanReviewer task={task} planContent={latest('plan')} />}
       {tab === 'Log' && <LogViewer taskId={task.id} storedLog={latest('log')} />}
       {tab === 'Diff' && <DiffViewer diff={latest('diff')} />}
-      {tab === 'Verify' && (
-        <div className="flex flex-1 items-center justify-center text-slate-600 text-sm">
-          The verification report will appear here after the verify phase. (Phase 4)
-        </div>
-      )}
+      {tab === 'Verify' && <VerifyReport task={task} reportContent={latest('verify_report')} />}
     </div>
   )
 }

@@ -22,7 +22,7 @@ describe.skipIf(!enabled)('ClaudeCodeAdapter (real CLI)', () => {
     for await (const event of adapter.run({
       cwd: process.cwd(),
       prompt: 'Reply with exactly the word: pong',
-      readOnly: true,
+      mode: 'read',
       abortSignal: controller.signal,
     })) {
       events.push(event)
