@@ -1,6 +1,6 @@
 import { join } from 'node:path'
 import { app, BrowserWindow, shell } from 'electron'
-import { registerIpcHandlers } from './ipc/handlers'
+import { createServices, registerIpcHandlers } from './ipc/handlers'
 import { openDatabase } from './store/db'
 
 function createWindow(): void {
@@ -41,7 +41,8 @@ function createWindow(): void {
 app.whenReady().then(() => {
   const dbPath = join(app.getPath('userData'), 'founcode.db')
   const db = openDatabase(dbPath)
-  registerIpcHandlers(db, dbPath)
+  const services = createServices(db)
+  registerIpcHandlers(db, dbPath, services)
   createWindow()
 
   app.on('activate', () => {

@@ -9,7 +9,7 @@ import type { AgentEvent, AppInfo, Project, Task, TaskState } from './types'
 export interface IpcInvokeMap {
   'app:ping': { args: undefined; result: 'pong' }
   'app:info': { args: undefined; result: AppInfo }
-  // Phase 1:
+  'dialog:selectFolder': { args: undefined; result: string | null }
   'project:add': { args: { path: string }; result: Project }
   'project:list': { args: undefined; result: Project[] }
   'task:create': {
@@ -17,6 +17,7 @@ export interface IpcInvokeMap {
     result: Task
   }
   'task:list': { args: { projectId?: string }; result: Task[] }
+  'task:get': { args: { taskId: string }; result: Task | null }
 }
 
 export type IpcInvokeChannel = keyof IpcInvokeMap
@@ -24,10 +25,12 @@ export type IpcInvokeChannel = keyof IpcInvokeMap
 export const IPC_INVOKE_CHANNELS: readonly IpcInvokeChannel[] = [
   'app:ping',
   'app:info',
+  'dialog:selectFolder',
   'project:add',
   'project:list',
   'task:create',
   'task:list',
+  'task:get',
 ]
 
 // ---- events (main -> renderer stream) ----

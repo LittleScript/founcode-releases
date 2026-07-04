@@ -24,15 +24,16 @@ Basis: PRD v1.0 + TDD v1.0. Terakhir diperbarui: 3 Juli 2026.
 
 ## Fase 1 — Project & Task Management (F1)
 
-- [ ] ProjectRepo + TaskRepo + ArtifactRepo (CRUD, unit test)
-- [ ] IPC: `project:add` (folder picker + validasi folder adalah repo git), `project:list`
-- [ ] IPC: `task:create`, `task:list`
-- [ ] UI: Onboarding page (welcome → add project pertama)
-- [ ] UI: Task Board (kolom per state, card task, create task dialog)
-- [ ] UI: Task Detail page (skeleton — tab Plan / Log / Diff / Verify)
-- [ ] TaskStateMachine: definisi state + transisi legal + tabel `task_events` (unit test SEMUA transisi ilegal ditolak)
+- [x] ProjectRepo + TaskRepo + ArtifactRepo (CRUD, unit test)
+- [x] IPC: `project:add` (folder picker + validasi folder adalah repo git), `project:list`
+- [x] IPC: `task:create`, `task:list` (+ `task:get`, `dialog:selectFolder`)
+- [x] UI: Onboarding page (welcome → add project pertama)
+- [x] UI: Task Board (kolom per state, card task, create task dialog)
+- [x] UI: Task Detail page (skeleton — tab Plan / Log / Diff / Verify)
+- [x] TaskStateMachine: definisi state + transisi legal + tabel `task_events` (unit test SEMUA transisi ilegal ditolak — exhaustive 135 pasangan state×aksi)
 
 **Exit criteria:** bisa add project nyata, buat task, task muncul di board; state machine 100% tercakup unit test.
+**Status 4 Jul 2026: TERPENUHI** — diverifikasi manual oleh Koko (add project → create task → muncul di Backlog → detail page). 21 unit test pass.
 
 ## Fase 2 — Agent Layer + Fase PLAN (F2, F5)
 
