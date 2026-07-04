@@ -78,7 +78,7 @@ Basis: PRD v1.0 + TDD v1.0. Terakhir diperbarui: 3 Juli 2026.
 - [x] Tulis salinan plan approved ke `<project>/.founcode/plans/` + ignore via `.git/info/exclude` (tidak menyentuh .gitignore user)
 
 **Exit criteria:** siklus penuh Plan → Execute → Verify → Merge berhasil pada task nyata di repo nyata dengan Claude Code asli, di Windows 11.
-**Status kode 4 Jul 2026: selesai, 64 test pass (termasuk merge conflict abort, fix-loop cap, send-back). Menunggu verifikasi manual E2E.**
+**Status 4 Jul 2026: TERPENUHI (M4 tercapai)** — E2E otomatis dengan Claude Code ASLI lolos (`tests/full-cycle.integration.test.ts`, 86 detik: plan 23s → execute 27s → verify ~35s → merge bersih; verdict pass; repo user bersih; worktree+branch ter-cleanup). 64 unit/integration test + 1 full-cycle E2E. Dogfooding via UI = langkah berikutnya.
 
 ## Fase 5 — Licensing, Packaging, Polish (F6)
 

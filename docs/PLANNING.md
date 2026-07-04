@@ -24,7 +24,7 @@ Estimasi dalam **sesi kerja efektif** (1 sesi ≈ setengah hari fokus dengan ban
 | **M1 — Board hidup** | Fase 1 selesai: project & task management, state machine teruji | 4–5 sesi | ✅ **SELESAI 4 Jul** (1 sesi) |
 | **M2 — Plan bekerja** ⭐ | Fase 2 selesai: Claude Code adapter + fase Plan end-to-end | 6–8 sesi | ✅ **SELESAI 4 Jul** — checkpoint kritis LOLOS (integration test vs CLI asli) |
 | **M3 — Execute bekerja** | Fase 3 selesai: worktree + eksekusi + diff viewer | 5–6 sesi | 🔵 Kode selesai 4 Jul; menunggu verifikasi manual E2E |
-| **M4 — Siklus penuh** ⭐⭐ | Fase 4 selesai: verify + merge; **dogfooding dimulai** | 5–6 sesi | ⬜ |
+| **M4 — Siklus penuh** ⭐⭐ | Fase 4 selesai: verify + merge; **dogfooding dimulai** | 5–6 sesi | ✅ **TERCAPAI 4 Jul** — full-cycle E2E dengan Claude Code asli lolos (86 detik) |
 | **M5 — Siap jual** | Fase 5 selesai: license, installer, QA | 5–7 sesi | ⬜ |
 | **M6 — Launch v1.0** 🚀 | Fase 6: landing page, rilis, marketing push | 3–4 sesi | ⬜ |
 
