@@ -37,32 +37,34 @@ Basis: PRD v1.0 + TDD v1.0. Terakhir diperbarui: 3 Juli 2026.
 
 ## Fase 2 — Agent Layer + Fase PLAN (F2, F5)
 
-- [ ] Interface `AgentAdapter` + tipe `AgentEvent` (TDD §4.1)
-- [ ] `MockAgentAdapter` (untuk dev & test tanpa CLI asli)
-- [ ] `AgentRegistry`: deteksi agen terinstal (`claude --version`)
-- [ ] `ClaudeCodeAdapter.detect()` + `run()` — spawn headless, parse stream-json → AgentEvent, abort/kill process tree (Windows `taskkill /T`)
-- [ ] Integration test adapter vs Claude Code CLI asli (prompt trivial)
-- [ ] Template `prompts/plan.md` (format Founcode Plan, larangan menulis file)
-- [ ] Orchestrator: aksi `startPlanning` → jalankan agen read-only → simpan artefak plan
-- [ ] Plan parser: validasi struktur format Founcode Plan (unit test: plan valid, cacat, kosong)
-- [ ] Auto re-prompt 1x jika plan tidak sesuai format (TDD §8)
-- [ ] UI: Plan Reviewer — render markdown, edit inline, tombol Approve / Request Re-plan (dengan feedback)
-- [ ] IPC streaming `task:event` → Log Viewer real-time di Task Detail
+- [x] Interface `AgentAdapter` + tipe `AgentEvent` (TDD §4.1)
+- [x] `MockAgentAdapter` (untuk dev & test tanpa CLI asli; marker `[mock:invalid]`/`[mock:fail]`)
+- [x] `AgentRegistry`: deteksi agen terinstal (`claude --version`)
+- [x] `ClaudeCodeAdapter.detect()` + `run()` — spawn headless, parse stream-json → AgentEvent, abort/kill process tree (Windows `taskkill /T`). *Catatan: prompt via stdin; resolve .exe > .cmd (where mengembalikan sh shim duluan); read-only via `--allowedTools Read Glob Grep` BUKAN plan mode (bajak format output)*
+- [x] Integration test adapter vs Claude Code CLI asli (env-gated `FOUNCODE_IT=1`; 2/2 pass)
+- [x] Template `prompts/plan.md` (format Founcode Plan, larangan menulis file)
+- [x] Orchestrator: aksi `startPlanning` → jalankan agen read-only → simpan artefak plan
+- [x] Plan parser: validasi struktur format Founcode Plan (unit test: plan valid, cacat, kosong)
+- [x] Auto re-prompt 1x jika plan tidak sesuai format (TDD §8)
+- [x] UI: Plan Reviewer — render markdown, edit inline, tombol Approve / Request Re-plan (dengan feedback) + Retry untuk FAILED
+- [x] IPC streaming `task:event` → Log Viewer real-time (log store global, tahan pindah tab; progress elapsed+activity saat PLANNING)
 
 **Exit criteria:** intent nyata pada repo nyata menghasilkan plan terstruktur yang bisa diedit & di-approve di UI; cancel di tengah planning membunuh proses agen bersih.
+**Status 4 Jul 2026: TERPENUHI** — diverifikasi manual Koko dengan Claude Code asli setelah fix render-loop (blank window) & fix plan mode.
 
 ## Fase 3 — Fase EXECUTE (F3)
 
-- [ ] `WorktreeManager`: create/getDiff/cleanup (integration test dengan repo git temporer)
-- [ ] Guard: worktree di userData, branch `founcode/task-<id>`, repo user tidak tersentuh
-- [ ] Template `prompts/execute.md` (implementasi persis sesuai plan; stop & lapor jika plan tak bisa diikuti)
-- [ ] Orchestrator: `approvePlan` → create worktree → jalankan agen (write mode) di worktree
-- [ ] Streaming log eksekusi ke UI + tombol Stop/Cancel
-- [ ] Simpan diff sebagai artefak setelah agen selesai
-- [ ] UI: Diff Viewer per file di Task Detail
-- [ ] Crash recovery: task EXECUTING yatim saat app restart → FAILED + opsi retry (TDD §8)
+- [x] `WorktreeManager`: create/commitAll/getDiff/remove (integration test dengan repo git temporer; auto-commit hasil agen supaya branch lengkap)
+- [x] Guard: worktree di userData, branch `founcode/task-<id>`, repo user tidak tersentuh (teruji: HEAD & status repo user tak berubah)
+- [x] Template `prompts/execute.md` (implementasi persis sesuai plan; `FOUNCODE_BLOCKED:` jika plan tak bisa diikuti)
+- [x] Orchestrator: `approvePlan` → create worktree → jalankan agen (write mode: acceptEdits + Bash) di worktree; timeout 30 menit
+- [x] Streaming log eksekusi ke UI + tombol Stop di header Task Detail (semua state aktif)
+- [x] Simpan diff sebagai artefak setelah agen selesai (+ event `empty_diff` bila kosong)
+- [x] UI: Diff Viewer per file (collapsible, warna +/-) di Task Detail
+- [x] Crash recovery: `recoverOrphans()` saat startup — task PLANNING/EXECUTING/VERIFYING yatim → FAILED + Retry; worktree stale dibersihkan saat create ulang
 
 **Exit criteria:** plan approved dieksekusi di worktree terisolasi; diff akurat tampil di UI; folder project user tetap bersih; stop membunuh proses dengan bersih.
+**Status kode 4 Jul 2026: selesai, 49 unit/integration test pass. Menunggu verifikasi manual E2E dengan Claude Code asli.**
 
 ## Fase 4 — Fase VERIFY + Finalisasi (F4)
 

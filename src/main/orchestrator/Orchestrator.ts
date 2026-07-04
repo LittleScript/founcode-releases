@@ -1,10 +1,12 @@
 // The only component allowed to change task state. Owns the phase
 // runners: Plan (this phase), Execute and Verify (Phase 3/4).
 
+import executeTemplate from '../../../prompts/execute.md?raw'
 import planTemplate from '../../../prompts/plan.md?raw'
 import type { AgentEvent, Task } from '../../shared/types'
 import type { AgentAdapter, AgentRunOptions } from '../agents/AgentAdapter'
 import type { AgentRegistry } from '../agents/AgentRegistry'
+import type { WorktreeManager } from '../git/WorktreeManager'
 import type { ArtifactRepo } from '../store/repositories/ArtifactRepo'
 import type { ProjectRepo } from '../store/repositories/ProjectRepo'
 import type { TaskRepo } from '../store/repositories/TaskRepo'
@@ -12,12 +14,14 @@ import { validatePlan } from './planParser'
 import { type TaskAction, transition } from './TaskStateMachine'
 
 export const PLAN_TIMEOUT_MS = 15 * 60 * 1000
+export const EXEC_TIMEOUT_MS = 30 * 60 * 1000
 
 export interface OrchestratorDeps {
   projects: ProjectRepo
   tasks: TaskRepo
   artifacts: ArtifactRepo
   registry: AgentRegistry
+  worktrees: WorktreeManager
   broadcastStateChange: (payload: {
     taskId: string
     from: Task['state']
@@ -72,15 +76,117 @@ export class Orchestrator {
       this.deps.artifacts.add(taskId, 'plan', editedPlan)
       this.deps.tasks.recordEvent(taskId, 'plan_edited_by_user')
     }
-    // Phase 3 wires the execution runner onto this transition.
-    return this.applyAction(taskId, 'approve_plan')
+    const updated = this.applyAction(taskId, 'approve_plan')
+    void this.runExecution(taskId)
+    return updated
   }
 
   cancel(taskId: string): Task {
     const updated = this.applyAction(taskId, 'cancel')
     // Abort AFTER the transition so the runner sees a consistent state.
     this.active.get(taskId)?.abort()
+    this.cleanupWorktree(taskId)
     return updated
+  }
+
+  // Called once at startup: tasks left mid-phase by a crash or forced
+  // shutdown cannot resume (their runner is gone) — fail them so the
+  // user gets a retry path. Worktrees are recreated fresh on retry.
+  recoverOrphans(): void {
+    const failActions: Partial<Record<Task['state'], TaskAction>> = {
+      PLANNING: 'plan_failed',
+      EXECUTING: 'execution_failed',
+      VERIFYING: 'verify_failed_final',
+    }
+    for (const task of this.deps.tasks.list()) {
+      const action = failActions[task.state]
+      if (!action) continue
+      this.deps.tasks.recordEvent(task.id, 'crash_recovery', { orphanedState: task.state })
+      this.applyActionSafe(task.id, action)
+    }
+  }
+
+  private cleanupWorktree(taskId: string): void {
+    const task = this.deps.tasks.get(taskId)
+    const project = task ? this.deps.projects.get(task.projectId) : undefined
+    if (!task?.worktree || !project) return
+    try {
+      this.deps.worktrees.remove(project.path, taskId)
+      this.deps.tasks.setWorktree(taskId, null, null)
+    } catch (error) {
+      this.deps.tasks.recordEvent(taskId, 'worktree_cleanup_failed', {
+        message: (error as Error).message,
+      })
+    }
+  }
+
+  private async runExecution(taskId: string): Promise<void> {
+    const task = this.deps.tasks.get(taskId)
+    if (!task) return
+    const project = this.deps.projects.get(task.projectId)
+    const adapter = this.deps.registry.get(task.agentId)
+    const plan = this.deps.artifacts.latest(taskId, 'plan')
+
+    if (!project || !adapter || !plan) {
+      this.deps.tasks.recordEvent(taskId, 'agent_error', {
+        message: !project
+          ? 'Project not found'
+          : !adapter
+            ? `Unknown agent: ${task.agentId}`
+            : 'No approved plan artifact',
+      })
+      this.applyActionSafe(taskId, 'execution_failed')
+      return
+    }
+
+    const controller = new AbortController()
+    this.active.set(taskId, controller)
+    const timeout = setTimeout(() => controller.abort(), EXEC_TIMEOUT_MS)
+
+    try {
+      const { branch, worktreePath, baseRef } = this.deps.worktrees.create(project.path, taskId)
+      this.deps.tasks.setWorktree(taskId, branch, worktreePath)
+      this.deps.tasks.recordEvent(taskId, 'worktree_created', { branch, worktreePath, baseRef })
+
+      const prompt = executeTemplate.replace('{{plan}}', plan.content)
+      const result = await this.collect(taskId, adapter, {
+        cwd: worktreePath,
+        prompt,
+        readOnly: false,
+        abortSignal: controller.signal,
+      })
+      this.deps.artifacts.add(taskId, 'log', result.log)
+
+      if (controller.signal.aborted) return // cancel already handled state + cleanup
+
+      const blocked = result.resultText?.trimStart().startsWith('FOUNCODE_BLOCKED:')
+      if (result.exitCode !== 0 || blocked) {
+        this.deps.tasks.recordEvent(taskId, 'agent_error', {
+          exitCode: result.exitCode,
+          blocked: blocked ?? false,
+          message: blocked ? result.resultText?.slice(0, 2000) : undefined,
+        })
+        this.applyActionSafe(taskId, 'execution_failed')
+        return
+      }
+
+      this.deps.worktrees.commitAll(worktreePath, `founcode: execute task ${taskId}`)
+      const diff = this.deps.worktrees.getDiff(worktreePath, baseRef)
+      this.deps.artifacts.add(taskId, 'diff', diff)
+      if (!diff.trim()) {
+        this.deps.tasks.recordEvent(taskId, 'empty_diff')
+      }
+      // Phase 4 wires the verify runner onto this transition.
+      this.applyActionSafe(taskId, 'execution_finished')
+    } catch (error) {
+      if (!controller.signal.aborted) {
+        this.deps.tasks.recordEvent(taskId, 'agent_error', { message: (error as Error).message })
+        this.applyActionSafe(taskId, 'execution_failed')
+      }
+    } finally {
+      clearTimeout(timeout)
+      this.active.delete(taskId)
+    }
   }
 
   private async runPlanning(taskId: string, feedback?: string): Promise<void> {

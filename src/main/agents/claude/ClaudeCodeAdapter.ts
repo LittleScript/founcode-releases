@@ -88,7 +88,9 @@ export class ClaudeCodeAdapter implements AgentAdapter {
       '--verbose',
       ...(opts.readOnly
         ? ['--allowedTools', 'Read', 'Glob', 'Grep']
-        : ['--permission-mode', 'acceptEdits']),
+        : // Execution: auto-accept edits and allow shell commands so the
+          // agent can run tests/build inside the isolated worktree.
+          ['--permission-mode', 'acceptEdits', '--allowedTools', 'Bash']),
     ]
 
     const child = spawn(cmd.file, args, {

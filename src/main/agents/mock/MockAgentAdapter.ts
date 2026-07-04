@@ -3,6 +3,8 @@
 //   [mock:invalid]  -> emit a malformed plan (exercises the re-prompt path)
 //   [mock:fail]     -> exit non-zero (exercises the failure path)
 
+import { writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { setTimeout as sleep } from 'node:timers/promises'
 import type { AgentEvent } from '../../../shared/types'
 import type { AgentAdapter, AgentRunOptions } from '../AgentAdapter'
@@ -57,6 +59,18 @@ export class MockAgentAdapter implements AgentAdapter {
     if (opts.prompt.includes('[mock:fail]')) {
       yield { type: 'error', message: 'Mock agent simulated failure' }
       yield { type: 'done', exitCode: 1 }
+      return
+    }
+
+    if (!opts.readOnly) {
+      // Execution mode: actually produce a change so the diff pipeline
+      // has something real to show.
+      const file = join(opts.cwd, 'mock-execution.txt')
+      writeFileSync(file, `Mock execution output\nPrompt excerpt: ${opts.prompt.slice(0, 80)}\n`)
+      yield { type: 'file_change', path: file, kind: 'create' }
+      const resultText = 'Implemented the plan: created mock-execution.txt as requested.'
+      yield { type: 'text', content: resultText }
+      yield { type: 'done', exitCode: 0, costUsd: 0, resultText }
       return
     }
 

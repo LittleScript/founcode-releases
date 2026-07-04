@@ -52,7 +52,8 @@ function createWindow(): void {
 app.whenReady().then(() => {
   const dbPath = join(app.getPath('userData'), 'founcode.db')
   const db = openDatabase(dbPath)
-  const services = createServices(db)
+  const services = createServices(db, join(app.getPath('userData'), 'worktrees'))
+  services.orchestrator.recoverOrphans()
   registerIpcHandlers(db, dbPath, services)
   createWindow()
 

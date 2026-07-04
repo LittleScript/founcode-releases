@@ -1,6 +1,9 @@
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AgentRegistry } from '../src/main/agents/AgentRegistry'
 import { MockAgentAdapter } from '../src/main/agents/mock/MockAgentAdapter'
+import { WorktreeManager } from '../src/main/git/WorktreeManager'
 import { Orchestrator } from '../src/main/orchestrator/Orchestrator'
 import { type Database, openDatabase } from '../src/main/store/db'
 import { ArtifactRepo } from '../src/main/store/repositories/ArtifactRepo'
@@ -13,6 +16,7 @@ function makeOrchestrator(broadcast = vi.fn()) {
     tasks,
     artifacts,
     registry: new AgentRegistry([new MockAgentAdapter(0)]),
+    worktrees: new WorktreeManager(join(tmpdir(), 'founcode-test-unused')),
     broadcastStateChange: broadcast,
     broadcastAgentEvent: vi.fn(),
   })

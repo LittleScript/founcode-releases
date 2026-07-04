@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react'
 import type { Artifact, Task } from '../../shared/types'
+import { DiffViewer } from '../components/DiffViewer'
 import { LogViewer } from '../components/LogViewer'
 import { PlanReviewer } from '../components/PlanReviewer'
 import { StateBadge } from '../components/StateBadge'
 import { useAppStore } from '../stores/appStore'
+
+const ACTIVE_STATES = ['PLANNING', 'EXECUTING', 'VERIFYING'] as const
 
 const TABS = ['Plan', 'Log', 'Diff', 'Verify'] as const
 type Tab = (typeof TABS)[number]
@@ -54,6 +57,19 @@ export function TaskDetail({ taskId }: { taskId: string }) {
           <h1 className="font-semibold text-lg text-slate-100">{task.title}</h1>
           <StateBadge state={task.state} />
           <span className="text-slate-600 text-xs">agent: {task.agentId}</span>
+          {(ACTIVE_STATES as readonly string[]).includes(task.state) && (
+            <button
+              type="button"
+              onClick={() =>
+                window.founcode
+                  .invoke('task:cancel', { taskId: task.id })
+                  .catch((e) => useAppStore.setState({ error: (e as Error).message }))
+              }
+              className="ml-auto rounded-md border border-red-900 px-3 py-1 text-red-400 text-xs hover:bg-red-950/40"
+            >
+              ■ Stop
+            </button>
+          )}
         </div>
         <p className="mt-1 text-slate-400 text-sm">{task.intent}</p>
       </header>
@@ -77,11 +93,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
 
       {tab === 'Plan' && <PlanReviewer task={task} planContent={latest('plan')} />}
       {tab === 'Log' && <LogViewer taskId={task.id} storedLog={latest('log')} />}
-      {tab === 'Diff' && (
-        <div className="flex flex-1 items-center justify-center text-slate-600 text-sm">
-          File changes from the isolated worktree will appear here after execution. (Phase 3)
-        </div>
-      )}
+      {tab === 'Diff' && <DiffViewer diff={latest('diff')} />}
       {tab === 'Verify' && (
         <div className="flex flex-1 items-center justify-center text-slate-600 text-sm">
           The verification report will appear here after the verify phase. (Phase 4)

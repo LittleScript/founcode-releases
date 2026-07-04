@@ -5,6 +5,7 @@ import { basename, join } from 'node:path'
 import { app, BrowserWindow, dialog, ipcMain } from 'electron'
 import type { IpcEventMap, IpcInvokeMap } from '../../shared/ipc-contract'
 import { AgentRegistry } from '../agents/AgentRegistry'
+import { WorktreeManager } from '../git/WorktreeManager'
 import { Orchestrator } from '../orchestrator/Orchestrator'
 import { type Database, getSchemaVersion } from '../store/db'
 import { ArtifactRepo } from '../store/repositories/ArtifactRepo'
@@ -34,16 +35,18 @@ export interface MainServices {
   orchestrator: Orchestrator
 }
 
-export function createServices(db: Database): MainServices {
+export function createServices(db: Database, worktreesDir: string): MainServices {
   const projects = new ProjectRepo(db)
   const tasks = new TaskRepo(db)
   const artifacts = new ArtifactRepo(db)
   const registry = new AgentRegistry()
+  const worktrees = new WorktreeManager(worktreesDir)
   const orchestrator = new Orchestrator({
     projects,
     tasks,
     artifacts,
     registry,
+    worktrees,
     broadcastStateChange: (change) => broadcast('task:stateChanged', change),
     broadcastAgentEvent: (payload) => broadcast('task:event', payload),
   })
