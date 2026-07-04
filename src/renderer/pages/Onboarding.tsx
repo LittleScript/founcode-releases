@@ -1,30 +1,72 @@
 import { useAppStore } from '../stores/appStore'
 
+const PHASES = [
+  {
+    key: 'P',
+    color: 'text-phase-plan border-phase-plan/30',
+    title: 'Plan',
+    desc: 'The agent analyzes your repo read-only and drafts a reviewable plan. Nothing is written until you approve.',
+  },
+  {
+    key: 'E',
+    color: 'text-phase-exec border-phase-exec/30',
+    title: 'Execute',
+    desc: 'Work happens in an isolated git worktree on a dedicated branch. Your checkout is never touched.',
+  },
+  {
+    key: 'V',
+    color: 'text-phase-verify border-phase-verify/30',
+    title: 'Verify',
+    desc: 'A fresh agent judges the diff against the plan and runs your tests before anything reaches you.',
+  },
+]
+
 export function Onboarding() {
   const addProject = useAppStore((s) => s.addProject)
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-6 p-8">
-      <div className="flex size-16 items-center justify-center rounded-2xl bg-accent-dim font-bold text-3xl text-surface">
-        F
+    <div className="flex flex-1 flex-col items-center justify-center gap-10 p-8">
+      <div className="rise-in flex flex-col items-center gap-4 text-center">
+        <div className="flex size-14 items-center justify-center rounded-xl border border-accent/30 bg-accent-ghost">
+          <span className="font-mono font-semibold text-accent text-xl">F/</span>
+        </div>
+        <div>
+          <h1 className="font-semibold text-2xl text-slate-100 tracking-tight">
+            Trust what your agents ship.
+          </h1>
+          <p className="mt-2 max-w-md text-slate-400 text-sm leading-relaxed">
+            Founcode turns AI coding agents into a disciplined pipeline — every task is planned,
+            executed in isolation, and independently verified before it reaches your branch.
+          </p>
+        </div>
       </div>
-      <div className="max-w-md text-center">
-        <h1 className="mb-2 font-semibold text-2xl text-slate-100">Welcome to Founcode</h1>
-        <p className="text-slate-400 text-sm leading-relaxed">
-          Orchestrate your AI coding agents with a disciplined workflow: every task starts with a
-          reviewable <span className="text-slate-200">plan</span>, executes in an isolated{' '}
-          <span className="text-slate-200">worktree</span>, and ends with independent{' '}
-          <span className="text-slate-200">verification</span>.
+
+      <div className="grid max-w-2xl grid-cols-3 gap-3">
+        {PHASES.map((phase, i) => (
+          <div
+            key={phase.key}
+            className="rise-in panel p-4"
+            style={{ animationDelay: `${120 + i * 90}ms` }}
+          >
+            <span
+              className={`inline-flex size-7 items-center justify-center rounded-md border font-mono text-sm ${phase.color}`}
+            >
+              {phase.key}
+            </span>
+            <h3 className="mt-3 mb-1 font-medium text-slate-200 text-sm">{phase.title}</h3>
+            <p className="text-slate-500 text-xs leading-relaxed">{phase.desc}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="rise-in flex flex-col items-center gap-2" style={{ animationDelay: '420ms' }}>
+        <button type="button" onClick={addProject} className="btn-primary px-6 py-2.5">
+          Add your first project
+        </button>
+        <p className="font-mono text-[11px] text-slate-600">
+          pick a local folder that is a git repository
         </p>
       </div>
-      <button
-        type="button"
-        onClick={addProject}
-        className="rounded-lg bg-accent-dim px-5 py-2.5 font-medium text-sm text-surface hover:bg-accent"
-      >
-        Add your first project
-      </button>
-      <p className="text-slate-600 text-xs">Pick a local folder that is a git repository.</p>
     </div>
   )
 }

@@ -79,27 +79,23 @@ export function VerifyReport({
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       {task.state === 'REVIEW' && (
-        <div className="flex items-center gap-2 border-b border-edge px-4 py-3">
+        <div className="flex items-center gap-2 border-b border-edge bg-surface-raised/40 px-4 py-3">
           <button
             type="button"
             disabled={busy}
             onClick={() => call(() => window.founcode.invoke('task:merge', { taskId: task.id }))}
-            className="rounded-md bg-accent-dim px-4 py-1.5 font-medium text-sm text-surface hover:bg-accent disabled:opacity-40"
+            className="btn-primary"
           >
             ⇣ Merge to my branch
           </button>
-          <button
-            type="button"
-            onClick={() => setFeedbackOpen(true)}
-            className="rounded-md border border-edge px-4 py-1.5 text-slate-300 text-sm hover:bg-surface-hover"
-          >
+          <button type="button" onClick={() => setFeedbackOpen(true)} className="btn-ghost">
             ↩ Send back
           </button>
           <button
             type="button"
             disabled={busy}
             onClick={() => call(() => window.founcode.invoke('task:discard', { taskId: task.id }))}
-            className="ml-auto rounded-md px-3 py-1.5 text-slate-500 text-sm hover:text-red-400"
+            className="btn-danger ml-auto"
           >
             Discard
           </button>
@@ -113,7 +109,7 @@ export function VerifyReport({
             onChange={(e) => setFeedback(e.target.value)}
             rows={3}
             placeholder="What should the agent fix or change?"
-            className="mb-2 w-full resize-none rounded-md border border-edge bg-surface px-3 py-2 text-slate-100 text-sm outline-none focus:border-accent-dim"
+            className="input-field mb-2 resize-none"
           />
           <div className="flex gap-2">
             <button
@@ -129,14 +125,14 @@ export function VerifyReport({
                   setFeedbackOpen(false)
                 })
               }
-              className="rounded-md bg-accent-dim px-3 py-1.5 font-medium text-sm text-surface hover:bg-accent disabled:opacity-40"
+              className="btn-primary"
             >
               Send back to execution
             </button>
             <button
               type="button"
               onClick={() => setFeedbackOpen(false)}
-              className="rounded-md px-3 py-1.5 text-slate-400 text-sm hover:bg-surface-hover"
+              className="btn-ghost border-transparent"
             >
               Cancel
             </button>

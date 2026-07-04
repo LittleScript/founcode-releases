@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { Artifact, Task } from '../../shared/types'
 import { DiffViewer } from '../components/DiffViewer'
 import { LogViewer } from '../components/LogViewer'
+import { PipelineRail } from '../components/PipelineRail'
 import { PlanReviewer } from '../components/PlanReviewer'
 import { StateBadge } from '../components/StateBadge'
 import { VerifyReport } from '../components/VerifyReport'
@@ -38,7 +39,11 @@ export function TaskDetail({ taskId }: { taskId: string }) {
   }, [taskId, state])
 
   if (!task) {
-    return <div className="flex flex-1 items-center justify-center text-slate-500">Loading…</div>
+    return (
+      <div className="flex flex-1 items-center justify-center font-mono text-slate-600 text-sm">
+        loading…
+      </div>
+    )
   }
 
   const latest = (kind: Artifact['kind']) =>
@@ -46,18 +51,21 @@ export function TaskDetail({ taskId }: { taskId: string }) {
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
-      <header className="border-b border-edge px-6 py-4">
+      <header className="border-b border-edge px-6 pt-4 pb-0">
         <button
           type="button"
           onClick={goBoard}
-          className="mb-2 text-slate-500 text-xs hover:text-slate-300"
+          className="mb-2 font-mono text-[11px] text-slate-600 transition-colors hover:text-slate-300"
         >
-          ← Back to board
+          ← board
         </button>
+
         <div className="flex items-center gap-3">
-          <h1 className="font-semibold text-lg text-slate-100">{task.title}</h1>
+          <h1 className="font-semibold text-[17px] text-slate-100 tracking-tight">{task.title}</h1>
           <StateBadge state={task.state} />
-          <span className="text-slate-600 text-xs">agent: {task.agentId}</span>
+          <span className="rounded-sm border border-edge px-1.5 py-0.5 font-mono text-[10px] text-slate-500">
+            {task.agentId}
+          </span>
           {(ACTIVE_STATES as readonly string[]).includes(task.state) && (
             <button
               type="button"
@@ -66,31 +74,36 @@ export function TaskDetail({ taskId }: { taskId: string }) {
                   .invoke('task:cancel', { taskId: task.id })
                   .catch((e) => useAppStore.setState({ error: (e as Error).message }))
               }
-              className="ml-auto rounded-md border border-red-900 px-3 py-1 text-red-400 text-xs hover:bg-red-950/40"
+              className="btn-danger ml-auto border border-red-900/60"
             >
               ■ Stop
             </button>
           )}
         </div>
-        <p className="mt-1 text-slate-400 text-sm">{task.intent}</p>
-      </header>
+        <p className="mt-1.5 max-w-3xl text-slate-400 text-sm leading-relaxed">{task.intent}</p>
 
-      <nav className="flex gap-1 border-b border-edge px-6 pt-3">
-        {TABS.map((t) => (
-          <button
-            key={t}
-            type="button"
-            onClick={() => setTab(t)}
-            className={`rounded-t-md px-4 py-2 text-sm ${
-              tab === t
-                ? 'border border-edge border-b-0 bg-surface-raised text-slate-100'
-                : 'text-slate-500 hover:text-slate-300'
-            }`}
-          >
-            {t}
-          </button>
-        ))}
-      </nav>
+        <div className="mt-4 max-w-md">
+          <PipelineRail state={task.state} labels />
+        </div>
+
+        <nav className="mt-4 flex gap-5">
+          {TABS.map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTab(t)}
+              className={`relative pb-2.5 font-medium text-[13px] transition-colors duration-150 ${
+                tab === t ? 'text-slate-100' : 'text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              {t}
+              {tab === t && (
+                <span className="absolute right-0 bottom-0 left-0 h-[2px] rounded-full bg-accent" />
+              )}
+            </button>
+          ))}
+        </nav>
+      </header>
 
       {tab === 'Plan' && <PlanReviewer task={task} planContent={latest('plan')} />}
       {tab === 'Log' && <LogViewer taskId={task.id} storedLog={latest('log')} />}

@@ -20,8 +20,8 @@ function PlanningProgress({ task }: { task: Task }) {
   const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
 
   return (
-    <div className="flex flex-col items-center gap-1 text-slate-500 text-xs">
-      <div>elapsed {mmss(elapsed)}</div>
+    <div className="flex flex-col items-center gap-1.5 font-mono text-[11px] text-slate-500">
+      <div className="text-slate-400">elapsed {mmss(elapsed)}</div>
       <div>
         {lines.length > 0
           ? `${lines.length} events · last activity ${sinceActivity}s ago`
@@ -31,6 +31,12 @@ function PlanningProgress({ task }: { task: Task }) {
         <div className="max-w-md truncate text-slate-600">{lastLine.content.slice(0, 100)}</div>
       )}
     </div>
+  )
+}
+
+function Spinner() {
+  return (
+    <div className="size-8 animate-spin rounded-full border-2 border-accent-dim border-t-transparent" />
   )
 }
 
@@ -59,10 +65,11 @@ export function PlanReviewer({ task, planContent }: { task: Task; planContent: s
 
   if (task.state === 'BACKLOG') {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-4">
-        <p className="max-w-md text-center text-slate-400 text-sm">
-          Start planning: the agent will analyze the repository read-only and produce an
-          implementation plan for your review. No code is written in this phase.
+      <div className="rise-in flex flex-1 flex-col items-center justify-center gap-5">
+        <p className="max-w-md text-center text-slate-400 text-sm leading-relaxed">
+          Start planning: the agent will analyze the repository{' '}
+          <span className="text-slate-200">read-only</span> and produce an implementation plan for
+          your review. No code is written in this phase.
         </p>
         <button
           type="button"
@@ -70,7 +77,7 @@ export function PlanReviewer({ task, planContent }: { task: Task; planContent: s
           onClick={() =>
             call(() => window.founcode.invoke('task:startPlanning', { taskId: task.id }))
           }
-          className="rounded-md bg-accent-dim px-4 py-2 font-medium text-sm text-surface hover:bg-accent disabled:opacity-40"
+          className="btn-primary px-6 py-2"
         >
           ▶ Start Planning
         </button>
@@ -80,15 +87,15 @@ export function PlanReviewer({ task, planContent }: { task: Task; planContent: s
 
   if (task.state === 'FAILED') {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-4">
-        <p className="max-w-md text-center text-red-400 text-sm">
+      <div className="rise-in flex flex-1 flex-col items-center justify-center gap-5">
+        <p className="max-w-md text-center text-phase-fail text-sm">
           The agent run failed. Check the Log tab for details.
         </p>
         <button
           type="button"
           disabled={busy}
           onClick={() => call(() => window.founcode.invoke('task:retry', { taskId: task.id }))}
-          className="rounded-md bg-accent-dim px-4 py-2 font-medium text-sm text-surface hover:bg-accent disabled:opacity-40"
+          className="btn-primary"
         >
           ↻ Retry (back to Backlog)
         </button>
@@ -98,14 +105,14 @@ export function PlanReviewer({ task, planContent }: { task: Task; planContent: s
 
   if (task.state === 'PLANNING') {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-4">
-        <div className="size-8 animate-spin rounded-full border-2 border-accent-dim border-t-transparent" />
+      <div className="flex flex-1 flex-col items-center justify-center gap-5">
+        <Spinner />
         <p className="text-slate-400 text-sm">Agent is analyzing the repository… (see Log tab)</p>
         <PlanningProgress task={task} />
         <button
           type="button"
           onClick={() => call(() => window.founcode.invoke('task:cancel', { taskId: task.id }))}
-          className="rounded-md border border-edge px-4 py-2 text-slate-300 text-sm hover:bg-surface-hover"
+          className="btn-ghost"
         >
           Cancel
         </button>
@@ -115,8 +122,8 @@ export function PlanReviewer({ task, planContent }: { task: Task; planContent: s
 
   if (!planContent) {
     return (
-      <div className="flex flex-1 items-center justify-center text-slate-600 text-sm">
-        No plan yet.
+      <div className="flex flex-1 items-center justify-center font-mono text-slate-600 text-sm">
+        no plan yet
       </div>
     )
   }
@@ -126,7 +133,7 @@ export function PlanReviewer({ task, planContent }: { task: Task; planContent: s
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       {reviewable && (
-        <div className="flex items-center gap-2 border-b border-edge px-4 py-3">
+        <div className="flex items-center gap-2 border-b border-edge bg-surface-raised/40 px-4 py-3">
           {!editing ? (
             <>
               <button
@@ -135,7 +142,7 @@ export function PlanReviewer({ task, planContent }: { task: Task; planContent: s
                 onClick={() =>
                   call(() => window.founcode.invoke('task:approvePlan', { taskId: task.id }))
                 }
-                className="rounded-md bg-accent-dim px-4 py-1.5 font-medium text-sm text-surface hover:bg-accent disabled:opacity-40"
+                className="btn-primary"
               >
                 ✓ Approve Plan
               </button>
@@ -145,15 +152,11 @@ export function PlanReviewer({ task, planContent }: { task: Task; planContent: s
                   setDraft(planContent)
                   setEditing(true)
                 }}
-                className="rounded-md border border-edge px-4 py-1.5 text-slate-300 text-sm hover:bg-surface-hover"
+                className="btn-ghost"
               >
                 Edit
               </button>
-              <button
-                type="button"
-                onClick={() => setFeedbackOpen(true)}
-                className="rounded-md border border-edge px-4 py-1.5 text-slate-300 text-sm hover:bg-surface-hover"
-              >
+              <button type="button" onClick={() => setFeedbackOpen(true)} className="btn-ghost">
                 ↻ Request Re-plan
               </button>
               <button
@@ -161,7 +164,7 @@ export function PlanReviewer({ task, planContent }: { task: Task; planContent: s
                 onClick={() =>
                   call(() => window.founcode.invoke('task:cancel', { taskId: task.id }))
                 }
-                className="ml-auto rounded-md px-3 py-1.5 text-slate-500 text-sm hover:text-red-400"
+                className="btn-danger ml-auto"
               >
                 Discard
               </button>
@@ -180,15 +183,11 @@ export function PlanReviewer({ task, planContent }: { task: Task; planContent: s
                     setEditing(false)
                   })
                 }
-                className="rounded-md bg-accent-dim px-4 py-1.5 font-medium text-sm text-surface hover:bg-accent disabled:opacity-40"
+                className="btn-primary"
               >
                 ✓ Approve Edited Plan
               </button>
-              <button
-                type="button"
-                onClick={() => setEditing(false)}
-                className="rounded-md border border-edge px-4 py-1.5 text-slate-300 text-sm hover:bg-surface-hover"
-              >
+              <button type="button" onClick={() => setEditing(false)} className="btn-ghost">
                 Cancel Edit
               </button>
             </>
@@ -197,13 +196,13 @@ export function PlanReviewer({ task, planContent }: { task: Task; planContent: s
       )}
 
       {feedbackOpen && (
-        <div className="border-b border-edge bg-surface-raised px-4 py-3">
+        <div className="border-b border-edge bg-surface-raised/60 px-4 py-3">
           <textarea
             value={feedback}
             onChange={(e) => setFeedback(e.target.value)}
             rows={3}
             placeholder="What should the agent change about this plan?"
-            className="mb-2 w-full resize-none rounded-md border border-edge bg-surface px-3 py-2 text-slate-100 text-sm outline-none focus:border-accent-dim"
+            className="input-field mb-2 resize-none"
           />
           <div className="flex gap-2">
             <button
@@ -219,14 +218,14 @@ export function PlanReviewer({ task, planContent }: { task: Task; planContent: s
                   setFeedbackOpen(false)
                 })
               }
-              className="rounded-md bg-accent-dim px-3 py-1.5 font-medium text-sm text-surface hover:bg-accent disabled:opacity-40"
+              className="btn-primary"
             >
               Send &amp; Re-plan
             </button>
             <button
               type="button"
               onClick={() => setFeedbackOpen(false)}
-              className="rounded-md px-3 py-1.5 text-slate-400 text-sm hover:bg-surface-hover"
+              className="btn-ghost border-transparent"
             >
               Cancel
             </button>
@@ -238,10 +237,10 @@ export function PlanReviewer({ task, planContent }: { task: Task; planContent: s
         <textarea
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          className="flex-1 resize-none bg-surface p-4 font-mono text-slate-200 text-sm outline-none"
+          className="flex-1 resize-none bg-surface p-5 font-mono text-[13px] text-slate-200 leading-relaxed outline-none"
         />
       ) : (
-        <div className="prose prose-invert prose-sm max-w-none flex-1 overflow-y-auto p-6">
+        <div className="prose prose-invert prose-sm max-w-none flex-1 overflow-y-auto px-6 py-5">
           <Markdown remarkPlugins={[remarkGfm]}>{planContent}</Markdown>
         </div>
       )}

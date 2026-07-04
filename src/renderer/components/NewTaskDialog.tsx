@@ -29,11 +29,16 @@ export function NewTaskDialog({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="w-[520px] rounded-xl border border-edge bg-surface-raised p-6 shadow-2xl">
-        <h2 className="mb-4 font-semibold text-lg text-slate-100">New Task</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-[2px]">
+      <div className="rise-in w-[540px] rounded-xl border border-edge bg-surface-raised p-6 shadow-2xl shadow-black/60">
+        <div className="mb-5 flex items-baseline justify-between">
+          <h2 className="font-semibold text-lg text-slate-100 tracking-tight">New Task</h2>
+          <span className="font-mono text-[10px] text-slate-600 uppercase tracking-widest">
+            plan first — no code without approval
+          </span>
+        </div>
 
-        <label className="mb-1 block text-slate-400 text-sm" htmlFor="task-title">
+        <label className="field-label" htmlFor="task-title">
           Title
         </label>
         <input
@@ -41,11 +46,11 @@ export function NewTaskDialog({ onClose }: { onClose: () => void }) {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Add dark mode to settings page"
-          className="mb-4 w-full rounded-md border border-edge bg-surface px-3 py-2 text-slate-100 text-sm outline-none focus:border-accent-dim"
+          className="input-field mb-4"
         />
 
-        <label className="mb-1 block text-slate-400 text-sm" htmlFor="task-intent">
-          Intent — describe what you want in natural language
+        <label className="field-label" htmlFor="task-intent">
+          Intent — what do you want, in plain language
         </label>
         <textarea
           id="task-intent"
@@ -53,16 +58,17 @@ export function NewTaskDialog({ onClose }: { onClose: () => void }) {
           onChange={(e) => setIntent(e.target.value)}
           rows={5}
           placeholder="Users should be able to toggle dark mode from the settings page. Persist the choice and apply it app-wide on startup."
-          className="mb-2 w-full resize-none rounded-md border border-edge bg-surface px-3 py-2 text-slate-100 text-sm outline-none focus:border-accent-dim"
+          className="input-field mb-4 resize-none"
         />
-        <label className="mb-1 block text-slate-400 text-sm" htmlFor="task-agent">
+
+        <label className="field-label" htmlFor="task-agent">
           Agent
         </label>
         <select
           id="task-agent"
           value={agentId}
           onChange={(e) => setAgentId(e.target.value)}
-          className="mb-2 w-full rounded-md border border-edge bg-surface px-3 py-2 text-slate-100 text-sm outline-none focus:border-accent-dim"
+          className="input-field mb-6"
         >
           {agents.map((a) => (
             <option key={a.id} value={a.id} disabled={!a.installed}>
@@ -72,24 +78,12 @@ export function NewTaskDialog({ onClose }: { onClose: () => void }) {
             </option>
           ))}
         </select>
-        <p className="mb-4 text-slate-500 text-xs">
-          The agent will produce a plan for your review before touching any code.
-        </p>
 
         <div className="flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-md px-4 py-2 text-slate-400 text-sm hover:bg-surface-hover"
-          >
+          <button type="button" onClick={onClose} className="btn-ghost border-transparent">
             Cancel
           </button>
-          <button
-            type="button"
-            onClick={submit}
-            disabled={!canSubmit}
-            className="rounded-md bg-accent-dim px-4 py-2 font-medium text-sm text-surface hover:bg-accent disabled:opacity-40"
-          >
+          <button type="button" onClick={submit} disabled={!canSubmit} className="btn-primary">
             {submitting ? 'Creating…' : 'Create Task'}
           </button>
         </div>

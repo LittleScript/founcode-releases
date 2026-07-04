@@ -3,10 +3,10 @@ import { type LogLine, NO_LINES, useLogStore } from '../stores/logStore'
 
 const COLORS: Record<LogLine['kind'], string> = {
   text: 'text-slate-300',
-  tool: 'text-sky-400',
-  file: 'text-amber-400',
-  error: 'text-red-400',
-  done: 'text-slate-500',
+  tool: 'text-phase-plan',
+  file: 'text-amber-300',
+  error: 'text-phase-fail',
+  done: 'text-slate-600',
 }
 
 export function LogViewer({ taskId, storedLog }: { taskId: string; storedLog: string | null }) {
@@ -20,16 +20,16 @@ export function LogViewer({ taskId, storedLog }: { taskId: string; storedLog: st
 
   if (lines.length === 0 && !storedLog) {
     return (
-      <div className="flex flex-1 items-center justify-center text-slate-600 text-sm">
-        No agent activity yet.
+      <div className="flex flex-1 items-center justify-center font-mono text-slate-600 text-sm">
+        no agent activity yet
       </div>
     )
   }
 
   return (
-    <div className="flex-1 overflow-y-auto bg-surface p-4 font-mono text-xs leading-relaxed">
+    <div className="m-4 flex-1 overflow-y-auto rounded-lg border border-edge bg-[#070a0e] p-4 font-mono text-xs leading-relaxed">
       {storedLog && lines.length === 0 && (
-        <pre className="whitespace-pre-wrap text-slate-400">{storedLog}</pre>
+        <pre className="whitespace-pre-wrap text-slate-500">{storedLog}</pre>
       )}
       {lines.map((line) => (
         <div key={line.key} className={`whitespace-pre-wrap ${COLORS[line.kind]}`}>
