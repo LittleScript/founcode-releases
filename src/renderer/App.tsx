@@ -4,6 +4,7 @@ import { Board } from './pages/Board'
 import { Onboarding } from './pages/Onboarding'
 import { TaskDetail } from './pages/TaskDetail'
 import { useAppStore } from './stores/appStore'
+import { useLogStore } from './stores/logStore'
 
 function Sidebar({ info }: { info: AppInfo | null }) {
   const projects = useAppStore((s) => s.projects)
@@ -84,9 +85,17 @@ export default function App() {
     init()
     window.founcode.invoke('app:info', undefined).then(setInfo).catch(console.error)
     // Keep the board live: any state change in main refreshes the task list.
-    return window.founcode.on('task:stateChanged', () => {
+    const offState = window.founcode.on('task:stateChanged', () => {
       refreshTasks()
     })
+    // Single global subscription: streaming logs survive tab switches.
+    const offEvents = window.founcode.on('task:event', ({ taskId, event }) => {
+      useLogStore.getState().append(taskId, event)
+    })
+    return () => {
+      offState()
+      offEvents()
+    }
   }, [init, refreshTasks])
 
   return (

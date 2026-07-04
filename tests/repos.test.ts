@@ -1,9 +1,22 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { AgentRegistry } from '../src/main/agents/AgentRegistry'
+import { MockAgentAdapter } from '../src/main/agents/mock/MockAgentAdapter'
 import { Orchestrator } from '../src/main/orchestrator/Orchestrator'
 import { type Database, openDatabase } from '../src/main/store/db'
 import { ArtifactRepo } from '../src/main/store/repositories/ArtifactRepo'
 import { ProjectRepo } from '../src/main/store/repositories/ProjectRepo'
 import { TaskRepo } from '../src/main/store/repositories/TaskRepo'
+
+function makeOrchestrator(broadcast = vi.fn()) {
+  return new Orchestrator({
+    projects,
+    tasks,
+    artifacts,
+    registry: new AgentRegistry([new MockAgentAdapter(0)]),
+    broadcastStateChange: broadcast,
+    broadcastAgentEvent: vi.fn(),
+  })
+}
 
 let db: Database
 let projects: ProjectRepo
@@ -93,7 +106,7 @@ describe('Orchestrator', () => {
     const p = projects.add('demo', 'C:/demo')
     const t = tasks.create({ projectId: p.id, title: 'T', intent: 'x', agentId: 'claude-code' })
     const broadcast = vi.fn()
-    const orchestrator = new Orchestrator(tasks, broadcast)
+    const orchestrator = makeOrchestrator(broadcast)
 
     const updated = orchestrator.applyAction(t.id, 'start_planning')
 
@@ -107,7 +120,7 @@ describe('Orchestrator', () => {
     const p = projects.add('demo', 'C:/demo')
     const t = tasks.create({ projectId: p.id, title: 'T', intent: 'x', agentId: 'claude-code' })
     const broadcast = vi.fn()
-    const orchestrator = new Orchestrator(tasks, broadcast)
+    const orchestrator = makeOrchestrator(broadcast)
 
     expect(() => orchestrator.applyAction(t.id, 'merge')).toThrow()
     expect(tasks.get(t.id)?.state).toBe('BACKLOG')
@@ -116,7 +129,7 @@ describe('Orchestrator', () => {
   })
 
   it('throws for unknown task', () => {
-    const orchestrator = new Orchestrator(tasks, vi.fn())
+    const orchestrator = makeOrchestrator()
     expect(() => orchestrator.applyAction('nope', 'start_planning')).toThrow('Task not found')
   })
 })

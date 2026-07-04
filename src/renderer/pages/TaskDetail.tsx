@@ -1,17 +1,12 @@
 import { useEffect, useState } from 'react'
-import type { Task } from '../../shared/types'
+import type { Artifact, Task } from '../../shared/types'
+import { LogViewer } from '../components/LogViewer'
+import { PlanReviewer } from '../components/PlanReviewer'
 import { StateBadge } from '../components/StateBadge'
 import { useAppStore } from '../stores/appStore'
 
 const TABS = ['Plan', 'Log', 'Diff', 'Verify'] as const
 type Tab = (typeof TABS)[number]
-
-const TAB_PLACEHOLDERS: Record<Tab, string> = {
-  Plan: 'The implementation plan will appear here once planning starts. (Phase 2)',
-  Log: 'Live agent output will stream here during planning and execution. (Phase 2)',
-  Diff: 'File changes from the isolated worktree will appear here after execution. (Phase 3)',
-  Verify: 'The verification report will appear here after the verify phase. (Phase 4)',
-}
 
 export function TaskDetail({ taskId }: { taskId: string }) {
   const goBoard = useAppStore((s) => s.goBoard)
@@ -19,6 +14,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
   // from it keeps this page in sync; fetch is only a fallback.
   const storeTask = useAppStore((s) => s.tasks.find((t) => t.id === taskId))
   const [fetchedTask, setFetchedTask] = useState<Task | null>(null)
+  const [artifacts, setArtifacts] = useState<Artifact[]>([])
   const [tab, setTab] = useState<Tab>('Plan')
 
   useEffect(() => {
@@ -28,10 +24,21 @@ export function TaskDetail({ taskId }: { taskId: string }) {
   }, [taskId, storeTask])
 
   const task = storeTask ?? fetchedTask
+  const state = task?.state
+
+  useEffect(() => {
+    // Refresh artifacts whenever the task changes state (new plan/log).
+    if (state) {
+      window.founcode.invoke('task:artifacts', { taskId }).then(setArtifacts)
+    }
+  }, [taskId, state])
 
   if (!task) {
     return <div className="flex flex-1 items-center justify-center text-slate-500">Loading…</div>
   }
+
+  const latest = (kind: Artifact['kind']) =>
+    artifacts.filter((a) => a.kind === kind).at(-1)?.content ?? null
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
@@ -46,6 +53,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
         <div className="flex items-center gap-3">
           <h1 className="font-semibold text-lg text-slate-100">{task.title}</h1>
           <StateBadge state={task.state} />
+          <span className="text-slate-600 text-xs">agent: {task.agentId}</span>
         </div>
         <p className="mt-1 text-slate-400 text-sm">{task.intent}</p>
       </header>
@@ -67,9 +75,18 @@ export function TaskDetail({ taskId }: { taskId: string }) {
         ))}
       </nav>
 
-      <div className="flex flex-1 items-center justify-center p-6 text-slate-600 text-sm">
-        {TAB_PLACEHOLDERS[tab]}
-      </div>
+      {tab === 'Plan' && <PlanReviewer task={task} planContent={latest('plan')} />}
+      {tab === 'Log' && <LogViewer taskId={task.id} storedLog={latest('log')} />}
+      {tab === 'Diff' && (
+        <div className="flex flex-1 items-center justify-center text-slate-600 text-sm">
+          File changes from the isolated worktree will appear here after execution. (Phase 3)
+        </div>
+      )}
+      {tab === 'Verify' && (
+        <div className="flex flex-1 items-center justify-center text-slate-600 text-sm">
+          The verification report will appear here after the verify phase. (Phase 4)
+        </div>
+      )}
     </div>
   )
 }

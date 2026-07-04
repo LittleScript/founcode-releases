@@ -2,7 +2,7 @@
 // main/renderer boundary. Renderer never touches Node; everything goes
 // through these typed channels. TDD §6.
 
-import type { AgentEvent, AppInfo, Project, Task, TaskState } from './types'
+import type { AgentEvent, AgentInfo, AppInfo, Artifact, Project, Task, TaskState } from './types'
 
 // ---- invoke (request/response) ----
 
@@ -18,6 +18,13 @@ export interface IpcInvokeMap {
   }
   'task:list': { args: { projectId?: string }; result: Task[] }
   'task:get': { args: { taskId: string }; result: Task | null }
+  'task:startPlanning': { args: { taskId: string }; result: undefined }
+  'task:requestReplan': { args: { taskId: string; feedback: string }; result: undefined }
+  'task:approvePlan': { args: { taskId: string; editedPlan?: string }; result: Task }
+  'task:cancel': { args: { taskId: string }; result: Task }
+  'task:retry': { args: { taskId: string }; result: Task }
+  'task:artifacts': { args: { taskId: string }; result: Artifact[] }
+  'agent:listInstalled': { args: undefined; result: AgentInfo[] }
 }
 
 export type IpcInvokeChannel = keyof IpcInvokeMap
@@ -31,6 +38,13 @@ export const IPC_INVOKE_CHANNELS: readonly IpcInvokeChannel[] = [
   'task:create',
   'task:list',
   'task:get',
+  'task:startPlanning',
+  'task:requestReplan',
+  'task:approvePlan',
+  'task:cancel',
+  'task:retry',
+  'task:artifacts',
+  'agent:listInstalled',
 ]
 
 // ---- events (main -> renderer stream) ----

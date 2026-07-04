@@ -13,7 +13,7 @@ interface AppState {
   init: () => Promise<void>
   addProject: () => Promise<void>
   setActiveProject: (id: string) => Promise<void>
-  createTask: (input: { title: string; intent: string }) => Promise<void>
+  createTask: (input: { title: string; intent: string; agentId: string }) => Promise<void>
   refreshTasks: () => Promise<void>
   openTask: (taskId: string) => void
   goBoard: () => void
@@ -51,16 +51,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     await get().refreshTasks()
   },
 
-  createTask: async ({ title, intent }) => {
+  createTask: async ({ title, intent, agentId }) => {
     const projectId = get().activeProjectId
     if (!projectId) return
     try {
-      await window.founcode.invoke('task:create', {
-        projectId,
-        title,
-        intent,
-        agentId: 'claude-code',
-      })
+      await window.founcode.invoke('task:create', { projectId, title, intent, agentId })
       await get().refreshTasks()
     } catch (error) {
       set({ error: (error as Error).message })

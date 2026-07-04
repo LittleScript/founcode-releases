@@ -68,4 +68,4 @@ export type AgentEvent =
   | { type: 'tool_use'; name: string; detail: string }
   | { type: 'file_change'; path: string; kind: 'create' | 'edit' | 'delete' }
   | { type: 'error'; message: string }
-  | { type: 'done'; exitCode: number; costUsd?: number }
+  | { type: 'done'; exitCode: number; costUsd?: number; resultText?: string }

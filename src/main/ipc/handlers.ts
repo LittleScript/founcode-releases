@@ -4,6 +4,7 @@ import { existsSync } from 'node:fs'
 import { basename, join } from 'node:path'
 import { app, BrowserWindow, dialog, ipcMain } from 'electron'
 import type { IpcEventMap, IpcInvokeMap } from '../../shared/ipc-contract'
+import { AgentRegistry } from '../agents/AgentRegistry'
 import { Orchestrator } from '../orchestrator/Orchestrator'
 import { type Database, getSchemaVersion } from '../store/db'
 import { ArtifactRepo } from '../store/repositories/ArtifactRepo'
@@ -29,6 +30,7 @@ export interface MainServices {
   projects: ProjectRepo
   tasks: TaskRepo
   artifacts: ArtifactRepo
+  registry: AgentRegistry
   orchestrator: Orchestrator
 }
 
@@ -36,8 +38,16 @@ export function createServices(db: Database): MainServices {
   const projects = new ProjectRepo(db)
   const tasks = new TaskRepo(db)
   const artifacts = new ArtifactRepo(db)
-  const orchestrator = new Orchestrator(tasks, (change) => broadcast('task:stateChanged', change))
-  return { projects, tasks, artifacts, orchestrator }
+  const registry = new AgentRegistry()
+  const orchestrator = new Orchestrator({
+    projects,
+    tasks,
+    artifacts,
+    registry,
+    broadcastStateChange: (change) => broadcast('task:stateChanged', change),
+    broadcastAgentEvent: (payload) => broadcast('task:event', payload),
+  })
+  return { projects, tasks, artifacts, registry, orchestrator }
 }
 
 export function registerIpcHandlers(db: Database, dbPath: string, services: MainServices): void {
@@ -87,4 +97,26 @@ export function registerIpcHandlers(db: Database, dbPath: string, services: Main
   handle('task:list', ({ projectId }) => tasks.list(projectId))
 
   handle('task:get', ({ taskId }) => tasks.get(taskId) ?? null)
+
+  handle('task:startPlanning', ({ taskId }) => {
+    services.orchestrator.startPlanning(taskId)
+    return undefined
+  })
+
+  handle('task:requestReplan', ({ taskId, feedback }) => {
+    services.orchestrator.startPlanning(taskId, feedback)
+    return undefined
+  })
+
+  handle('task:approvePlan', ({ taskId, editedPlan }) =>
+    services.orchestrator.approvePlan(taskId, editedPlan),
+  )
+
+  handle('task:cancel', ({ taskId }) => services.orchestrator.cancel(taskId))
+
+  handle('task:retry', ({ taskId }) => services.orchestrator.applyAction(taskId, 'retry'))
+
+  handle('task:artifacts', ({ taskId }) => services.artifacts.listByTask(taskId))
+
+  handle('agent:listInstalled', () => services.registry.listInstalled())
 }
