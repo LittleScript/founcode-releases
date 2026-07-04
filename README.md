@@ -8,10 +8,13 @@ Founcode is a Windows-first desktop app that turns AI coding agents (Claude Code
 
 ## Docs
 
+- [USER-GUIDE](docs/USER-GUIDE.md) — cara pakai lengkap (step-by-step)
+- [DEVELOPMENT](docs/DEVELOPMENT.md) — setup dev, arsitektur, testing, gotchas
 - [PRD](docs/PRD.md) — product requirements
 - [TDD](docs/TDD.md) — technical design
-- [TODO](docs/TODO.md) — implementation checklist
-- [PLANNING](docs/PLANNING.md) — roadmap & milestones
+- [TODO](docs/TODO.md) — implementation checklist per fase
+- [PLANNING](docs/PLANNING.md) — roadmap, milestones & status
+- [COMPETITORS](docs/COMPETITORS.md) — analisis kompetitif & positioning
 
 ## License
 

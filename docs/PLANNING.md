@@ -18,15 +18,17 @@ Terakhir diperbarui: 3 Juli 2026.
 
 Estimasi dalam **sesi kerja efektif** (1 sesi ≈ setengah hari fokus dengan bantuan Claude Code), bukan tanggal kalender — menyesuaikan ritme Koko yang paralel dengan TracFi/PRIMS/dll.
 
-| Milestone | Isi | Estimasi | Kumulatif |
+| Milestone | Isi | Estimasi | Status |
 |---|---|---|---|
-| **M0 — Fondasi** | Fase 0 selesai: scaffold, hardening, DB, IPC skeleton | 3–4 sesi | ~4 |
-| **M1 — Board hidup** | Fase 1 selesai: project & task management, state machine teruji | 4–5 sesi | ~9 |
-| **M2 — Plan bekerja** ⭐ | Fase 2 selesai: Claude Code adapter + fase Plan end-to-end | 6–8 sesi | ~17 |
-| **M3 — Execute bekerja** | Fase 3 selesai: worktree + eksekusi + diff viewer | 5–6 sesi | ~23 |
-| **M4 — Siklus penuh** ⭐⭐ | Fase 4 selesai: verify + merge; **dogfooding dimulai** | 5–6 sesi | ~29 |
-| **M5 — Siap jual** | Fase 5 selesai: license, installer, QA | 5–7 sesi | ~36 |
-| **M6 — Launch v1.0** 🚀 | Fase 6: landing page, rilis, marketing push | 3–4 sesi | ~40 |
+| **M0 — Fondasi** | Fase 0 selesai: scaffold, hardening, DB, IPC skeleton | 3–4 sesi | ✅ **SELESAI 3 Jul** (1 sesi) |
+| **M1 — Board hidup** | Fase 1 selesai: project & task management, state machine teruji | 4–5 sesi | ✅ **SELESAI 4 Jul** (1 sesi) |
+| **M2 — Plan bekerja** ⭐ | Fase 2 selesai: Claude Code adapter + fase Plan end-to-end | 6–8 sesi | ✅ **SELESAI 4 Jul** — checkpoint kritis LOLOS (integration test vs CLI asli) |
+| **M3 — Execute bekerja** | Fase 3 selesai: worktree + eksekusi + diff viewer | 5–6 sesi | 🔵 Kode selesai 4 Jul; menunggu verifikasi manual E2E |
+| **M4 — Siklus penuh** ⭐⭐ | Fase 4 selesai: verify + merge; **dogfooding dimulai** | 5–6 sesi | ⬜ |
+| **M5 — Siap jual** | Fase 5 selesai: license, installer, QA | 5–7 sesi | ⬜ |
+| **M6 — Launch v1.0** 🚀 | Fase 6: landing page, rilis, marketing push | 3–4 sesi | ⬜ |
+
+> Realisasi jauh lebih cepat dari estimasi (M0–M3 dalam ~4 sesi vs estimasi ~23) berkat pengembangan berbantuan Claude Code — estimasi sisa milestone kemungkinan juga overestimate.
 
 **Checkpoint kritis:**
 - **M2** adalah validasi teknis terbesar (integrasi CLI headless). Jika Claude Code headless ternyata tidak memadai untuk fase Plan read-only, arsitektur perlu ditinjau — deteksi dini di sini, bukan di M4.
