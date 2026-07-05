@@ -96,12 +96,15 @@ Keputusan (5 Jul): nama **Blueprint**; sequential feeding **manual + auto (toggl
 - [ ] Prompt `prompts/blueprint/{questions,structure,prd,tasks,revise}.md`
 - [ ] MockAgent mode blueprint (deterministik untuk dev/test) + unit test alur generatif
 
-**B3 — UI Idea → Questions → Structure → PRD**
-- [ ] Entry "✦ New from Idea" di board; Blueprint Studio full-screen + bar progres 6 langkah
-- [ ] Idea input + tech preference (auto / manual stack picker)
-- [ ] Questions (pilihan ganda + skip) → jawab
-- [ ] Structure map (tree/kolom) → review/edit/terima
-- [ ] PRD viewer + revisi via chat (`revise.md`) → tulis `PRD.md` ke project
+**B3 — UI Idea → Questions → Structure → PRD** ✅ (5 Jul)
+- [x] Entry "✦ New from Idea" di board; Blueprint Studio full-screen + StepRail 6 langkah (stepper animasi)
+- [x] Idea input + tech preference (auto / manual stack picker) + contoh + agent picker
+- [x] Questions (chip pilihan ganda + Other + skip) → jawab
+- [x] Structure map (kolom fitur→sub-fitur, prioritas) → review/terima
+- [x] PRD viewer (markdown split-pane) + revisi via chat → tulis `PRD.md` ke project
+- [x] GeneratingView dengan peek streaming log; IPC + blueprintStore + wiring main (recoverOrphans)
+
+**Status B3: kode selesai, verify/build hijau. Menunggu tes manual Koko (Mock lalu Claude asli).**
 
 **B4 — Tasks → Implement (sequential feeding)**
 - [ ] Dekomposisi PRD → task Founcode dengan `blueprint_id` + `order_index` (Backlog)

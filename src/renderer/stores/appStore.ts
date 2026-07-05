@@ -1,7 +1,10 @@
 import { create } from 'zustand'
 import type { Project, Task } from '../../shared/types'
 
-type View = { name: 'board' } | { name: 'task'; taskId: string }
+type View =
+  | { name: 'board' }
+  | { name: 'task'; taskId: string }
+  | { name: 'blueprint'; blueprintId: string }
 
 interface AppState {
   view: View
@@ -16,6 +19,7 @@ interface AppState {
   createTask: (input: { title: string; intent: string; agentId: string }) => Promise<void>
   refreshTasks: () => Promise<void>
   openTask: (taskId: string) => void
+  openBlueprint: (blueprintId: string) => void
   goBoard: () => void
   clearError: () => void
 }
@@ -73,6 +77,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   openTask: (taskId) => set({ view: { name: 'task', taskId } }),
+  openBlueprint: (blueprintId) => set({ view: { name: 'blueprint', blueprintId } }),
   goBoard: () => set({ view: { name: 'board' } }),
   clearError: () => set({ error: null }),
 }))

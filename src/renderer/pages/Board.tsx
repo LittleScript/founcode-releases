@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { Task, TaskState } from '../../shared/types'
+import { NewBlueprintDialog } from '../components/blueprint/NewBlueprintDialog'
 import { NewTaskDialog } from '../components/NewTaskDialog'
 import { PipelineRail } from '../components/PipelineRail'
 import { STATE_LABELS } from '../components/StateBadge'
@@ -66,6 +67,7 @@ export function Board() {
   const projects = useAppStore((s) => s.projects)
   const activeProjectId = useAppStore((s) => s.activeProjectId)
   const [showNewTask, setShowNewTask] = useState(false)
+  const [showNewBlueprint, setShowNewBlueprint] = useState(false)
 
   const project = projects.find((p) => p.id === activeProjectId)
 
@@ -76,9 +78,18 @@ export function Board() {
           <h1 className="font-semibold text-[15px] text-slate-100">{project?.name ?? 'Board'}</h1>
           <p className="mt-0.5 font-mono text-[10px] text-slate-600">{project?.path}</p>
         </div>
-        <button type="button" onClick={() => setShowNewTask(true)} className="btn-primary">
-          + New Task
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowNewBlueprint(true)}
+            className="btn-ghost border-accent/30 text-accent hover:border-accent/50 hover:bg-accent/5"
+          >
+            ✦ New from Idea
+          </button>
+          <button type="button" onClick={() => setShowNewTask(true)} className="btn-primary">
+            + New Task
+          </button>
+        </div>
       </header>
 
       <div className="flex flex-1 gap-3 overflow-x-auto p-4">
@@ -116,6 +127,7 @@ export function Board() {
       </div>
 
       {showNewTask && <NewTaskDialog onClose={() => setShowNewTask(false)} />}
+      {showNewBlueprint && <NewBlueprintDialog onClose={() => setShowNewBlueprint(false)} />}
     </div>
   )
 }

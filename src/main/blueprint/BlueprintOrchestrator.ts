@@ -223,6 +223,12 @@ export class BlueprintOrchestrator {
     }
   }
 
+  // FAILED -> IDEA, then restart question generation.
+  retry(blueprintId: string): void {
+    this.apply(blueprintId, 'retry')
+    this.generateQuestions(blueprintId)
+  }
+
   // Recovery: generative states orphaned by a restart cannot resume.
   recoverOrphans(): void {
     const genStates: BlueprintState[] = ['IDEA', 'STRUCTURING', 'GENERATING_PRD', 'DECOMPOSING']

@@ -5,10 +5,12 @@ import { basename, join } from 'node:path'
 import { app, BrowserWindow, dialog, ipcMain } from 'electron'
 import type { IpcEventMap, IpcInvokeMap } from '../../shared/ipc-contract'
 import { AgentRegistry } from '../agents/AgentRegistry'
+import { BlueprintOrchestrator } from '../blueprint/BlueprintOrchestrator'
 import { WorktreeManager } from '../git/WorktreeManager'
 import { Orchestrator } from '../orchestrator/Orchestrator'
 import { type Database, getSchemaVersion } from '../store/db'
 import { ArtifactRepo } from '../store/repositories/ArtifactRepo'
+import { BlueprintRepo } from '../store/repositories/BlueprintRepo'
 import { ProjectRepo } from '../store/repositories/ProjectRepo'
 import { TaskRepo } from '../store/repositories/TaskRepo'
 
@@ -31,14 +33,17 @@ export interface MainServices {
   projects: ProjectRepo
   tasks: TaskRepo
   artifacts: ArtifactRepo
+  blueprints: BlueprintRepo
   registry: AgentRegistry
   orchestrator: Orchestrator
+  blueprintOrchestrator: BlueprintOrchestrator
 }
 
 export function createServices(db: Database, worktreesDir: string): MainServices {
   const projects = new ProjectRepo(db)
   const tasks = new TaskRepo(db)
   const artifacts = new ArtifactRepo(db)
+  const blueprints = new BlueprintRepo(db)
   const registry = new AgentRegistry()
   const worktrees = new WorktreeManager(worktreesDir)
   const orchestrator = new Orchestrator({
@@ -50,7 +55,15 @@ export function createServices(db: Database, worktreesDir: string): MainServices
     broadcastStateChange: (change) => broadcast('task:stateChanged', change),
     broadcastAgentEvent: (payload) => broadcast('task:event', payload),
   })
-  return { projects, tasks, artifacts, registry, orchestrator }
+  const blueprintOrchestrator = new BlueprintOrchestrator({
+    projects,
+    tasks,
+    blueprints,
+    registry,
+    broadcastState: (change) => broadcast('blueprint:stateChanged', change),
+    broadcastEvent: (payload) => broadcast('blueprint:event', payload),
+  })
+  return { projects, tasks, artifacts, blueprints, registry, orchestrator, blueprintOrchestrator }
 }
 
 export function registerIpcHandlers(db: Database, dbPath: string, services: MainServices): void {
@@ -130,4 +143,53 @@ export function registerIpcHandlers(db: Database, dbPath: string, services: Main
   handle('task:artifacts', ({ taskId }) => services.artifacts.listByTask(taskId))
 
   handle('agent:listInstalled', () => services.registry.listInstalled())
+
+  // ---- Blueprint ----
+  const bo = services.blueprintOrchestrator
+
+  handle('blueprint:create', (input) => {
+    if (!input.idea.trim()) throw new Error('Idea is required')
+    if (!services.projects.get(input.projectId)) throw new Error('Unknown project')
+    const bp = services.blueprints.create(input)
+    bo.generateQuestions(bp.id) // kick off immediately
+    return bp
+  })
+
+  handle('blueprint:get', ({ blueprintId }) => services.blueprints.get(blueprintId) ?? null)
+
+  handle('blueprint:list', ({ projectId }) => services.blueprints.list(projectId))
+
+  handle('blueprint:getQuestions', ({ blueprintId }) => bo.getQuestions(blueprintId))
+
+  handle('blueprint:submitAnswers', ({ blueprintId, answers }) => {
+    bo.submitAnswers(blueprintId, answers)
+    return undefined
+  })
+
+  handle('blueprint:acceptStructure', ({ blueprintId, structure }) => {
+    bo.acceptStructure(blueprintId, structure)
+    return undefined
+  })
+
+  handle('blueprint:revisePrd', ({ blueprintId, instructions }) => {
+    bo.revisePrd(blueprintId, instructions)
+    return undefined
+  })
+
+  handle('blueprint:acceptPrd', ({ blueprintId }) => {
+    bo.acceptPrd(blueprintId)
+    return undefined
+  })
+
+  handle('blueprint:tasks', ({ blueprintId }) => services.tasks.listByBlueprint(blueprintId))
+
+  handle('blueprint:setAdvanceMode', ({ blueprintId, mode }) => {
+    services.blueprints.setAdvanceMode(blueprintId, mode)
+    return undefined
+  })
+
+  handle('blueprint:retry', ({ blueprintId }) => {
+    bo.retry(blueprintId)
+    return undefined
+  })
 }

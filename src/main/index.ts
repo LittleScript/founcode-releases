@@ -54,6 +54,7 @@ app.whenReady().then(() => {
   const db = openDatabase(dbPath)
   const services = createServices(db, join(app.getPath('userData'), 'worktrees'))
   services.orchestrator.recoverOrphans()
+  services.blueprintOrchestrator.recoverOrphans()
   registerIpcHandlers(db, dbPath, services)
   createWindow()
 

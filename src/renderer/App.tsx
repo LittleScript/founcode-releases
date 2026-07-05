@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import type { AppInfo } from '../shared/types'
+import { BlueprintStudio } from './pages/BlueprintStudio'
 import { Board } from './pages/Board'
 import { Onboarding } from './pages/Onboarding'
 import { TaskDetail } from './pages/TaskDetail'
 import { useAppStore } from './stores/appStore'
+import { useBlueprintStore } from './stores/blueprintStore'
 import { useLogStore } from './stores/logStore'
 
 function Wordmark() {
@@ -121,11 +123,31 @@ export default function App() {
     const offEvents = window.founcode.on('task:event', ({ taskId, event }) => {
       useLogStore.getState().append(taskId, event)
     })
+    // Blueprint streaming + state, keyed the same way (blueprintId).
+    const offBpEvents = window.founcode.on('blueprint:event', ({ blueprintId, event }) => {
+      useLogStore.getState().append(blueprintId, event)
+    })
+    const offBpState = window.founcode.on('blueprint:stateChanged', () => {
+      useBlueprintStore.getState().refresh()
+      refreshTasks()
+    })
     return () => {
       offState()
       offEvents()
+      offBpEvents()
+      offBpState()
     }
   }, [init, refreshTasks])
+
+  // Blueprint Studio is a focused full-screen wizard — no sidebar.
+  if (projects.length > 0 && view.name === 'blueprint') {
+    return (
+      <div className="flex h-screen">
+        <BlueprintStudio blueprintId={view.blueprintId} />
+        <ErrorToast />
+      </div>
+    )
+  }
 
   return (
     <div className="flex h-screen">
