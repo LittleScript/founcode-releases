@@ -4,9 +4,9 @@
 // the orchestrator re-prompts once, then surfaces raw for manual fixing.
 
 import type {
-  BlueprintQuestion,
   BlueprintStructure,
   BlueprintTaskSpec,
+  QuestionsResult,
   StructureFeature,
 } from '../../shared/blueprint-types'
 
@@ -28,18 +28,18 @@ function extractJson(text: string): { data: unknown; error?: string } {
   }
 }
 
-export function parseQuestions(text: string): ParseResult<BlueprintQuestion[]> {
+export function parseQuestions(text: string): ParseResult<QuestionsResult> {
   const { data, error } = extractJson(text)
   if (error) return { value: null, errors: [error] }
 
-  const obj = data as { questions?: unknown }
+  const obj = data as { questions?: unknown; suggestions?: unknown }
   const arr = obj?.questions
   if (!Array.isArray(arr) || arr.length === 0) {
     return { value: null, errors: ["'questions' must be a non-empty array"] }
   }
 
   const errors: string[] = []
-  const questions: BlueprintQuestion[] = []
+  const questions: QuestionsResult['questions'] = []
   for (const [i, raw] of arr.entries()) {
     const q = raw as Record<string, unknown>
     if (typeof q?.question !== 'string' || !Array.isArray(q?.options)) {
@@ -53,7 +53,11 @@ export function parseQuestions(text: string): ParseResult<BlueprintQuestion[]> {
     })
   }
   if (errors.length > 0) return { value: null, errors }
-  return { value: questions, errors: [] }
+
+  const suggestions = Array.isArray(obj.suggestions)
+    ? (obj.suggestions as unknown[]).map(String).filter(Boolean)
+    : []
+  return { value: { questions, suggestions }, errors: [] }
 }
 
 export function parseStructure(text: string): ParseResult<BlueprintStructure> {

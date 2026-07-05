@@ -49,11 +49,16 @@ interface GenResult {
 export class BlueprintOrchestrator {
   private active = new Map<string, AbortController>()
   private questionsCache = new Map<string, BlueprintQuestion[]>()
+  private suggestionsCache = new Map<string, string[]>()
 
   constructor(private deps: BlueprintDeps) {}
 
   getQuestions(blueprintId: string): BlueprintQuestion[] {
     return this.questionsCache.get(blueprintId) ?? []
+  }
+
+  getSuggestions(blueprintId: string): string[] {
+    return this.suggestionsCache.get(blueprintId) ?? []
   }
 
   private apply(blueprintId: string, action: BlueprintAction): Blueprint {
@@ -127,8 +132,9 @@ export class BlueprintOrchestrator {
         const result = await this.collect(blueprintId, bp, prompt)
         const parsed = result.ok ? parseQuestions(result.text) : null
         if (parsed?.value) {
-          this.questionsCache.set(blueprintId, parsed.value)
-          this.deps.onQuestions?.(blueprintId, parsed.value)
+          this.questionsCache.set(blueprintId, parsed.value.questions)
+          this.suggestionsCache.set(blueprintId, parsed.value.suggestions)
+          this.deps.onQuestions?.(blueprintId, parsed.value.questions)
           this.applySafe(blueprintId, 'generate_questions') // IDEA -> QUESTIONS
           return
         }

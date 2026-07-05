@@ -5,6 +5,7 @@ import type { Task } from '../../shared/types'
 interface BlueprintState {
   blueprint: Blueprint | null
   questions: BlueprintQuestion[]
+  suggestions: string[]
   tasks: Task[]
   loading: boolean
 
@@ -16,11 +17,12 @@ interface BlueprintState {
 export const useBlueprintStore = create<BlueprintState>((set, get) => ({
   blueprint: null,
   questions: [],
+  suggestions: [],
   tasks: [],
   loading: false,
 
   open: async (blueprintId) => {
-    set({ loading: true, blueprint: null, questions: [], tasks: [] })
+    set({ loading: true, blueprint: null, questions: [], suggestions: [], tasks: [] })
     const blueprint = await window.founcode.invoke('blueprint:get', { blueprintId })
     set({ blueprint, loading: false })
     await get().refresh()
@@ -29,15 +31,16 @@ export const useBlueprintStore = create<BlueprintState>((set, get) => ({
   refresh: async () => {
     const id = get().blueprint?.id
     if (!id) return
-    const [blueprint, questions, tasks] = await Promise.all([
+    const [blueprint, questions, suggestions, tasks] = await Promise.all([
       window.founcode.invoke('blueprint:get', { blueprintId: id }),
       window.founcode.invoke('blueprint:getQuestions', { blueprintId: id }),
+      window.founcode.invoke('blueprint:getSuggestions', { blueprintId: id }),
       window.founcode.invoke('blueprint:tasks', { blueprintId: id }),
     ])
-    set({ blueprint, questions, tasks })
+    set({ blueprint, questions, suggestions, tasks })
   },
 
-  clear: () => set({ blueprint: null, questions: [], tasks: [] }),
+  clear: () => set({ blueprint: null, questions: [], suggestions: [], tasks: [] }),
 }))
 
 // Convenience wrappers for the studio actions.

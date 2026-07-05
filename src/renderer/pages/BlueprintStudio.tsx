@@ -10,7 +10,7 @@ import { blueprintActions, useBlueprintStore } from '../stores/blueprintStore'
 
 export function BlueprintStudio({ blueprintId }: { blueprintId: string }) {
   const goBoard = useAppStore((s) => s.goBoard)
-  const { blueprint, questions, tasks, open } = useBlueprintStore()
+  const { blueprint, questions, suggestions, tasks, open } = useBlueprintStore()
 
   useEffect(() => {
     open(blueprintId)
@@ -58,7 +58,9 @@ export function BlueprintStudio({ blueprintId }: { blueprintId: string }) {
           }
         />
       )}
-      {s === 'QUESTIONS' && <QuestionsStep blueprintId={blueprintId} questions={questions} />}
+      {s === 'QUESTIONS' && (
+        <QuestionsStep blueprintId={blueprintId} questions={questions} suggestions={suggestions} />
+      )}
       {s === 'STRUCTURING' && (
         <GeneratingView blueprintId={blueprintId} label="Mapping out the features…" />
       )}

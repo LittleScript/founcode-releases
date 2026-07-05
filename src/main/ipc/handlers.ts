@@ -204,6 +204,8 @@ export function registerIpcHandlers(db: Database, dbPath: string, services: Main
 
   handle('blueprint:getQuestions', ({ blueprintId }) => bo.getQuestions(blueprintId))
 
+  handle('blueprint:getSuggestions', ({ blueprintId }) => bo.getSuggestions(blueprintId))
+
   handle('blueprint:submitAnswers', ({ blueprintId, answers }) => {
     bo.submitAnswers(blueprintId, answers)
     return undefined

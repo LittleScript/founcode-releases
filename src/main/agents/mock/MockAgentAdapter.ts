@@ -59,6 +59,7 @@ function buildBlueprintOutput(kind: string): string {
             allowSkip: true,
           },
         ],
+        suggestions: ['Add a loyalty program.', 'Send WhatsApp reminders.'],
       })
     case 'structure':
       return fence({

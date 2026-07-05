@@ -16,6 +16,13 @@ export interface BlueprintQuestion {
   allowSkip: boolean
 }
 
+// Questions step output: the clarifying questions plus a few fresh
+// feature ideas the agent proposes (the user opts in per idea).
+export interface QuestionsResult {
+  questions: BlueprintQuestion[]
+  suggestions: string[]
+}
+
 export interface BlueprintAnswer {
   question: string
   answer: string | null // null = skipped

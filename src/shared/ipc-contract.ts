@@ -54,6 +54,7 @@ export interface IpcInvokeMap {
   'blueprint:get': { args: { blueprintId: string }; result: Blueprint | null }
   'blueprint:list': { args: { projectId?: string }; result: Blueprint[] }
   'blueprint:getQuestions': { args: { blueprintId: string }; result: BlueprintQuestion[] }
+  'blueprint:getSuggestions': { args: { blueprintId: string }; result: string[] }
   'blueprint:submitAnswers': {
     args: { blueprintId: string; answers: BlueprintAnswer[] }
     result: undefined
@@ -104,6 +105,7 @@ export const IPC_INVOKE_CHANNELS: readonly IpcInvokeChannel[] = [
   'blueprint:get',
   'blueprint:list',
   'blueprint:getQuestions',
+  'blueprint:getSuggestions',
   'blueprint:submitAnswers',
   'blueprint:acceptStructure',
   'blueprint:revisePrd',

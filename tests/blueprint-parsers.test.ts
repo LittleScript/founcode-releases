@@ -6,11 +6,18 @@ import {
 } from '../src/main/blueprint/blueprintParsers'
 
 describe('parseQuestions', () => {
-  it('parses a valid questions fence', () => {
-    const text = 'ok\n```json\n{"questions":[{"question":"Q?","options":["a","b"]}]}\n```'
+  it('parses a valid questions fence with suggestions', () => {
+    const text =
+      'ok\n```json\n{"questions":[{"question":"Q?","options":["a","b"]}],"suggestions":["idea one"]}\n```'
     const r = parseQuestions(text)
-    expect(r.value).toHaveLength(1)
-    expect(r.value?.[0]?.allowSkip).toBe(true) // defaults true
+    expect(r.value?.questions).toHaveLength(1)
+    expect(r.value?.questions[0]?.allowSkip).toBe(true) // defaults true
+    expect(r.value?.suggestions).toEqual(['idea one'])
+  })
+
+  it('defaults suggestions to an empty array when missing', () => {
+    const r = parseQuestions('```json\n{"questions":[{"question":"Q?","options":["a"]}]}\n```')
+    expect(r.value?.suggestions).toEqual([])
   })
 
   it('rejects missing fence and empty array', () => {
