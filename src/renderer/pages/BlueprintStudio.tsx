@@ -65,7 +65,11 @@ export function BlueprintStudio({ blueprintId }: { blueprintId: string }) {
         <GeneratingView blueprintId={blueprintId} label="Mapping out the features…" />
       )}
       {s === 'STRUCTURE_REVIEW' && blueprint.structure && (
-        <StructureStep blueprintId={blueprintId} structure={blueprint.structure} />
+        <StructureStep
+          blueprintId={blueprintId}
+          structure={blueprint.structure}
+          projectName={blueprint.title}
+        />
       )}
       {s === 'GENERATING_PRD' && (
         <GeneratingView
