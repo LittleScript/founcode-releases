@@ -1,13 +1,22 @@
 import type { AgentInfo } from '../../shared/types'
 import type { AgentAdapter } from './AgentAdapter'
 import { ClaudeCodeAdapter } from './claude/ClaudeCodeAdapter'
+import { CodexAdapter } from './codex/CodexAdapter'
+import { GeminiAdapter } from './gemini/GeminiAdapter'
 import { MockAgentAdapter } from './mock/MockAgentAdapter'
+import { OpenCodeAdapter } from './opencode/OpenCodeAdapter'
 
 export class AgentRegistry {
   private adapters = new Map<string, AgentAdapter>()
 
   constructor(adapters?: AgentAdapter[]) {
-    for (const adapter of adapters ?? [new ClaudeCodeAdapter(), new MockAgentAdapter()]) {
+    for (const adapter of adapters ?? [
+      new ClaudeCodeAdapter(),
+      new OpenCodeAdapter(),
+      new CodexAdapter(),
+      new GeminiAdapter(),
+      new MockAgentAdapter(),
+    ]) {
       this.adapters.set(adapter.id, adapter)
     }
   }

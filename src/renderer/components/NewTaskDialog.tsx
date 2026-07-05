@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { MODEL_OPTIONS } from '../../shared/settings-types'
 import type { AgentInfo } from '../../shared/types'
 import { useAppStore } from '../stores/appStore'
+import { ModelField } from './ModelField'
 
 export function NewTaskDialog({ onClose }: { onClose: () => void }) {
   const createTask = useAppStore((s) => s.createTask)
@@ -71,7 +71,10 @@ export function NewTaskDialog({ onClose }: { onClose: () => void }) {
           <select
             id="task-agent"
             value={agentId}
-            onChange={(e) => setAgentId(e.target.value)}
+            onChange={(e) => {
+              setAgentId(e.target.value)
+              setModel('') // model formats differ per agent
+            }}
             className="input-field"
           >
             {agents.map((a) => (
@@ -81,18 +84,7 @@ export function NewTaskDialog({ onClose }: { onClose: () => void }) {
               </option>
             ))}
           </select>
-          <select
-            value={model}
-            onChange={(e) => setModel(e.target.value)}
-            className="input-field"
-            title="Model"
-          >
-            {MODEL_OPTIONS.map((m) => (
-              <option key={m.value} value={m.value}>
-                {m.label}
-              </option>
-            ))}
-          </select>
+          <ModelField agentId={agentId} value={model} onChange={setModel} />
         </div>
 
         <div className="flex justify-end gap-2">
