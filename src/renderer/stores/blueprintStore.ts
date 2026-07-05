@@ -8,6 +8,8 @@ interface BlueprintState {
   suggestions: string[]
   tasks: Task[]
   loading: boolean
+  // Bumps on every refresh so chat panels know to reload their thread.
+  version: number
 
   open: (blueprintId: string) => Promise<void>
   refresh: () => Promise<void>
@@ -20,6 +22,7 @@ export const useBlueprintStore = create<BlueprintState>((set, get) => ({
   suggestions: [],
   tasks: [],
   loading: false,
+  version: 0,
 
   open: async (blueprintId) => {
     set({ loading: true, blueprint: null, questions: [], suggestions: [], tasks: [] })
@@ -37,7 +40,7 @@ export const useBlueprintStore = create<BlueprintState>((set, get) => ({
       window.founcode.invoke('blueprint:getSuggestions', { blueprintId: id }),
       window.founcode.invoke('blueprint:tasks', { blueprintId: id }),
     ])
-    set({ blueprint, questions, suggestions, tasks })
+    set((s) => ({ blueprint, questions, suggestions, tasks, version: s.version + 1 }))
   },
 
   clear: () => set({ blueprint: null, questions: [], suggestions: [], tasks: [] }),
@@ -54,6 +57,8 @@ export const blueprintActions = {
   acceptPrd: (blueprintId: string) =>
     window.founcode.invoke('blueprint:acceptPrd', { blueprintId }),
   finish: (blueprintId: string) => window.founcode.invoke('blueprint:finish', { blueprintId }),
+  chat: (blueprintId: string, phase: 'structure' | 'prd', message: string) =>
+    window.founcode.invoke('blueprint:chat', { blueprintId, phase, message }),
   setAdvanceMode: (blueprintId: string, mode: 'manual' | 'auto') =>
     window.founcode.invoke('blueprint:setAdvanceMode', { blueprintId, mode }),
   retry: (blueprintId: string) => window.founcode.invoke('blueprint:retry', { blueprintId }),

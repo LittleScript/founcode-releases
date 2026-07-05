@@ -55,6 +55,16 @@ export interface BlueprintTaskSpec {
 
 export type BlueprintMode = 'greenfield' | 'extend' | 'document'
 
+export type ChatPhase = 'structure' | 'prd'
+
+export interface BlueprintMessage {
+  id: number
+  phase: ChatPhase
+  role: 'user' | 'agent'
+  content: string
+  createdAt: number
+}
+
 export interface Blueprint {
   id: string
   projectId: string

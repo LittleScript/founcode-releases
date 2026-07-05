@@ -4,6 +4,7 @@
 
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import chatTemplate from '../../../prompts/blueprint/chat.md?raw'
 import documentPrdTemplate from '../../../prompts/blueprint/document-prd.md?raw'
 import prdTemplate from '../../../prompts/blueprint/prd.md?raw'
 import questionsTemplate from '../../../prompts/blueprint/questions.md?raw'
@@ -222,6 +223,66 @@ export class BlueprintOrchestrator {
     this.apply(blueprintId, 'finish') // PRD_REVIEW -> DONE
   }
 
+  // ---- discussion chat (structure / PRD steps) ----
+  // Answers questions and, when asked, regenerates the artifact in place.
+  // Does NOT change blueprint state — the user stays on the review step.
+  chat(blueprintId: string, phase: 'structure' | 'prd', message: string): void {
+    void (async () => {
+      const bp = this.deps.blueprints.get(blueprintId)
+      if (!bp) return
+      this.deps.blueprints.addMessage(blueprintId, phase, 'user', message)
+      this.pingRefresh(blueprintId)
+
+      const artifact =
+        phase === 'structure' ? JSON.stringify(bp.structure, null, 2) : (bp.prd ?? '')
+      const history = this.deps.blueprints
+        .listMessages(blueprintId, phase)
+        .map((m) => `${m.role === 'user' ? 'User' : 'Agent'}: ${m.content}`)
+        .join('\n')
+      const prompt = chatTemplate
+        .replaceAll('{{phase}}', phase)
+        .replace('{{artifact}}', artifact)
+        .replace('{{history}}', history)
+        .replace('{{message}}', message)
+
+      try {
+        const result = await this.collect(blueprintId, bp, prompt)
+        if (!result.ok || !result.text.trim()) {
+          this.deps.blueprints.addMessage(blueprintId, phase, 'agent', '(no response — try again)')
+          this.pingRefresh(blueprintId)
+          return
+        }
+        const { reply, updated } = splitChatReply(result.text, phase)
+        this.deps.blueprints.addMessage(blueprintId, phase, 'agent', reply)
+
+        if (updated !== null) {
+          if (phase === 'structure') {
+            const parsed = parseStructure(updated)
+            if (parsed.value) this.deps.blueprints.update(blueprintId, { structure: parsed.value })
+          } else {
+            this.deps.blueprints.update(blueprintId, { prd: updated.trim() })
+          }
+          this.deps.blueprints.recordEvent(blueprintId, 'chat_updated_artifact', { phase })
+        }
+        this.pingRefresh(blueprintId)
+      } catch (error) {
+        this.deps.blueprints.addMessage(
+          blueprintId,
+          phase,
+          'agent',
+          `(error: ${(error as Error).message})`,
+        )
+        this.pingRefresh(blueprintId)
+      }
+    })()
+  }
+
+  // Nudge the renderer to reload the blueprint (state unchanged).
+  private pingRefresh(blueprintId: string): void {
+    const bp = this.deps.blueprints.get(blueprintId)
+    if (bp) this.deps.broadcastState({ blueprintId, from: bp.state, to: bp.state })
+  }
+
   // ---- step 4: accept PRD -> decompose into tasks ----
   acceptPrd(blueprintId: string): void {
     this.apply(blueprintId, 'accept_prd') // -> DECOMPOSING
@@ -380,6 +441,21 @@ export class BlueprintOrchestrator {
 
 function isTaskTerminal(state: string): boolean {
   return state === 'DONE' || state === 'DISCARDED'
+}
+
+// Splits a chat response into the conversational reply and an optional
+// regenerated artifact (after the ===STRUCTURE=== / ===PRD=== delimiter).
+function splitChatReply(
+  text: string,
+  phase: 'structure' | 'prd',
+): { reply: string; updated: string | null } {
+  const delimiter = phase === 'structure' ? '===STRUCTURE===' : '===PRD==='
+  const idx = text.indexOf(delimiter)
+  if (idx === -1) return { reply: text.trim(), updated: null }
+  return {
+    reply: text.slice(0, idx).trim() || 'Updated.',
+    updated: text.slice(idx + delimiter.length).trim(),
+  }
 }
 
 // For extend mode, tells the generative agent to analyze the existing

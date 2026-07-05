@@ -159,6 +159,42 @@ describe('BlueprintOrchestrator generative flow', () => {
     expect(tasks.listByBlueprint(bp.id)).toHaveLength(0)
   })
 
+  it('chat: a question adds a reply without changing the artifact', async () => {
+    const bp = newBp()
+    orch.generateQuestions(bp.id)
+    await waitState(bp.id, 'QUESTIONS')
+    orch.submitAnswers(bp.id, [])
+    await waitState(bp.id, 'STRUCTURE_REVIEW')
+    const before = JSON.stringify(blueprints.get(bp.id)?.structure)
+
+    orch.chat(bp.id, 'structure', 'Why did you pick this structure?')
+    await vi.waitFor(() => expect(blueprints.listMessages(bp.id, 'structure').length).toBe(2), {
+      timeout: 3000,
+      interval: 10,
+    })
+    const msgs = blueprints.listMessages(bp.id, 'structure')
+    expect(msgs[0]?.role).toBe('user')
+    expect(msgs[1]?.role).toBe('agent')
+    // No change requested -> structure untouched.
+    expect(JSON.stringify(blueprints.get(bp.id)?.structure)).toBe(before)
+  })
+
+  it('chat: a change request regenerates the structure in place', async () => {
+    const bp = newBp()
+    orch.generateQuestions(bp.id)
+    await waitState(bp.id, 'QUESTIONS')
+    orch.submitAnswers(bp.id, [])
+    await waitState(bp.id, 'STRUCTURE_REVIEW')
+
+    orch.chat(bp.id, 'structure', 'Please restructure it [mock:change-structure]')
+    await vi.waitFor(
+      () => expect(blueprints.get(bp.id)?.structure?.features[0]?.name).toBe('Revised'),
+      { timeout: 3000, interval: 10 },
+    )
+    // Still in review — chat never changes blueprint state.
+    expect(blueprints.get(bp.id)?.state).toBe('STRUCTURE_REVIEW')
+  })
+
   it('extend mode: full flow still reaches TASK_REVIEW with tasks', async () => {
     const bp = blueprints.create({
       projectId,

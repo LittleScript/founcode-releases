@@ -5,10 +5,12 @@
 import type {
   Blueprint,
   BlueprintAnswer,
+  BlueprintMessage,
   BlueprintMode,
   BlueprintQuestion,
   BlueprintState,
   BlueprintStructure,
+  ChatPhase,
   TechPref,
 } from './blueprint-types'
 import type { AgentEvent, AgentInfo, AppInfo, Artifact, Project, Task, TaskState } from './types'
@@ -66,6 +68,14 @@ export interface IpcInvokeMap {
   'blueprint:revisePrd': { args: { blueprintId: string; instructions: string }; result: undefined }
   'blueprint:acceptPrd': { args: { blueprintId: string }; result: undefined }
   'blueprint:finish': { args: { blueprintId: string }; result: undefined }
+  'blueprint:chat': {
+    args: { blueprintId: string; phase: ChatPhase; message: string }
+    result: undefined
+  }
+  'blueprint:messages': {
+    args: { blueprintId: string; phase: ChatPhase }
+    result: BlueprintMessage[]
+  }
   'blueprint:tasks': { args: { blueprintId: string }; result: Task[] }
   'blueprint:setAdvanceMode': {
     args: { blueprintId: string; mode: 'manual' | 'auto' }
@@ -111,6 +121,8 @@ export const IPC_INVOKE_CHANNELS: readonly IpcInvokeChannel[] = [
   'blueprint:revisePrd',
   'blueprint:acceptPrd',
   'blueprint:finish',
+  'blueprint:chat',
+  'blueprint:messages',
   'blueprint:tasks',
   'blueprint:setAdvanceMode',
   'blueprint:startImplementation',

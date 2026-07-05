@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { BlueprintStructure } from '../../../shared/blueprint-types'
 import { blueprintActions } from '../../stores/blueprintStore'
+import { ChatPanel } from './ChatPanel'
 import { StructureGraph } from './StructureGraph'
 
 export function StructureStep({
@@ -34,13 +35,19 @@ export function StructureStep({
         </button>
       </div>
 
-      <div className="min-h-0 flex-1 border-edge border-y">
-        <StructureGraph structure={structure} projectName={projectName} />
-      </div>
-
-      <div className="px-6 py-2 font-mono text-[11px] text-slate-600">
-        {structure.features.length} features ·{' '}
-        {structure.features.reduce((n, f) => n + f.subFeatures.length, 0)} sub-features
+      <div className="flex min-h-0 flex-1 border-edge border-t">
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="min-h-0 flex-1">
+            <StructureGraph structure={structure} projectName={projectName} />
+          </div>
+          <div className="border-edge border-t px-6 py-2 font-mono text-[11px] text-slate-600">
+            {structure.features.length} features ·{' '}
+            {structure.features.reduce((n, f) => n + f.subFeatures.length, 0)} sub-features
+          </div>
+        </div>
+        <aside className="w-80 shrink-0 border-edge border-l bg-surface-raised/40">
+          <ChatPanel blueprintId={blueprintId} phase="structure" />
+        </aside>
       </div>
     </div>
   )

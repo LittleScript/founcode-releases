@@ -158,6 +158,40 @@ export class BlueprintRepo {
       .run(...(values as never[]))
   }
 
+  addMessage(
+    blueprintId: string,
+    phase: 'structure' | 'prd',
+    role: 'user' | 'agent',
+    content: string,
+  ): void {
+    this.db
+      .prepare(
+        'INSERT INTO blueprint_messages (blueprint_id, phase, role, content, created_at) VALUES (?, ?, ?, ?, ?)',
+      )
+      .run(blueprintId, phase, role, content, Date.now())
+  }
+
+  listMessages(blueprintId: string, phase: 'structure' | 'prd') {
+    const rows = this.db
+      .prepare(
+        'SELECT id, phase, role, content, created_at FROM blueprint_messages WHERE blueprint_id = ? AND phase = ? ORDER BY id ASC',
+      )
+      .all(blueprintId, phase) as unknown as {
+      id: number
+      phase: string
+      role: string
+      content: string
+      created_at: number
+    }[]
+    return rows.map((r) => ({
+      id: r.id,
+      phase: r.phase as 'structure' | 'prd',
+      role: r.role as 'user' | 'agent',
+      content: r.content,
+      createdAt: r.created_at,
+    }))
+  }
+
   recordEvent(blueprintId: string, event: string, detail?: unknown): void {
     this.db
       .prepare(

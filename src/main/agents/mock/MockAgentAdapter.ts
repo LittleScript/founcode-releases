@@ -47,7 +47,7 @@ function fence(obj: unknown): string {
   return `Here is the result.\n\n\`\`\`json\n${JSON.stringify(obj, null, 2)}\n\`\`\`\n`
 }
 
-function buildBlueprintOutput(kind: string): string {
+function buildBlueprintOutput(kind: string, prompt = ''): string {
   switch (kind) {
     case 'questions':
       return fence({
@@ -95,6 +95,20 @@ function buildBlueprintOutput(kind: string): string {
           },
         ],
       })
+    case 'chat': {
+      // Conversational reply; if the user message carried a change marker,
+      // append the updated artifact after the right delimiter.
+      const reply = 'Sure — here is my answer to your question about the plan.'
+      if (prompt.includes('[mock:change-structure]')) {
+        return `${reply}\n===STRUCTURE===\n\`\`\`json\n${JSON.stringify({
+          features: [{ name: 'Revised', priority: 'high', subFeatures: [{ name: 'New sub' }] }],
+        })}\n\`\`\`\n`
+      }
+      if (prompt.includes('[mock:change-prd]')) {
+        return `${reply}\n===PRD===\n# PRD — Revised\n\nUpdated per your request.\n`
+      }
+      return reply
+    }
     default:
       // prd / revise -> markdown, not json
       return '# PRD — Mock Product\n\n## Overview\nA mock PRD generated for testing.\n\n## Tech Stack\nNext.js, SQLite.\n'
@@ -143,7 +157,7 @@ export class MockAgentAdapter implements AgentAdapter {
     // prompt templates carry.
     const gen = opts.prompt.match(/founcode:gen=(\w+)/)?.[1]
     if (gen) {
-      const resultText = buildBlueprintOutput(gen)
+      const resultText = buildBlueprintOutput(gen, opts.prompt)
       yield { type: 'text', content: resultText }
       yield { type: 'done', exitCode: 0, costUsd: 0, resultText }
       return

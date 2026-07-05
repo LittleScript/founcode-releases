@@ -134,6 +134,13 @@ Keputusan (5 Jul): nama **Blueprint**; sequential feeding **manual + auto (toggl
 
 **Status B6: kode selesai. Menunggu tes manual Koko (Mock + Claude asli pada repo existing).**
 
+**B7 — Enhancement Blueprint** ✅ (5 Jul, permintaan Koko)
+- [x] B7.1: pertanyaan **multi-select** (chip checkbox + all/clear + other) + agen **usulkan 2–4 ide segar** (opt-in chip, ide diterima masuk sebagai jawaban tambahan); `blueprint:getSuggestions`
+- [x] B7.2: **structure jadi node-graph** (React Flow / @xyflow/react) ala n8n/gambar 1 — Product→Feature→Sub-feature, pan/zoom/fit-view, node Mission-Control
+- [x] B7.3: **panel chat diskusi** di Structure & PRD (migration 005 `blueprint_messages`) — user tanya/minta ubah real-time; agen balas & **regenerate artefak in-place** (delimiter ===STRUCTURE===/===PRD===) tanpa ubah state; prompt `chat.md`, `blueprint:chat`/`messages`
+- [x] Setting AI (model dropdown, dsb.) DITUNDA ke Fase 6 (Settings page) — keputusan Koko
+- [x] 109 test pass (4 baru: suggestions parse, chat Q&A, chat change)
+
 ## Fase 6 — Licensing, Packaging, Polish (F6)
 
 - [ ] Keputusan final: Lemon Squeezy vs Paddle (bandingkan fee + dukungan merchant Indonesia) → buat produk & tier

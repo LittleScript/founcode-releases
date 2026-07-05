@@ -231,6 +231,15 @@ export function registerIpcHandlers(db: Database, dbPath: string, services: Main
     return undefined
   })
 
+  handle('blueprint:chat', ({ blueprintId, phase, message }) => {
+    bo.chat(blueprintId, phase, message)
+    return undefined
+  })
+
+  handle('blueprint:messages', ({ blueprintId, phase }) =>
+    services.blueprints.listMessages(blueprintId, phase),
+  )
+
   handle('blueprint:tasks', ({ blueprintId }) => services.tasks.listByBlueprint(blueprintId))
 
   handle('blueprint:setAdvanceMode', ({ blueprintId, mode }) => {

@@ -102,4 +102,20 @@ export const MIGRATIONS: Migration[] = [
     // existing codebase into a PRD (document).
     sql: "ALTER TABLE blueprints ADD COLUMN mode TEXT NOT NULL DEFAULT 'greenfield';",
   },
+  {
+    version: 5,
+    // Real-time discussion threads on the structure and PRD steps. The
+    // agent can answer questions and regenerate the artifact in place.
+    sql: `
+      CREATE TABLE blueprint_messages (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        blueprint_id TEXT NOT NULL REFERENCES blueprints(id),
+        phase        TEXT NOT NULL,   -- 'structure' | 'prd'
+        role         TEXT NOT NULL,   -- 'user' | 'agent'
+        content      TEXT NOT NULL,
+        created_at   INTEGER NOT NULL
+      );
+      CREATE INDEX idx_bp_messages ON blueprint_messages(blueprint_id, phase);
+    `,
+  },
 ]

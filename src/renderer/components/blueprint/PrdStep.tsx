@@ -3,6 +3,7 @@ import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { BlueprintMode } from '../../../shared/blueprint-types'
 import { blueprintActions } from '../../stores/blueprintStore'
+import { ChatPanel } from './ChatPanel'
 
 export function PrdStep({
   blueprintId,
@@ -13,15 +14,7 @@ export function PrdStep({
   prd: string
   mode: BlueprintMode
 }) {
-  const [instructions, setInstructions] = useState('')
   const [busy, setBusy] = useState(false)
-
-  async function revise() {
-    if (!instructions.trim()) return
-    setBusy(true)
-    await blueprintActions.revisePrd(blueprintId, instructions.trim())
-    setInstructions('')
-  }
 
   async function accept() {
     setBusy(true)
@@ -42,37 +35,13 @@ export function PrdStep({
         </div>
       </div>
 
-      {/* Revision rail */}
+      {/* Discussion + actions rail */}
       <aside className="flex w-80 shrink-0 flex-col bg-surface-raised/40">
-        <div className="border-edge border-b px-5 py-4">
-          <h3 className="font-medium text-slate-100 text-sm">Product Requirements</h3>
-          <p className="mt-1 text-[11px] text-slate-500 leading-relaxed">
-            Read it over. Want changes? Ask in plain language — Founcode rewrites the whole doc.
-          </p>
+        <div className="min-h-0 flex-1">
+          <ChatPanel blueprintId={blueprintId} phase="prd" />
         </div>
 
-        <div className="flex flex-1 flex-col justify-end p-4">
-          <div className="mb-3 rounded-lg border border-edge bg-surface p-3">
-            <p className="mb-2 font-mono text-[10px] text-slate-600 uppercase tracking-widest">
-              revise
-            </p>
-            <textarea
-              value={instructions}
-              onChange={(e) => setInstructions(e.target.value)}
-              rows={3}
-              placeholder="e.g. use Postgres instead of SQLite; add a notifications feature"
-              className="input-field resize-none text-[13px]"
-            />
-            <button
-              type="button"
-              onClick={revise}
-              disabled={!instructions.trim() || busy}
-              className="btn-ghost mt-2 w-full justify-center"
-            >
-              ↻ Revise PRD
-            </button>
-          </div>
-
+        <div className="flex flex-col border-edge border-t p-4">
           {mode === 'document' ? (
             <>
               <button
