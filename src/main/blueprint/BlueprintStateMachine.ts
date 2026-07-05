@@ -21,12 +21,14 @@ export type BlueprintState = (typeof BLUEPRINT_STATES)[number]
 
 export const BLUEPRINT_ACTIONS = [
   'generate_questions', // IDEA -> QUESTIONS
+  'generate_prd_direct', // IDEA -> GENERATING_PRD (document mode: skip Q + structure)
   'submit_answers', // QUESTIONS -> STRUCTURING
   'structure_ready', // STRUCTURING -> STRUCTURE_REVIEW
   'accept_structure', // STRUCTURE_REVIEW -> GENERATING_PRD
   'prd_ready', // GENERATING_PRD -> PRD_REVIEW
   'revise_prd', // PRD_REVIEW -> GENERATING_PRD (chat revision loop)
   'accept_prd', // PRD_REVIEW -> DECOMPOSING
+  'finish', // PRD_REVIEW -> DONE (keep the PRD, no task build)
   'tasks_ready', // DECOMPOSING -> TASK_REVIEW
   'start_implementation', // TASK_REVIEW -> IMPLEMENTING
   'all_tasks_done', // IMPLEMENTING -> DONE
@@ -41,12 +43,14 @@ const GENERATIVE_STATES: BlueprintState[] = ['IDEA', 'STRUCTURING', 'GENERATING_
 
 const TRANSITIONS: Record<BlueprintAction, Partial<Record<BlueprintState, BlueprintState>>> = {
   generate_questions: { IDEA: 'QUESTIONS' },
+  generate_prd_direct: { IDEA: 'GENERATING_PRD' },
   submit_answers: { QUESTIONS: 'STRUCTURING' },
   structure_ready: { STRUCTURING: 'STRUCTURE_REVIEW' },
   accept_structure: { STRUCTURE_REVIEW: 'GENERATING_PRD' },
   prd_ready: { GENERATING_PRD: 'PRD_REVIEW' },
   revise_prd: { PRD_REVIEW: 'GENERATING_PRD' },
   accept_prd: { PRD_REVIEW: 'DECOMPOSING' },
+  finish: { PRD_REVIEW: 'DONE' },
   tasks_ready: { DECOMPOSING: 'TASK_REVIEW' },
   start_implementation: { TASK_REVIEW: 'IMPLEMENTING' },
   all_tasks_done: { IMPLEMENTING: 'DONE' },

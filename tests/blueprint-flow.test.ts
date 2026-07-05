@@ -125,4 +125,57 @@ describe('BlueprintOrchestrator generative flow', () => {
     orch.recoverOrphans()
     expect(blueprints.get(bp.id)?.state).toBe('FAILED')
   })
+
+  it('document mode: start() skips Q + structure, goes straight to PRD review', async () => {
+    const bp = blueprints.create({
+      projectId,
+      title: 'Legacy app',
+      idea: '',
+      mode: 'document',
+      techPref: { mode: 'auto' },
+      agentId: 'mock',
+    })
+    orch.start(bp.id)
+    await waitState(bp.id, 'PRD_REVIEW')
+    expect(blueprints.get(bp.id)?.prd).toContain('# PRD')
+    // No questions were generated in document mode.
+    expect(orch.getQuestions(bp.id)).toEqual([])
+  })
+
+  it('finish keeps the PRD and ends at DONE (no task build)', async () => {
+    const bp = blueprints.create({
+      projectId,
+      title: 'Legacy app',
+      idea: 'document this',
+      mode: 'document',
+      techPref: { mode: 'auto' },
+      agentId: 'mock',
+    })
+    orch.start(bp.id)
+    await waitState(bp.id, 'PRD_REVIEW')
+
+    orch.finish(bp.id)
+    expect(blueprints.get(bp.id)?.state).toBe('DONE')
+    expect(tasks.listByBlueprint(bp.id)).toHaveLength(0)
+  })
+
+  it('extend mode: full flow still reaches TASK_REVIEW with tasks', async () => {
+    const bp = blueprints.create({
+      projectId,
+      title: 'Add admin',
+      idea: 'add an admin dashboard',
+      mode: 'extend',
+      techPref: { mode: 'auto' },
+      agentId: 'mock',
+    })
+    orch.start(bp.id)
+    await waitState(bp.id, 'QUESTIONS')
+    orch.submitAnswers(bp.id, [])
+    await waitState(bp.id, 'STRUCTURE_REVIEW')
+    orch.acceptStructure(bp.id)
+    await waitState(bp.id, 'PRD_REVIEW')
+    orch.acceptPrd(bp.id)
+    await waitState(bp.id, 'TASK_REVIEW')
+    expect(tasks.listByBlueprint(bp.id).length).toBeGreaterThan(0)
+  })
 })

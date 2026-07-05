@@ -46,11 +46,14 @@ export interface BlueprintTaskSpec {
   priority: 'high' | 'medium' | 'low'
 }
 
+export type BlueprintMode = 'greenfield' | 'extend' | 'document'
+
 export interface Blueprint {
   id: string
   projectId: string
   title: string
   idea: string
+  mode: BlueprintMode
   techPref: TechPref
   answers: BlueprintAnswer[] | null
   structure: BlueprintStructure | null

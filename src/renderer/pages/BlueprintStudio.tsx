@@ -44,12 +44,19 @@ export function BlueprintStudio({ blueprintId }: { blueprintId: string }) {
           {blueprint.title}
         </span>
         <div className="ml-auto">
-          <StepRail state={s} />
+          <StepRail state={s} mode={blueprint.mode} />
         </div>
       </header>
 
       {s === 'IDEA' && (
-        <GeneratingView blueprintId={blueprintId} label="Thinking of the right questions…" />
+        <GeneratingView
+          blueprintId={blueprintId}
+          label={
+            blueprint.mode === 'document'
+              ? 'Reading your codebase…'
+              : 'Thinking of the right questions…'
+          }
+        />
       )}
       {s === 'QUESTIONS' && <QuestionsStep blueprintId={blueprintId} questions={questions} />}
       {s === 'STRUCTURING' && (
@@ -59,10 +66,17 @@ export function BlueprintStudio({ blueprintId }: { blueprintId: string }) {
         <StructureStep blueprintId={blueprintId} structure={blueprint.structure} />
       )}
       {s === 'GENERATING_PRD' && (
-        <GeneratingView blueprintId={blueprintId} label="Writing the PRD…" />
+        <GeneratingView
+          blueprintId={blueprintId}
+          label={
+            blueprint.mode === 'document'
+              ? 'Reverse-engineering the PRD from your code…'
+              : 'Writing the PRD…'
+          }
+        />
       )}
       {s === 'PRD_REVIEW' && blueprint.prd && (
-        <PrdStep blueprintId={blueprintId} prd={blueprint.prd} />
+        <PrdStep blueprintId={blueprintId} prd={blueprint.prd} mode={blueprint.mode} />
       )}
       {s === 'DECOMPOSING' && (
         <GeneratingView blueprintId={blueprintId} label="Breaking the PRD into tasks…" />
@@ -74,12 +88,25 @@ export function BlueprintStudio({ blueprintId }: { blueprintId: string }) {
             ✓
           </div>
           <div className="text-center">
-            <p className="font-medium text-slate-100">
-              Blueprint ready — {tasks.length} tasks queued
-            </p>
-            <p className="mt-1 text-slate-500 text-sm">
-              Work them from the board. Each task reads the PRD, then plans, executes, and verifies.
-            </p>
+            {tasks.length > 0 ? (
+              <>
+                <p className="font-medium text-slate-100">
+                  Blueprint ready — {tasks.length} tasks queued
+                </p>
+                <p className="mt-1 text-slate-500 text-sm">
+                  Work them from the board. Each task reads the PRD, then plans, executes, and
+                  verifies.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="font-medium text-slate-100">PRD saved</p>
+                <p className="mt-1 text-slate-500 text-sm">
+                  Written to <span className="font-mono text-slate-400">.founcode/blueprints/</span>{' '}
+                  in your project. Start tasks anytime from the board.
+                </p>
+              </>
+            )}
           </div>
           <button type="button" onClick={goBoard} className="btn-primary px-5">
             Go to Board →

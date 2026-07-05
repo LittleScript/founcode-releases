@@ -4,6 +4,7 @@
 
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import documentPrdTemplate from '../../../prompts/blueprint/document-prd.md?raw'
 import prdTemplate from '../../../prompts/blueprint/prd.md?raw'
 import questionsTemplate from '../../../prompts/blueprint/questions.md?raw'
 import reviseTemplate from '../../../prompts/blueprint/revise.md?raw'
@@ -75,6 +76,42 @@ export class BlueprintOrchestrator {
     }
   }
 
+  // Entry point after creation — routes by mode. Document mode skips
+  // questions + structure and reverse-engineers a PRD from the code.
+  start(blueprintId: string): void {
+    const bp = this.deps.blueprints.get(blueprintId)
+    if (!bp) return
+    if (bp.mode === 'document') this.generateDocumentPrd(blueprintId)
+    else this.generateQuestions(blueprintId)
+  }
+
+  // ---- document mode: IDEA -> GENERATING_PRD (skip Q + structure) ----
+  private generateDocumentPrd(blueprintId: string): void {
+    void (async () => {
+      const bp = this.deps.blueprints.get(blueprintId)
+      if (!bp) return
+      this.applySafe(blueprintId, 'generate_prd_direct') // IDEA -> GENERATING_PRD
+      const goal = bp.idea.trim()
+        ? `## User's note / goal\n${bp.idea.trim()}`
+        : 'The user did not add a specific goal — just document what exists.'
+      const prompt = documentPrdTemplate.replace('{{goal_section}}', goal)
+      try {
+        const result = await this.collect(blueprintId, bp, prompt)
+        if (result.ok && result.text.trim()) {
+          this.deps.blueprints.update(blueprintId, { prd: result.text.trim() })
+          this.applySafe(blueprintId, 'prd_ready')
+          return
+        }
+        this.applySafe(blueprintId, 'generation_failed')
+      } catch (error) {
+        this.deps.blueprints.recordEvent(blueprintId, 'agent_error', {
+          message: (error as Error).message,
+        })
+        this.applySafe(blueprintId, 'generation_failed')
+      }
+    })()
+  }
+
   // ---- step 1: questions ----
   // Runs while still in IDEA (a generative state); only transitions to
   // QUESTIONS once the questions are parsed and cached.
@@ -85,6 +122,7 @@ export class BlueprintOrchestrator {
       const prompt = questionsTemplate
         .replace('{{idea}}', bp.idea)
         .replace('{{tech_pref}}', techPrefText(bp))
+        .replace('{{existing_section}}', existingSection(bp))
       try {
         const result = await this.collect(blueprintId, bp, prompt)
         const parsed = result.ok ? parseQuestions(result.text) : null
@@ -122,6 +160,7 @@ export class BlueprintOrchestrator {
       .replace('{{idea}}', bp.idea)
       .replace('{{tech_pref}}', techPrefText(bp))
       .replace('{{answers}}', answersText(bp.answers))
+      .replace('{{existing_section}}', existingSection(bp))
     const result = await this.collect(blueprintId, bp, prompt)
     if (result.ok) {
       const parsed = parseStructure(result.text)
@@ -154,6 +193,7 @@ export class BlueprintOrchestrator {
           .replace('{{tech_pref}}', techPrefText(bp))
           .replace('{{answers}}', answersText(bp.answers))
           .replace('{{structure}}', JSON.stringify(bp.structure, null, 2))
+          .replace('{{existing_section}}', existingSection(bp))
     const result = await this.collect(blueprintId, bp, prompt)
     if (result.ok && result.text.trim()) {
       this.deps.blueprints.update(blueprintId, { prd: result.text.trim() })
@@ -169,6 +209,13 @@ export class BlueprintOrchestrator {
     void this.runPrd(blueprintId, instructions)
   }
 
+  // Keep the PRD and stop here (no task build) — the natural end for
+  // document mode, and available to any mode.
+  finish(blueprintId: string): void {
+    this.writePrdToProject(blueprintId)
+    this.apply(blueprintId, 'finish') // PRD_REVIEW -> DONE
+  }
+
   // ---- step 4: accept PRD -> decompose into tasks ----
   acceptPrd(blueprintId: string): void {
     this.apply(blueprintId, 'accept_prd') // -> DECOMPOSING
@@ -182,6 +229,7 @@ export class BlueprintOrchestrator {
     const prompt = tasksTemplate
       .replace('{{prd}}', bp.prd ?? '')
       .replace('{{structure}}', JSON.stringify(bp.structure, null, 2))
+      .replace('{{existing_section}}', existingSection(bp))
     const result = await this.collect(blueprintId, bp, prompt)
     if (result.ok) {
       const parsed = parseTaskSpecs(result.text)
@@ -273,10 +321,10 @@ export class BlueprintOrchestrator {
     }
   }
 
-  // FAILED -> IDEA, then restart question generation.
+  // FAILED -> IDEA, then restart the flow appropriate to the mode.
   retry(blueprintId: string): void {
     this.apply(blueprintId, 'retry')
-    this.generateQuestions(blueprintId)
+    this.start(blueprintId)
   }
 
   // Recovery: generative states orphaned by a restart cannot resume.
@@ -326,6 +374,18 @@ export class BlueprintOrchestrator {
 
 function isTaskTerminal(state: string): boolean {
   return state === 'DONE' || state === 'DISCARDED'
+}
+
+// For extend mode, tells the generative agent to analyze the existing
+// repo first and scope the spec/tasks to the remaining work.
+function existingSection(bp: Blueprint): string {
+  if (bp.mode !== 'extend') return ''
+  return [
+    '## Existing project',
+    'This repository ALREADY contains a partially-built project. Before answering, explore it with your Read, Glob, and Grep tools to understand what exists (structure, routes/pages, data models, dependencies).',
+    'The idea/goal below is what the user wants to ADD or COMPLETE. Build the spec around EXTENDING the current code — do not re-plan work that is already done, and prefer the existing stack and conventions.',
+    '',
+  ].join('\n')
 }
 
 function techPrefText(bp: Blueprint): string {

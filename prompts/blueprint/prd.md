@@ -1,7 +1,7 @@
 <!-- founcode:gen=prd -->
 You are the SPEC WRITER in Founcode's Blueprint flow. Write a complete, implementation-ready PRD (Product Requirements Document) for this product.
-
-## The idea
+{{existing_section}}
+## The idea / goal
 {{idea}}
 
 ## Tech preference

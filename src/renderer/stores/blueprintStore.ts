@@ -50,6 +50,7 @@ export const blueprintActions = {
     window.founcode.invoke('blueprint:revisePrd', { blueprintId, instructions }),
   acceptPrd: (blueprintId: string) =>
     window.founcode.invoke('blueprint:acceptPrd', { blueprintId }),
+  finish: (blueprintId: string) => window.founcode.invoke('blueprint:finish', { blueprintId }),
   setAdvanceMode: (blueprintId: string, mode: 'manual' | 'auto') =>
     window.founcode.invoke('blueprint:setAdvanceMode', { blueprintId, mode }),
   retry: (blueprintId: string) => window.founcode.invoke('blueprint:retry', { blueprintId }),

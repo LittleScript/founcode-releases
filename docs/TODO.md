@@ -124,6 +124,16 @@ Keputusan (5 Jul): nama **Blueprint**; sequential feeding **manual + auto (toggl
 **Exit criteria:** dari ide bahasa awam → PRD tervalidasi → task graph → minimal 1 task terbangun & ter-merge lewat P-E-V, pada project greenfield, dengan Claude Code asli di Windows 11.
 **Status 5 Jul 2026: TERPENUHI (M5 tercapai)** — E2E "Quote API" greenfield lolos (214 detik): questions 17s → structure 12s → PRD 8601 char/36s → 10 task terdekomposisi rapi → task#1 auto-plan→execute→verify→merge; repo greenfield berisi server.js+package.json+README+.gitignore, bersih. 99 unit/integration test + 2 full E2E (task tunggal + blueprint greenfield).
 
+**B6 — Brownfield (project existing)** ✅ (5 Jul)
+- [x] 3 mode blueprint (migration 004 `mode`): `greenfield` (baru), `extend` (repo existing + tujuan → analisis kode → PRD current+target → task = sisa kerja), `document` (repo existing → retro-PRD, skip questions/structure)
+- [x] State machine: aksi `generate_prd_direct` (IDEA→GENERATING_PRD untuk document) + `finish` (PRD_REVIEW→DONE) — exhaustive test
+- [x] Prompt: `{{existing_section}}` di questions/structure/prd/tasks (extend = suruh agen eksplor repo dulu, scope ke sisa kerja) + `document-prd.md` (reverse-engineer PRD dari kode)
+- [x] BlueprintOrchestrator: `start()` routing per mode, `generateDocumentPrd`, `finish()`, existingSection helper
+- [x] UI: NewBlueprintDialog pilih Extend/Document untuk current project (idea optional di document); StepRail mode-aware (document = Analyze→PRD→Build); PrdStep tombol "Save PRD & finish" + "Continue → build"; label document-aware
+- [x] 3 test baru (document skip, finish→DONE tanpa task, extend full flow); 102 test pass
+
+**Status B6: kode selesai. Menunggu tes manual Koko (Mock + Claude asli pada repo existing).**
+
 ## Fase 6 — Licensing, Packaging, Polish (F6)
 
 - [ ] Keputusan final: Lemon Squeezy vs Paddle (bandingkan fee + dukungan merchant Indonesia) → buat produk & tier

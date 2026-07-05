@@ -194,7 +194,7 @@ export function registerIpcHandlers(db: Database, dbPath: string, services: Main
     if (!input.idea.trim()) throw new Error('Idea is required')
     if (!services.projects.get(input.projectId)) throw new Error('Unknown project')
     const bp = services.blueprints.create(input)
-    bo.generateQuestions(bp.id) // kick off immediately
+    bo.start(bp.id) // kick off immediately (routes by mode)
     return bp
   })
 
@@ -221,6 +221,11 @@ export function registerIpcHandlers(db: Database, dbPath: string, services: Main
 
   handle('blueprint:acceptPrd', ({ blueprintId }) => {
     bo.acceptPrd(blueprintId)
+    return undefined
+  })
+
+  handle('blueprint:finish', ({ blueprintId }) => {
+    bo.finish(blueprintId)
     return undefined
   })
 

@@ -12,6 +12,7 @@ import {
 
 const LEGAL: [BlueprintState, BlueprintAction, BlueprintState][] = [
   ['IDEA', 'generate_questions', 'QUESTIONS'],
+  ['IDEA', 'generate_prd_direct', 'GENERATING_PRD'],
   ['IDEA', 'generation_failed', 'FAILED'],
   ['QUESTIONS', 'submit_answers', 'STRUCTURING'],
   ['STRUCTURING', 'structure_ready', 'STRUCTURE_REVIEW'],
@@ -21,6 +22,7 @@ const LEGAL: [BlueprintState, BlueprintAction, BlueprintState][] = [
   ['GENERATING_PRD', 'generation_failed', 'FAILED'],
   ['PRD_REVIEW', 'revise_prd', 'GENERATING_PRD'],
   ['PRD_REVIEW', 'accept_prd', 'DECOMPOSING'],
+  ['PRD_REVIEW', 'finish', 'DONE'],
   ['DECOMPOSING', 'tasks_ready', 'TASK_REVIEW'],
   ['DECOMPOSING', 'generation_failed', 'FAILED'],
   ['TASK_REVIEW', 'start_implementation', 'IMPLEMENTING'],

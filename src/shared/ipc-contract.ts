@@ -5,6 +5,7 @@
 import type {
   Blueprint,
   BlueprintAnswer,
+  BlueprintMode,
   BlueprintQuestion,
   BlueprintState,
   BlueprintStructure,
@@ -43,6 +44,7 @@ export interface IpcInvokeMap {
       projectId: string
       title: string
       idea: string
+      mode?: BlueprintMode
       techPref: TechPref
       agentId: string
       advanceMode?: 'manual' | 'auto'
@@ -62,6 +64,7 @@ export interface IpcInvokeMap {
   }
   'blueprint:revisePrd': { args: { blueprintId: string; instructions: string }; result: undefined }
   'blueprint:acceptPrd': { args: { blueprintId: string }; result: undefined }
+  'blueprint:finish': { args: { blueprintId: string }; result: undefined }
   'blueprint:tasks': { args: { blueprintId: string }; result: Task[] }
   'blueprint:setAdvanceMode': {
     args: { blueprintId: string; mode: 'manual' | 'auto' }
@@ -105,6 +108,7 @@ export const IPC_INVOKE_CHANNELS: readonly IpcInvokeChannel[] = [
   'blueprint:acceptStructure',
   'blueprint:revisePrd',
   'blueprint:acceptPrd',
+  'blueprint:finish',
   'blueprint:tasks',
   'blueprint:setAdvanceMode',
   'blueprint:startImplementation',

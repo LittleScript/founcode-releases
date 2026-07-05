@@ -1,11 +1,11 @@
-import type { BlueprintState } from '../../../shared/blueprint-types'
+import type { BlueprintMode, BlueprintState } from '../../../shared/blueprint-types'
 
-const STEPS = ['Idea', 'Questions', 'Structure', 'PRD', 'Tasks', 'Implement'] as const
+// Full flow (greenfield / extend) vs the shorter document flow.
+const FULL_STEPS = ['Idea', 'Questions', 'Structure', 'PRD', 'Tasks', 'Implement'] as const
+const DOC_STEPS = ['Analyze', 'PRD', 'Build'] as const
 
-// Which step index a blueprint state maps to, and whether that step is
-// mid-generation (agent working) vs awaiting the user.
-const STATE_STEP: Record<BlueprintState, { step: number; busy: boolean }> = {
-  IDEA: { step: 1, busy: true }, // generating questions
+const FULL_MAP: Record<BlueprintState, { step: number; busy: boolean }> = {
+  IDEA: { step: 1, busy: true },
   QUESTIONS: { step: 1, busy: false },
   STRUCTURING: { step: 2, busy: true },
   STRUCTURE_REVIEW: { step: 2, busy: false },
@@ -18,21 +18,30 @@ const STATE_STEP: Record<BlueprintState, { step: number; busy: boolean }> = {
   FAILED: { step: 1, busy: false },
 }
 
-export function activeStep(state: BlueprintState): number {
-  return STATE_STEP[state].step
-}
-export function isBusy(state: BlueprintState): boolean {
-  return STATE_STEP[state].busy
+const DOC_MAP: Record<BlueprintState, { step: number; busy: boolean }> = {
+  IDEA: { step: 0, busy: true },
+  GENERATING_PRD: { step: 1, busy: true },
+  PRD_REVIEW: { step: 1, busy: false },
+  DECOMPOSING: { step: 2, busy: true },
+  TASK_REVIEW: { step: 2, busy: false },
+  IMPLEMENTING: { step: 2, busy: false },
+  DONE: { step: 2, busy: false },
+  FAILED: { step: 0, busy: false },
+  // unused in document mode:
+  QUESTIONS: { step: 0, busy: false },
+  STRUCTURING: { step: 1, busy: true },
+  STRUCTURE_REVIEW: { step: 1, busy: false },
 }
 
-export function StepRail({ state }: { state: BlueprintState }) {
-  const current = STATE_STEP[state].step
-  const busy = STATE_STEP[state].busy
+export function StepRail({ state, mode }: { state: BlueprintState; mode: BlueprintMode }) {
+  const isDoc = mode === 'document'
+  const steps = isDoc ? DOC_STEPS : FULL_STEPS
+  const { step: current, busy } = (isDoc ? DOC_MAP : FULL_MAP)[state]
   const failed = state === 'FAILED'
 
   return (
     <div className="flex items-center gap-1.5">
-      {STEPS.map((label, i) => {
+      {steps.map((label, i) => {
         const done = i < current
         const active = i === current
         return (
@@ -62,7 +71,7 @@ export function StepRail({ state }: { state: BlueprintState }) {
                 )}
               </span>
             </div>
-            {i < STEPS.length - 1 && (
+            {i < steps.length - 1 && (
               <span
                 className={`h-px w-6 transition-colors duration-300 ${
                   done ? 'bg-accent/40' : 'bg-edge'

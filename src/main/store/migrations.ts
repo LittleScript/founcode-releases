@@ -95,4 +95,11 @@ export const MIGRATIONS: Migration[] = [
       CREATE INDEX idx_tasks_blueprint ON tasks(blueprint_id);
     `,
   },
+  {
+    version: 4,
+    // Brownfield support: a blueprint targets a new repo (greenfield),
+    // extends an existing one toward a goal (extend), or documents an
+    // existing codebase into a PRD (document).
+    sql: "ALTER TABLE blueprints ADD COLUMN mode TEXT NOT NULL DEFAULT 'greenfield';",
+  },
 ]

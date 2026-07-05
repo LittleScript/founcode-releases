@@ -1,9 +1,18 @@
 import { useState } from 'react'
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import type { BlueprintMode } from '../../../shared/blueprint-types'
 import { blueprintActions } from '../../stores/blueprintStore'
 
-export function PrdStep({ blueprintId, prd }: { blueprintId: string; prd: string }) {
+export function PrdStep({
+  blueprintId,
+  prd,
+  mode,
+}: {
+  blueprintId: string
+  prd: string
+  mode: BlueprintMode
+}) {
   const [instructions, setInstructions] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -17,6 +26,11 @@ export function PrdStep({ blueprintId, prd }: { blueprintId: string; prd: string
   async function accept() {
     setBusy(true)
     await blueprintActions.acceptPrd(blueprintId)
+  }
+
+  async function finish() {
+    setBusy(true)
+    await blueprintActions.finish(blueprintId)
   }
 
   return (
@@ -59,14 +73,45 @@ export function PrdStep({ blueprintId, prd }: { blueprintId: string; prd: string
             </button>
           </div>
 
-          <button
-            type="button"
-            onClick={accept}
-            disabled={busy}
-            className="btn-primary w-full justify-center py-2"
-          >
-            {busy ? 'Working…' : 'Accept PRD → Break into Tasks'}
-          </button>
+          {mode === 'document' ? (
+            <>
+              <button
+                type="button"
+                onClick={finish}
+                disabled={busy}
+                className="btn-primary w-full justify-center py-2"
+              >
+                {busy ? 'Working…' : '✓ Save PRD & finish'}
+              </button>
+              <button
+                type="button"
+                onClick={accept}
+                disabled={busy}
+                className="btn-ghost mt-2 w-full justify-center"
+              >
+                Continue → build remaining work
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={accept}
+                disabled={busy}
+                className="btn-primary w-full justify-center py-2"
+              >
+                {busy ? 'Working…' : 'Accept PRD → Break into Tasks'}
+              </button>
+              <button
+                type="button"
+                onClick={finish}
+                disabled={busy}
+                className="mt-2 w-full text-center text-[11px] text-slate-600 hover:text-slate-400"
+              >
+                or just keep the PRD and finish
+              </button>
+            </>
+          )}
         </div>
       </aside>
     </div>

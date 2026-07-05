@@ -2,6 +2,7 @@ import { nanoid } from 'nanoid'
 import type {
   Blueprint,
   BlueprintAnswer,
+  BlueprintMode,
   BlueprintStructure,
   TechPref,
 } from '../../../shared/blueprint-types'
@@ -13,6 +14,7 @@ interface BlueprintRow {
   project_id: string
   title: string
   idea: string
+  mode: string
   tech_pref: string
   answers: string | null
   structure: string | null
@@ -30,6 +32,7 @@ function toBlueprint(row: BlueprintRow): Blueprint {
     projectId: row.project_id,
     title: row.title,
     idea: row.idea,
+    mode: (row.mode ?? 'greenfield') as BlueprintMode,
     techPref: JSON.parse(row.tech_pref) as TechPref,
     answers: row.answers ? (JSON.parse(row.answers) as BlueprintAnswer[]) : null,
     structure: row.structure ? (JSON.parse(row.structure) as BlueprintStructure) : null,
@@ -48,6 +51,7 @@ export interface CreateBlueprintInput {
   idea: string
   techPref: TechPref
   agentId: string
+  mode?: BlueprintMode
   advanceMode?: 'manual' | 'auto'
 }
 
@@ -61,6 +65,7 @@ export class BlueprintRepo {
       projectId: input.projectId,
       title: input.title,
       idea: input.idea,
+      mode: input.mode ?? 'greenfield',
       techPref: input.techPref,
       answers: null,
       structure: null,
@@ -74,14 +79,15 @@ export class BlueprintRepo {
     this.db
       .prepare(
         `INSERT INTO blueprints
-         (id, project_id, title, idea, tech_pref, advance_mode, agent_id, state, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (id, project_id, title, idea, mode, tech_pref, advance_mode, agent_id, state, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         bp.id,
         bp.projectId,
         bp.title,
         bp.idea,
+        bp.mode,
         JSON.stringify(bp.techPref),
         bp.advanceMode,
         bp.agentId,
