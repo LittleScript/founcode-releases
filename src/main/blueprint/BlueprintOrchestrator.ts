@@ -36,6 +36,8 @@ export interface BlueprintDeps {
   broadcastEvent: (p: { blueprintId: string; event: AgentEvent }) => void
   // Populated by main once questions are generated so the renderer can render them.
   onQuestions?: (blueprintId: string, questions: BlueprintQuestion[]) => void
+  // Kicks off a task's Plan phase (points at the task Orchestrator).
+  startTaskPlanning?: (taskId: string) => void
 }
 
 interface GenResult {
@@ -223,6 +225,54 @@ export class BlueprintOrchestrator {
     }
   }
 
+  // ---- step 5: implementation (sequential feeding) ----
+  startImplementation(blueprintId: string, advanceMode?: 'manual' | 'auto'): void {
+    if (advanceMode) this.deps.blueprints.setAdvanceMode(blueprintId, advanceMode)
+    this.apply(blueprintId, 'start_implementation') // TASK_REVIEW -> IMPLEMENTING
+    this.startNextTask(blueprintId)
+  }
+
+  // Starts the lowest-order task that hasn't finished yet. Returns false
+  // when there is nothing left to start (all done).
+  startNextTask(blueprintId: string): boolean {
+    const tasks = this.deps.tasks.listByBlueprint(blueprintId)
+    // A task is "in flight" if it's neither a fresh Backlog nor terminal.
+    const active = tasks.find((t) => t.state !== 'BACKLOG' && !isTaskTerminal(t.state))
+    if (active) return true // already working one; don't start another
+    const next = tasks.find((t) => t.state === 'BACKLOG')
+    if (!next) {
+      // Nothing queued and nothing active -> blueprint is complete.
+      if (tasks.every((t) => isTaskTerminal(t.state))) {
+        this.applySafe(blueprintId, 'all_tasks_done')
+      }
+      return false
+    }
+    this.deps.blueprints.recordEvent(blueprintId, 'task_started', {
+      taskId: next.id,
+      order: next.orderIndex,
+    })
+    this.deps.startTaskPlanning?.(next.id)
+    return true
+  }
+
+  // Called by the task Orchestrator when a blueprint task settles.
+  handleTaskSettled(task: { blueprintId: string | null; state: string }): void {
+    if (!task.blueprintId) return
+    const bp = this.deps.blueprints.get(task.blueprintId)
+    if (bp?.state !== 'IMPLEMENTING') return
+    // Auto mode advances on a successful merge; manual waits for the
+    // user. A discarded/failed task never auto-advances (user decides).
+    if (task.state === 'DONE' && bp.advanceMode === 'auto') {
+      this.startNextTask(bp.id)
+    } else if (task.state === 'DONE') {
+      // Manual: check whether that was the last one.
+      const tasks = this.deps.tasks.listByBlueprint(bp.id)
+      if (tasks.every((t) => isTaskTerminal(t.state))) {
+        this.applySafe(bp.id, 'all_tasks_done')
+      }
+    }
+  }
+
   // FAILED -> IDEA, then restart question generation.
   retry(blueprintId: string): void {
     this.apply(blueprintId, 'retry')
@@ -272,6 +322,10 @@ export class BlueprintOrchestrator {
     if (controller.signal.aborted) return { ok: false, text: '' }
     return { ok: exitCode === 0, text: resultText ?? parts.join('\n') }
   }
+}
+
+function isTaskTerminal(state: string): boolean {
+  return state === 'DONE' || state === 'DISCARDED'
 }
 
 function techPrefText(bp: Blueprint): string {

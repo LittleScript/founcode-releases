@@ -7,7 +7,7 @@ Title: {{title}}
 
 Intent:
 {{intent}}
-{{feedback_section}}
+{{context_section}}{{feedback_section}}
 ## Output requirements
 
 Respond with ONLY the plan document in markdown — no preamble, no closing remarks. The plan MUST follow this exact structure (all five sections, exact headings):

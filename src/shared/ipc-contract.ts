@@ -66,6 +66,11 @@ export interface IpcInvokeMap {
     args: { blueprintId: string; mode: 'manual' | 'auto' }
     result: undefined
   }
+  'blueprint:startImplementation': {
+    args: { blueprintId: string; advanceMode: 'manual' | 'auto' }
+    result: undefined
+  }
+  'blueprint:startNext': { args: { blueprintId: string }; result: undefined }
   'blueprint:retry': { args: { blueprintId: string }; result: undefined }
 }
 
@@ -100,6 +105,8 @@ export const IPC_INVOKE_CHANNELS: readonly IpcInvokeChannel[] = [
   'blueprint:acceptPrd',
   'blueprint:tasks',
   'blueprint:setAdvanceMode',
+  'blueprint:startImplementation',
+  'blueprint:startNext',
   'blueprint:retry',
 ]
 

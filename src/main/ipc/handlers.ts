@@ -46,6 +46,11 @@ export function createServices(db: Database, worktreesDir: string): MainServices
   const blueprints = new BlueprintRepo(db)
   const registry = new AgentRegistry()
   const worktrees = new WorktreeManager(worktreesDir)
+
+  // Mutual reference resolved via closure: the task orchestrator notifies
+  // the blueprint orchestrator when a task settles; the blueprint
+  // orchestrator asks the task orchestrator to start the next task.
+  let blueprintOrchestrator: BlueprintOrchestrator
   const orchestrator = new Orchestrator({
     projects,
     tasks,
@@ -54,16 +59,47 @@ export function createServices(db: Database, worktreesDir: string): MainServices
     worktrees,
     broadcastStateChange: (change) => broadcast('task:stateChanged', change),
     broadcastAgentEvent: (payload) => broadcast('task:event', payload),
+    getPlanContext: (task) => buildBlueprintPlanContext(task, blueprints, tasks),
+    onTaskSettled: (task) => blueprintOrchestrator.handleTaskSettled(task),
   })
-  const blueprintOrchestrator = new BlueprintOrchestrator({
+  blueprintOrchestrator = new BlueprintOrchestrator({
     projects,
     tasks,
     blueprints,
     registry,
     broadcastState: (change) => broadcast('blueprint:stateChanged', change),
     broadcastEvent: (payload) => broadcast('blueprint:event', payload),
+    startTaskPlanning: (taskId) => orchestrator.startPlanning(taskId),
   })
   return { projects, tasks, artifacts, blueprints, registry, orchestrator, blueprintOrchestrator }
+}
+
+// Injects the Blueprint's PRD + a summary of completed sibling tasks into
+// a task's plan prompt — the shared context that keeps each agent aware
+// of the whole product while it focuses on its one task (anti context-rot).
+function buildBlueprintPlanContext(
+  task: { blueprintId: string | null; orderIndex: number | null },
+  blueprints: BlueprintRepo,
+  tasks: TaskRepo,
+): string {
+  if (!task.blueprintId) return ''
+  const bp = blueprints.get(task.blueprintId)
+  if (!bp?.prd) return ''
+  const siblings = tasks.listByBlueprint(task.blueprintId)
+  const done = siblings.filter((t) => t.state === 'DONE')
+  const doneList =
+    done.length > 0
+      ? done.map((t) => `- ${t.title}`).join('\n')
+      : '- (none yet — this is the first task)'
+  return [
+    '## Product context (from the Blueprint PRD)',
+    'This task is one step in a larger product. Read this PRD for context, then plan ONLY your task above — do not implement the whole product.',
+    '',
+    bp.prd,
+    '',
+    '## Already completed in this product',
+    doneList,
+  ].join('\n')
 }
 
 export function registerIpcHandlers(db: Database, dbPath: string, services: MainServices): void {
@@ -185,6 +221,16 @@ export function registerIpcHandlers(db: Database, dbPath: string, services: Main
 
   handle('blueprint:setAdvanceMode', ({ blueprintId, mode }) => {
     services.blueprints.setAdvanceMode(blueprintId, mode)
+    return undefined
+  })
+
+  handle('blueprint:startImplementation', ({ blueprintId, advanceMode }) => {
+    bo.startImplementation(blueprintId, advanceMode)
+    return undefined
+  })
+
+  handle('blueprint:startNext', ({ blueprintId }) => {
+    bo.startNextTask(blueprintId)
     return undefined
   })
 

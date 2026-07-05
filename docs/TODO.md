@@ -106,11 +106,14 @@ Keputusan (5 Jul): nama **Blueprint**; sequential feeding **manual + auto (toggl
 
 **Status B3: kode selesai, verify/build hijau. Menunggu tes manual Koko (Mock lalu Claude asli).**
 
-**B4 — Tasks → Implement (sequential feeding)**
-- [ ] Dekomposisi PRD → task Founcode dengan `blueprint_id` + `order_index` (Backlog)
-- [ ] PRD disuntik sebagai konteks ke prompt Plan tiap task (+ ringkasan task selesai)
-- [ ] Sequential feeding: mulai task urutan terkecil; saat DONE → advance (toggle **manual/auto** per blueprint)
-- [ ] UI Task step + penanda urutan di board + tombol "Start next task"
+**B4 — Tasks → Implement (sequential feeding)** ✅ (5 Jul)
+- [x] Dekomposisi PRD → task Founcode dengan `blueprint_id` + `order_index` (Backlog) — dari B2
+- [x] PRD disuntik sebagai konteks ke prompt Plan tiap task (+ daftar task selesai) via `getPlanContext`
+- [x] Sequential feeding: `startImplementation`→task[0]; manual/auto advance (auto = task berikutnya mulai sendiri setelah merge; review gate manusia TETAP ada)
+- [x] UI: TasksStep start beneran; BlueprintBanner di board (progress bar + "Start next task" manual / indikator working / Complete); badge `#N` urutan di kartu task
+- [x] Wiring callback dua arah Orchestrator↔BlueprintOrchestrator (onTaskSettled / startTaskPlanning)
+
+**Status B4: kode selesai, 96 test pass (7 baru: feeding manual/auto, PRD context). Menunggu tes manual Koko.**
 
 **B5 — Greenfield & polish**
 - [ ] Greenfield: buat folder + `git init` + commit awal (README dari PRD) + daftarkan project

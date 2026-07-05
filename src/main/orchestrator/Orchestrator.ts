@@ -33,6 +33,12 @@ export interface OrchestratorDeps {
     to: Task['state']
   }) => void
   broadcastAgentEvent: (payload: { taskId: string; event: AgentEvent }) => void
+  // Extra context injected into the plan prompt (Blueprint tasks get the
+  // PRD + a summary of already-completed sibling tasks).
+  getPlanContext?: (task: Task) => string
+  // Called when a task reaches a terminal state (DONE/DISCARDED) so a
+  // Blueprint can advance its sequential feeding.
+  onTaskSettled?: (task: Task) => void
 }
 
 interface CollectResult {
@@ -98,12 +104,14 @@ export class Orchestrator {
     this.deps.worktrees.merge(project.path, taskId)
     const updated = this.applyAction(taskId, 'merge')
     this.cleanupWorktree(taskId)
+    this.deps.onTaskSettled?.(updated)
     return updated
   }
 
   discard(taskId: string): Task {
     const updated = this.applyAction(taskId, 'discard')
     this.cleanupWorktree(taskId)
+    this.deps.onTaskSettled?.(updated)
     return updated
   }
 
@@ -396,7 +404,12 @@ export class Orchestrator {
 
       // Attempt 1 + one automatic corrective re-prompt on bad format.
       for (let attempt = 0; attempt < 2; attempt++) {
-        const prompt = buildPlanPrompt(task, feedback, formatErrors)
+        const prompt = buildPlanPrompt(
+          task,
+          feedback,
+          formatErrors,
+          this.deps.getPlanContext?.(task),
+        )
         const result = await this.collect(taskId, adapter, {
           cwd: project.path,
           prompt,
@@ -482,6 +495,7 @@ export function buildPlanPrompt(
   task: { title: string; intent: string },
   feedback?: string,
   formatErrors?: string[],
+  context?: string,
 ): string {
   const sections: string[] = []
   if (feedback) {
@@ -497,5 +511,6 @@ export function buildPlanPrompt(
   return planTemplate
     .replace('{{title}}', task.title)
     .replace('{{intent}}', task.intent)
+    .replace('{{context_section}}', context ? `\n${context}\n` : '')
     .replace('{{feedback_section}}', sections.join(''))
 }

@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import type { Blueprint } from '../../shared/blueprint-types'
 import type { Task, TaskState } from '../../shared/types'
+import { BlueprintBanner } from '../components/blueprint/BlueprintBanner'
 import { NewBlueprintDialog } from '../components/blueprint/NewBlueprintDialog'
 import { NewTaskDialog } from '../components/NewTaskDialog'
 import { PipelineRail } from '../components/PipelineRail'
@@ -44,7 +46,14 @@ function TaskCard({ task }: { task: Task }) {
       }`}
     >
       <div className="mb-1 flex items-start justify-between gap-2">
-        <span className="font-medium text-[13px] text-slate-100 leading-snug">{task.title}</span>
+        <span className="flex items-center gap-1.5 font-medium text-[13px] text-slate-100 leading-snug">
+          {task.orderIndex !== null && (
+            <span className="shrink-0 rounded-sm border border-accent/30 px-1 font-mono text-[9px] text-accent">
+              #{task.orderIndex + 1}
+            </span>
+          )}
+          {task.title}
+        </span>
         {needsYou && (
           <span className="shrink-0 rounded-sm bg-amber-500/15 px-1.5 py-0.5 font-mono text-[9px] text-amber-300 uppercase tracking-wider">
             you
@@ -66,10 +75,24 @@ export function Board() {
   const tasks = useAppStore((s) => s.tasks)
   const projects = useAppStore((s) => s.projects)
   const activeProjectId = useAppStore((s) => s.activeProjectId)
+  const openBlueprint = useAppStore((s) => s.openBlueprint)
   const [showNewTask, setShowNewTask] = useState(false)
   const [showNewBlueprint, setShowNewBlueprint] = useState(false)
+  const [activeBlueprints, setActiveBlueprints] = useState<Blueprint[]>([])
 
   const project = projects.find((p) => p.id === activeProjectId)
+
+  // Reload active (implementing) blueprints whenever tasks change.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally re-runs when tasks change
+  useEffect(() => {
+    if (!activeProjectId) {
+      setActiveBlueprints([])
+      return
+    }
+    window.founcode.invoke('blueprint:list', { projectId: activeProjectId }).then((list) => {
+      setActiveBlueprints(list.filter((b) => b.state === 'IMPLEMENTING'))
+    })
+  }, [activeProjectId, tasks])
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
@@ -91,6 +114,15 @@ export function Board() {
           </button>
         </div>
       </header>
+
+      {activeBlueprints.map((bp) => (
+        <BlueprintBanner
+          key={bp.id}
+          blueprint={bp}
+          tasks={tasks}
+          onOpen={() => openBlueprint(bp.id)}
+        />
+      ))}
 
       <div className="flex flex-1 gap-3 overflow-x-auto p-4">
         {BOARD_STATES.map((state, i) => {

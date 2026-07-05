@@ -2,7 +2,6 @@ import { useState } from 'react'
 import type { Blueprint } from '../../../shared/blueprint-types'
 import type { Task } from '../../../shared/types'
 import { useAppStore } from '../../stores/appStore'
-import { blueprintActions } from '../../stores/blueprintStore'
 
 export function TasksStep({ blueprint, tasks }: { blueprint: Blueprint; tasks: Task[] }) {
   const goBoard = useAppStore((s) => s.goBoard)
@@ -11,9 +10,11 @@ export function TasksStep({ blueprint, tasks }: { blueprint: Blueprint; tasks: T
 
   async function start() {
     setBusy(true)
-    await blueprintActions.setAdvanceMode(blueprint.id, mode)
-    // Implementation feeding is wired in B4; for now, tasks are queued
-    // in Backlog and the user works them from the board.
+    // Transitions to IMPLEMENTING and kicks off the first task's planning.
+    await window.founcode.invoke('blueprint:startImplementation', {
+      blueprintId: blueprint.id,
+      advanceMode: mode,
+    })
     goBoard()
   }
 
