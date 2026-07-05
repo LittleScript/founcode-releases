@@ -80,11 +80,47 @@ Basis: PRD v1.0 + TDD v1.0. Terakhir diperbarui: 3 Juli 2026.
 **Exit criteria:** siklus penuh Plan → Execute → Verify → Merge berhasil pada task nyata di repo nyata dengan Claude Code asli, di Windows 11.
 **Status 4 Jul 2026: TERPENUHI (M4 tercapai)** — E2E otomatis dengan Claude Code ASLI lolos (`tests/full-cycle.integration.test.ts`, 86 detik: plan 23s → execute 27s → verify ~35s → merge bersih; verdict pass; repo user bersih; worktree+branch ter-cleanup). 64 unit/integration test + 1 full-cycle E2E. Dogfooding via UI = langkah berikutnya.
 
-## Fase 5 — Licensing, Packaging, Polish (F6)
+## Fase 5 — Blueprint / Spec Studio (Idea → PRD → Task Graph)
+
+Corong greenfield yang menyuapi pipeline P-E-V. Desain lengkap: `docs/BLUEPRINT-DESIGN.md`.
+Keputusan (5 Jul): nama **Blueprint**; sequential feeding **manual + auto (toggle user pilih)**.
+
+**B1 — Data & state machine**
+- [ ] Migration 003: tabel `blueprints` + kolom `blueprint_id`/`order_index` di `tasks`
+- [ ] BlueprintRepo (CRUD, JSON blobs untuk answers/structure/prd)
+- [ ] BlueprintStateMachine: IDEA→QUESTIONS→STRUCTURING→STRUCTURE_REVIEW→GENERATING_PRD→PRD_REVIEW→DECOMPOSING→TASK_REVIEW→IMPLEMENTING→DONE (unit test exhaustive transisi)
+
+**B2 — Generative runner & parser**
+- [ ] `Orchestrator.runGeneration()` — jalur agen menghasilkan DATA (bukan kode), tanpa worktree
+- [ ] Parser: questions/structure/tasks (JSON dalam fence, pola verdict parser, 1x auto re-prompt, fallback raw)
+- [ ] Prompt `prompts/blueprint/{questions,structure,prd,tasks,revise}.md`
+- [ ] MockAgent mode blueprint (deterministik untuk dev/test) + unit test alur generatif
+
+**B3 — UI Idea → Questions → Structure → PRD**
+- [ ] Entry "✦ New from Idea" di board; Blueprint Studio full-screen + bar progres 6 langkah
+- [ ] Idea input + tech preference (auto / manual stack picker)
+- [ ] Questions (pilihan ganda + skip) → jawab
+- [ ] Structure map (tree/kolom) → review/edit/terima
+- [ ] PRD viewer + revisi via chat (`revise.md`) → tulis `PRD.md` ke project
+
+**B4 — Tasks → Implement (sequential feeding)**
+- [ ] Dekomposisi PRD → task Founcode dengan `blueprint_id` + `order_index` (Backlog)
+- [ ] PRD disuntik sebagai konteks ke prompt Plan tiap task (+ ringkasan task selesai)
+- [ ] Sequential feeding: mulai task urutan terkecil; saat DONE → advance (toggle **manual/auto** per blueprint)
+- [ ] UI Task step + penanda urutan di board + tombol "Start next task"
+
+**B5 — Greenfield & polish**
+- [ ] Greenfield: buat folder + `git init` + commit awal (README dari PRD) + daftarkan project
+- [ ] Crash recovery blueprint (state generatif yatim → tandai perlu retry)
+- [ ] E2E: idea → PRD → 1–2 task → build, dengan Claude Code asli (gated FOUNCODE_IT)
+
+**Exit criteria:** dari ide bahasa awam → PRD tervalidasi → task graph → minimal 1 task terbangun & ter-merge lewat P-E-V, pada project greenfield, dengan Claude Code asli di Windows 11.
+
+## Fase 6 — Licensing, Packaging, Polish (F6)
 
 - [ ] Keputusan final: Lemon Squeezy vs Paddle (bandingkan fee + dukungan merchant Indonesia) → buat produk & tier
 - [ ] `LicenseService`: activate, re-validasi 24 jam, offline grace 7 hari, simpan via safeStorage
-- [ ] Enforcement Free tier di Orchestrator: 1 task aktif, 1 project (+ unit test)
+- [ ] Enforcement Free tier di Orchestrator: 1 task aktif, 1 project, auto-advance = Pro (+ unit test)
 - [ ] UI: Settings page (license, pilihan agen default, tema) + upgrade prompt yang sopan
 - [ ] electron-builder: NSIS installer + portable zip, icon & branding Founcode
 - [ ] electron-updater + repo GitHub Releases publik
@@ -94,7 +130,7 @@ Basis: PRD v1.0 + TDD v1.0. Terakhir diperbarui: 3 Juli 2026.
 
 **Exit criteria:** installer terpasang di VM bersih; free tier enforced; license activation bekerja; auto-update dari release draft bekerja.
 
-## Fase 6 — Launch (v1.0)
+## Fase 7 — Launch (v1.0)
 
 - [ ] Landing page founcode (nama domain: riset & beli) — bisa pakai skill build-premium-website
 - [ ] Harga final Pro tier (PRD §7: target $8–12/bln, harus < $20)

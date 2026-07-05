@@ -4,7 +4,7 @@ Instruksi untuk Claude Code di project ini. Baca ini dulu sebelum kerja.
 
 ## Apa ini
 
-**Founcode** — desktop app Windows-first (Electron + React + TypeScript) yang mengorkestrasi AI coding agents (Claude Code dulu, lalu Codex/Gemini/OpenCode) dengan workflow **Plan → Execute → Verify**. Produk komersial 21Kent, model freemium ($0 free / ~$10 Pro via Lemon Squeezy/Paddle). Kompetitor utama: Traycer (belum support Windows — itu celah kita).
+**Founcode** — desktop app Windows-first (Electron + React + TypeScript) yang mengorkestrasi AI coding agents (Claude Code dulu, lalu Codex/Gemini/OpenCode). Pipeline produk: **Blueprint → Plan → Execute → Verify → Merge** (Blueprint = Idea→PRD→Task Graph, Fase 5 aktif). Produk komersial 21Kent, model freemium ($0 free / ~$10 Pro via Lemon Squeezy/Paddle). Kompetitor utama: Traycer (belum support Windows + tak menggarap greenfield idea→app — itu celah kita).
 
 ## Dokumen sumber kebenaran (docs/)
 
@@ -15,6 +15,7 @@ Instruksi untuk Claude Code di project ini. Baca ini dulu sebelum kerja.
 | `docs/TODO.md` | Checklist per fase + exit criteria | **Setiap awal sesi** — kerjakan item teratas yang belum selesai |
 | `docs/PLANNING.md` | Milestone + status, strategi rilis, keputusan terbuka | Saat planning / ragu prioritas |
 | `docs/COMPETITORS.md` | Peta kompetitor & positioning verification-first | Sebelum keputusan produk/pricing |
+| `docs/BLUEPRINT-DESIGN.md` | Desain fitur Blueprint/Spec Studio (Idea→PRD→Tasks), Fase 5 aktif | Saat mengerjakan Blueprint (B1–B5) |
 | `docs/USER-GUIDE.md` | Panduan pakai lengkap untuk end user | Saat mengubah UX — jaga tetap akurat |
 | `docs/DEVELOPMENT.md` | Setup dev, peta arsitektur, testing, **gotcha yang sudah memakan korban** | Sesi pertama + saat kena jebakan aneh |
 

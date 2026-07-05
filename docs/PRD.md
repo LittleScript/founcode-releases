@@ -88,6 +88,9 @@ Founcode adalah **desktop app Windows-first** yang menjadi lapisan orkestrasi di
 
 ### 5.1 MVP — P0 (harus ada di v1.0)
 
+#### F0. Blueprint / Spec Studio — Idea → PRD → Task Graph *(ditambah 5 Jul 2026, desain: docs/BLUEPRINT-DESIGN.md)*
+Corong greenfield: user menjelaskan ide dengan bahasa awam → AI mengajukan ~5 pertanyaan klarifikasi → menghasilkan peta fitur (structure map) → menulis `PRD.md` (revisi via chat) → mendekomposisi jadi task graph berurutan. Task-task itu lalu diumpankan **satu per satu** (sequential feeding, PRD sebagai konteks bersama) ke pipeline Plan→Execute→Verify. Toggle **manual/auto advance** (user pilih). Diferensiator utama v1.0: satu-satunya tool yang menggarap **ide kosong → aplikasi terverifikasi**, Windows-native. Pipeline produk lengkap jadi: **Blueprint → Plan → Execute → Verify → Merge**.
+
 #### F1. Project & Task Management
 - Register project = folder git lokal di mesin user.
 - Task board sederhana (kolom: Backlog → Planning → Awaiting Approval → Executing → Verifying → Done / Failed).
