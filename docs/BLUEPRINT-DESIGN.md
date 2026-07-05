@@ -6,9 +6,21 @@
 |---|---|
 | Versi | 1.0 (draft untuk approval) |
 | Tanggal | 5 Juli 2026 |
-| Status | **Menunggu approval Koko sebelum implementasi** |
+| Status | ✅ **TERBANGUN & MELEBIHI desain awal** (5 Jul 2026) — lihat "Status as-built" di bawah |
 | Keputusan | Dibangun sebagai bagian v1.0 (sebelum rilis) — resequence: ini Fase 5, licensing jadi Fase 6, launch Fase 7 |
 | Inspirasi | ngodingpakeai.com (PRD generator lokal) + insight "task next" dari Koko |
+
+---
+
+## 0. Status as-built (5 Jul 2026)
+
+Desain di bawah adalah rencana awal (greenfield). Yang **benar-benar dibangun** melampauinya:
+- **B1–B5** (rencana asli): data + state machine, runner generatif + parser, UI Studio, sequential feeding, greenfield + E2E. ✅ E2E "Quote API" dengan Claude asli lolos (214s).
+- **B6 brownfield**: 3 mode — `greenfield`, `extend` (repo existing + tujuan, task = sisa kerja), `document` (retro-PRD, skip questions/structure). Aksi state machine `generate_prd_direct` + `finish`.
+- **B7 enhancement** (permintaan Koko): questions **multi-select** + agen **usulkan ide** (opt-in); structure jadi **node-graph React Flow**; **panel chat diskusi** real-time di Structure & PRD (regenerate artefak in-place).
+- Ditunda ke Fase 6: pemilihan model AI (Settings page).
+
+Detail teknis final: **TDD §12**. Sisa dokumen ini = rencana/rasional awal (dipertahankan sebagai catatan desain).
 
 ---
 

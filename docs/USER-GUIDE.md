@@ -1,14 +1,19 @@
 # Panduan Pengguna — Founcode
 
-Panduan lengkap memakai Founcode dari nol sampai siklus penuh Plan → Execute → Verify.
-Versi dokumen: 4 Juli 2026 (mencakup Fase 0–3; fase Verify menyusul).
-*Catatan: versi Inggris untuk publik dibuat saat launch (Fase 6).*
+Panduan lengkap memakai Founcode dari ide sampai siklus penuh Plan → Execute → Verify.
+Versi dokumen: 5 Juli 2026 (mencakup Fase 0–5, termasuk Blueprint).
+*Catatan: versi Inggris untuk publik dibuat saat launch (Fase 7).*
 
 ---
 
 ## 1. Apa Itu Founcode?
 
-Founcode adalah desktop app Windows yang mengubah AI coding agent (Claude Code, dan nantinya Codex/Gemini/OpenCode) menjadi alur kerja engineering yang disiplin. Alih-alih "prompt lalu berharap", setiap pekerjaan melewati tiga fase bergerbang:
+Founcode adalah desktop app Windows yang mengubah AI coding agent (Claude Code, dan nantinya Codex/Gemini/OpenCode) menjadi alur kerja engineering yang disiplin. Dua lapis:
+
+- **Blueprint** (§13) — dari **ide** (atau project mandek) → PRD → daftar task siap kerja.
+- **Plan → Execute → Verify** — tiap task dikerjakan dengan gerbang mutu.
+
+Alih-alih "prompt lalu berharap", setiap pekerjaan melewati tiga fase bergerbang:
 
 ```
 ┌─────────┐      ┌──────────┐      ┌──────────┐
@@ -160,3 +165,29 @@ Arsitekturnya siap (worktree per task), UI paralel menyusul di v1.x. Free tier: 
 
 **Q: Bagaimana kalau saya tidak setuju dengan plan?**
 Itu justru inti Founcode — Edit langsung, atau Request Re-plan dengan feedback. Tidak ada kode ditulis sampai kamu puas dengan rencananya.
+
+---
+
+## 13. Blueprint — dari Ide (atau Project Mandek) ke Aplikasi
+
+Blueprint adalah corong di depan pipeline: dari deskripsi awam sampai daftar task siap kerja. Buka lewat tombol **✦ New from Idea** di board (atau di layar Welcome).
+
+### Pilih "di mana membangun"
+- **New project** — Founcode buat folder + repo git baru. Cocok untuk ide dari nol.
+- **Current project** — pakai project yang sedang terbuka (kode yang sudah ada), lalu pilih:
+  - **Extend toward a goal** — kamu punya project setengah jadi dan mau menambah/menyelesaikan sesuatu. Agen **menganalisis kodemu dulu**, PRD-nya mencakup kondisi sekarang + target, dan task graph = **sisa pekerjaan** (tidak mengulang yang sudah ada).
+  - **Document the code** — project warisan tanpa dokumen. Agen membaca kode dan menghasilkan **PRD retro** yang mendokumentasikannya. Kamu bisa berhenti di situ (simpan PRD) atau lanjut membangun.
+
+### Alur 6 langkah (StepRail di header)
+1. **Idea/Goal** — jelaskan bahasa awam. Pilih preferensi tech (biar AI pilih / tentukan sendiri).
+2. **Questions** — AI mengajukan beberapa pertanyaan. Tiap pertanyaan bisa **pilih lebih dari satu** (atau "all"). Ada juga kotak **"Fresh ideas from the agent"** — ide segar yang bisa kamu **centang untuk disertakan**.
+3. **Structure** — peta fitur tampil sebagai **node-graph** (Product → Feature → Sub-feature). Bisa di-pan/zoom. Di sampingnya ada **panel chat**: tanya apa saja, atau minta perubahan → petanya ter-update.
+4. **PRD** — dokumen lengkap. Panel chat di kanan: diskusi & minta revisi bahasa awam → PRD ditulis ulang. Lalu **Accept → Break into Tasks** (atau, untuk mode Document, **Save PRD & finish**).
+5. **Tasks** — daftar task berurutan. Pilih mode **advance**: *One at a time* (kamu mulai tiap task) atau *Auto-advance* (task berikutnya mulai sendiri setelah kamu merge). Klik **Start Implementation**.
+6. **Implement** — kembali ke board. Task Founcode dari blueprint muncul dengan badge urutan (#1, #2, …) dan ada **panel progress blueprint** di atas board.
+
+### Cara task dikerjakan (penting)
+Task dari blueprint dijalankan **satu per satu** lewat Plan → Execute → Verify. Tiap agen **membaca PRD lebih dulu** (konteks bersama) baru mengerjakan satu task-nya — ini mencegah AI "bingung/muter-muter". Plan tiap task **di-approve otomatis** (kamu sudah menyetujui PRD di awal); gerbang review-mu tetap ada saat **merge** hasil tiap task. Di mode manual, klik **"Start next task"** di panel blueprint untuk lanjut; di mode auto, task berikutnya mulai sendiri setelah merge.
+
+### Diskusi chat (Structure & PRD)
+Panel chat memungkinkan tanya-jawab real-time: "kenapa pilih SQLite?", "apakah cukup untuk 10rb user?" — agen menjawab. Kalau kamu minta perubahan ("ganti ke Postgres", "tambah fitur notifikasi"), agen **meregenerasi artefak di tempat** (peta atau PRD ikut berubah) tanpa mengulang dari awal.

@@ -48,19 +48,28 @@ src/
 │   │   ├── AgentRegistry.ts     # Deteksi & lookup agen
 │   │   ├── claude/…             # Claude Code headless (stream-json)
 │   │   └── mock/…               # Agen palsu deterministik (dev/test)
-│   ├── git/WorktreeManager.ts   # Isolasi worktree + diff + guard repo user
-│   ├── store/         #   node:sqlite + migrations + repos (Project/Task/Artifact)
-│   └── ipc/handlers.ts#   Semua ipcMain.handle + createServices (wiring DI)
+│   ├── git/
+│   │   ├── WorktreeManager.ts   # Isolasi worktree + diff + merge guard repo user
+│   │   └── createGreenfieldRepo.ts # Buat repo baru (Blueprint greenfield)
+│   ├── blueprint/     #   Fase 5 — lihat §6.5 + TDD §12
+│   │   ├── BlueprintStateMachine.ts  # IDEA→…→DONE (pure, exhaustive-tested)
+│   │   ├── BlueprintOrchestrator.ts  # Phase runner generatif + sequential feeding
+│   │   └── blueprintParsers.ts       # parse questions/structure/tasks
+│   ├── store/         #   node:sqlite + migrations (001–005) + repos (Project/Task/Artifact/Blueprint)
+│   └── ipc/handlers.ts#   Semua ipcMain.handle + createServices (wiring DI dua-arah)
 ├── preload/           # contextBridge, allowlist channel dari kontrak
-└── renderer/          # React murni — TIDAK pernah menyentuh Node/fs/proses
-    ├── stores/        #   zustand: appStore (data), logStore (streaming logs)
-    ├── pages/         #   Onboarding, Board, TaskDetail
-    └── components/    #   PlanReviewer, LogViewer, DiffViewer, dsb.
-prompts/               # Template prompt per fase (di-bundle via ?raw)
+├── renderer/          # React murni — TIDAK pernah menyentuh Node/fs/proses
+│   ├── stores/        #   zustand: appStore, logStore, blueprintStore
+│   ├── pages/         #   Onboarding, Board, TaskDetail, BlueprintStudio
+│   └── components/    #   PlanReviewer, LogViewer, DiffViewer, VerifyReport,
+│                      #   blueprint/{StepRail,QuestionsStep,StructureGraph,ChatPanel,…}
+prompts/               # Template prompt (?raw): plan/execute/verify + blueprint/*
 tests/                 # Vitest — lihat §5
 ```
 
-**Aliran satu task:** UI → IPC → `Orchestrator.startPlanning()` → transisi state machine → adapter spawn agen (stream `AgentEvent` → broadcast `task:event` ke UI + artefak log) → plan tervalidasi → user approve → `runExecution()` → `WorktreeManager.create()` → agen write-mode di worktree → commit + diff artefak → VERIFYING *(verify runner = Fase 4)*.
+**Aliran satu task:** UI → IPC → `Orchestrator.startPlanning()` → transisi state machine → adapter spawn agen (stream `AgentEvent` → broadcast `task:event` ke UI + artefak log) → plan tervalidasi → user approve (atau auto-approve untuk task blueprint) → `runExecution()` → `WorktreeManager.create()` → agen write-mode di worktree → commit + diff → `runVerify()` (agen baru) → REVIEW → user merge.
+
+**Aliran Blueprint:** UI → `blueprint:create` → `BlueprintOrchestrator.start()` (routing per mode) → runner generatif (questions/structure/PRD/tasks, mode `read`, tanpa worktree) → tiap step transisi BlueprintStateMachine + broadcast → `acceptPrd` mendekomposisi jadi task Founcode (`order_index`) → `startImplementation` mengumpankan task satu per satu ke pipeline di atas (PRD disuntik sebagai konteks tiap Plan).
 
 ## 4. Keputusan Teknis Penting (jangan dilanggar tanpa update TDD)
 
@@ -84,8 +93,15 @@ tests/                 # Vitest — lihat §5
 | `claude-adapter.test.ts` | Parser stream-json line | — |
 | `claude-adapter.integration.test.ts` | CLI Claude Code ASLI (detect + run) | `FOUNCODE_IT=1` + kredit |
 | `db.test.ts` | Migrations, idempotensi, FK | — |
+| `blueprint-state-machine.test.ts` | Semua state×aksi blueprint (exhaustive) | — |
+| `blueprint-repo.test.ts` | BlueprintRepo CRUD + JSON blobs + FK | — |
+| `blueprint-parsers.test.ts` | parse questions(+suggestions)/structure/tasks | — |
+| `blueprint-flow.test.ts` | Alur generatif penuh + document/extend/finish/chat | — |
+| `blueprint-feeding.test.ts` | Sequential feeding manual/auto + PRD context | git |
+| `greenfield.test.ts` | createGreenfieldRepo + build task pertama | git |
+| `blueprint-e2e.integration.test.ts` | Blueprint E2E dgn Claude asli | `FOUNCODE_IT=1` |
 
-Aturan: state machine & parser wajib punya unit test SEBELUM dianggap selesai (CLAUDE.md).
+Aturan: state machine & parser wajib punya unit test SEBELUM dianggap selesai (CLAUDE.md). Total: **109 unit/integration + 3 E2E gated**.
 
 ## 6. Gotcha Dev (dipelajari dengan air mata)
 
@@ -95,6 +111,18 @@ Aturan: state machine & parser wajib punya unit test SEBELUM dianggap selesai (C
 4. **PowerShell 5.1 `Set-Content` merusak UTF-8 tanpa BOM** (mojibake em-dash). Edit file docs pakai editor/tool, bukan regex PowerShell.
 5. **Kutip ganda dalam `git commit -m` via PowerShell 5.1** memecah argumen — hindari `"` dalam pesan commit.
 6. Renderer crash = window blank bisu. Console renderer di-bridge ke terminal dev (lihat `main/index.ts`) — baca situ dulu sebelum menebak.
+7. **`git commit -m @'…'@` (here-string) sering pecah** kalau pesan panjang/ada tanda kutip → tulis pesan ke file lalu `git commit -F <file>`.
+8. **Dev app untuk sesi testing: jalankan DETACHED** (`Start-Process cmd /c "npm run dev" -WindowStyle Minimized`) supaya tak ikut mati saat background task session Claude Code dibersihkan.
+9. **Sesi terhubung ke `founcode:gen=*` marker**: MockAgent me-route output blueprint dari marker di prompt (jangan hapus marker dari `prompts/blueprint/*`).
+
+## 6.5 Arsitektur Blueprint (Fase 5)
+
+Detail penuh: TDD §12. Ringkas:
+- **Runner generatif** (`BlueprintOrchestrator`) menjalankan agen mode `read` untuk menghasilkan DATA (questions/structure/PRD/tasks) — **tanpa worktree**. Parser pola verdict (fence JSON + validasi + auto-retry).
+- **3 mode**: greenfield / extend (analisis kode existing) / document (retro-PRD). Diinjeksi ke prompt via `{{existing_section}}` / `{{goal_section}}`.
+- **Sequential feeding**: task graph → Backlog dengan `order_index`; diumpankan satu per satu; task blueprint auto-approve plan (`shouldAutoApprovePlan`); PRD disuntik via `getPlanContext`. Callback dua-arah Orchestrator↔BlueprintOrchestrator via closure di `createServices`.
+- **Chat** (`blueprint_messages`, migration 005): diskusi real-time di Structure/PRD; agen regenerate artefak via delimiter `===STRUCTURE===`/`===PRD===`.
+- **Node-graph**: React Flow (`@xyflow/react`) di `StructureGraph.tsx`.
 
 ## 7. Menambah Agen Baru (P1)
 

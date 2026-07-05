@@ -89,7 +89,18 @@ Founcode adalah **desktop app Windows-first** yang menjadi lapisan orkestrasi di
 ### 5.1 MVP — P0 (harus ada di v1.0)
 
 #### F0. Blueprint / Spec Studio — Idea → PRD → Task Graph *(ditambah 5 Jul 2026, desain: docs/BLUEPRINT-DESIGN.md)*
-Corong greenfield: user menjelaskan ide dengan bahasa awam → AI mengajukan ~5 pertanyaan klarifikasi → menghasilkan peta fitur (structure map) → menulis `PRD.md` (revisi via chat) → mendekomposisi jadi task graph berurutan. Task-task itu lalu diumpankan **satu per satu** (sequential feeding, PRD sebagai konteks bersama) ke pipeline Plan→Execute→Verify. Toggle **manual/auto advance** (user pilih). Diferensiator utama v1.0: satu-satunya tool yang menggarap **ide kosong → aplikasi terverifikasi**, Windows-native. Pipeline produk lengkap jadi: **Blueprint → Plan → Execute → Verify → Merge**.
+Corong dari ide/kode ke task graph yang bisa dieksekusi. Diferensiator utama v1.0: satu-satunya tool yang menggarap **ide kosong (atau project mandek) → aplikasi terverifikasi**, Windows-native. Pipeline produk lengkap: **Blueprint → Plan → Execute → Verify → Merge**.
+
+**Tiga mode** (dipilih di dialog):
+- **greenfield** — repo baru: user jelaskan ide bahasa awam → AI tanya klarifikasi → structure map → PRD → task graph. Founcode buat folder + `git init`.
+- **extend** — repo existing + tujuan: AI **analisis kode dulu** → PRD (kondisi sekarang + target) → task = **sisa pekerjaan**.
+- **document** — repo existing: AI **reverse-engineer PRD** dari kode (skip questions/structure); user bisa berhenti di PRD atau lanjut build.
+
+**Fitur alur** (semua terbangun):
+- **Questions**: multi-select (pilih 1/beberapa/semua) + AI **usulkan ide segar** yang bisa di-opt-in user.
+- **Structure**: **node-graph interaktif** (React Flow) Product→Feature→Sub-feature, pan/zoom.
+- **Structure & PRD**: **panel chat diskusi real-time** — user tanya/minta ubah, agen jawab & regenerate artefak in-place.
+- **Sequential feeding "task next"**: task diumpankan **satu per satu** ke P-E-V; tiap agen **baca PRD dulu** (konteks bersama, anti context-rot) lalu 1 task-nya; task blueprint **auto-approve plan** (gerbang manusia = review PRD + merge). Toggle **manual/auto advance** (auto = fitur Pro).
 
 #### F1. Project & Task Management
 - Register project = folder git lokal di mesin user.

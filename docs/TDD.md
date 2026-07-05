@@ -4,10 +4,12 @@
 
 | | |
 |---|---|
-| **Versi** | 1.0 |
-| **Tanggal** | 3 Juli 2026 |
+| **Versi** | 1.1 (Blueprint ditambahkan 5 Jul 2026) |
+| **Tanggal** | 3 Juli 2026 (rev 5 Jul) |
 | **Basis** | PRD v1.0 (docs/PRD.md) |
 | **Status** | Approved — basis implementasi |
+
+> **§0–§11 di bawah** mendeskripsikan inti Plan→Execute→Verify (Fase 0–4). **§12 Blueprint** (di akhir dokumen) mendeskripsikan lapisan Idea→PRD→Task Graph (Fase 5). Desain naratif Blueprint: `docs/BLUEPRINT-DESIGN.md`.
 
 ---
 
@@ -400,4 +402,39 @@ Renderer TIDAK punya akses Node (contextIsolation on, nodeIntegration off, sandb
 | Detail adapter Codex/Gemini/OpenCode (flag CLI masing-masing) | P1 — riset saat implementasi |
 | Telemetri produk (opt-in) | Setelah v1.0 |
 | Strategi macOS/Linux build | P2 |
-| Pilihan final Lemon Squeezy vs Paddle | Sebelum fase licensing (Fase 5) — bandingkan fee & dukungan merchant Indonesia |
+| Pilihan final Lemon Squeezy vs Paddle | Fase 6 — condong Lemon Squeezy (license-key native, milik Stripe) |
+| Pilihan model AI (Settings page) | Fase 6 |
+
+---
+
+## 12. Blueprint / Spec Studio (Fase 5) — Idea → PRD → Task Graph
+
+Lapisan generatif di depan pipeline P-E-V. Menjalankan agen dalam mode `read` untuk menghasilkan **DATA** (bukan kode) → tanpa worktree. Desain naratif: `docs/BLUEPRINT-DESIGN.md`.
+
+### 12.1 Komponen (`src/main/blueprint/`)
+- **BlueprintStateMachine** — pure logic; state IDEA → QUESTIONS → STRUCTURING → STRUCTURE_REVIEW → GENERATING_PRD → PRD_REVIEW → DECOMPOSING → TASK_REVIEW → IMPLEMENTING → DONE (+ FAILED/retry). Aksi khusus mode: `generate_prd_direct` (IDEA→GENERATING_PRD, document mode), `finish` (PRD_REVIEW→DONE). Exhaustive-tested.
+- **BlueprintOrchestrator** — satu-satunya pintu transisi blueprint + phase runner generatif: `start()` (routing per mode), `generateQuestions`, `submitAnswers→runStructure`, `acceptStructure→runPrd`, `revisePrd`, `acceptPrd→runDecompose`, `generateDocumentPrd`, `finish`, `chat`, dan sequential feeding (`startImplementation`/`startNextTask`/`handleTaskSettled`). Reuse `AgentAdapter`/`collect()`/streaming.
+- **blueprintParsers** — `parseQuestions` (→ `{questions, suggestions}`), `parseStructure`, `parseTaskSpecs`; pola verdict parser (fence JSON + validasi + errors).
+- **Prompt** `prompts/blueprint/{questions,structure,prd,revise,tasks,document-prd,chat}.md` dengan marker `founcode:gen=*` (routing MockAgent) + `{{existing_section}}` (extend mode) + `{{goal_section}}` (document mode).
+
+### 12.2 Tiga mode
+`greenfield` (repo baru; `createGreenfieldRepo` = folder+git init+identity lokal), `extend` (repo existing + tujuan; agen eksplor kode, task=sisa kerja), `document` (repo existing; retro-PRD, skip questions/structure).
+
+### 12.3 Data (migration 003–005)
+```sql
+blueprints(id, project_id, title, idea, mode, tech_pref, answers, structure, prd,
+           advance_mode, agent_id, state, created_at, updated_at)   -- mode: migration 004
+blueprint_events(id, blueprint_id, event, detail, created_at)
+blueprint_messages(id, blueprint_id, phase, role, content, created_at)  -- chat, migration 005
+tasks: + blueprint_id, order_index   -- sequential feeding
+```
+Struktur & jawaban disimpan sebagai JSON blob. PRD ditulis juga ke `<project>/.founcode/blueprints/<id>-PRD.md`.
+
+### 12.4 Sequential feeding ("task next")
+Task graph dibuat di Backlog dengan `order_index`. `IMPLEMENTING`: mulai task urutan terkecil lewat P-E-V. Task blueprint **auto-approve plan** (`shouldAutoApprovePlan`; gerbang manusia = review PRD + merge). **PRD disuntik ke prompt Plan tiap task** via `getPlanContext` (+ daftar task selesai) = konteks bersama anti context-rot. Advance **manual** (klik "Start next task") atau **auto** (mulai sendiri setelah merge; review/merge tetap manusia; auto = Pro). Wiring callback DUA ARAH Orchestrator↔BlueprintOrchestrator via closure di `createServices` (`onTaskSettled`/`startTaskPlanning`).
+
+### 12.5 UI (`src/renderer/`)
+Blueprint Studio full-screen + **StepRail** mode-aware (document = Analyze/PRD/Build). Steps: QuestionsStep (multi-select chip + suggestions opt-in), **StructureGraph** (React Flow / @xyflow/react node-graph), PrdStep (markdown + aksi). **ChatPanel** (diskusi real-time di Structure & PRD; agen regenerate artefak in-place via delimiter `===STRUCTURE===`/`===PRD===`). BlueprintBanner di board (progress feeding).
+
+### 12.6 IPC Blueprint
+`blueprint:create/get/list/getQuestions/getSuggestions/submitAnswers/acceptStructure/revisePrd/acceptPrd/finish/chat/messages/tasks/setAdvanceMode/startImplementation/startNext/retry`; event `blueprint:stateChanged`/`blueprint:event`. `project:createGreenfield`.

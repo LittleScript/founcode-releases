@@ -191,7 +191,9 @@ export function registerIpcHandlers(db: Database, dbPath: string, services: Main
   const bo = services.blueprintOrchestrator
 
   handle('blueprint:create', (input) => {
-    if (!input.idea.trim()) throw new Error('Idea is required')
+    // Document mode reverse-engineers a PRD from existing code, so a goal
+    // is optional there; every other mode needs an idea/goal.
+    if (input.mode !== 'document' && !input.idea.trim()) throw new Error('Idea is required')
     if (!services.projects.get(input.projectId)) throw new Error('Unknown project')
     const bp = services.blueprints.create(input)
     bo.start(bp.id) // kick off immediately (routes by mode)

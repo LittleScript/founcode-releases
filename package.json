@@ -1,7 +1,7 @@
 {
   "name": "founcode",
-  "version": "0.1.0",
-  "description": "Windows-first desktop orchestrator for AI coding agents (Plan -> Execute -> Verify)",
+  "version": "0.5.0",
+  "description": "Windows-first desktop orchestrator for AI coding agents (Blueprint -> Plan -> Execute -> Verify)",
   "main": "out/main/index.js",
   "author": "21Kent",
   "license": "UNLICENSED",
