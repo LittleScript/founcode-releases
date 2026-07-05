@@ -52,7 +52,9 @@ describe('database bootstrap', () => {
   })
 
   it('accepts a valid project + task insert', () => {
-    db.prepare(`INSERT INTO projects (id, name, path, created_at) VALUES ('p1', 'demo', 'C:/demo', 0)`).run()
+    db.prepare(
+      `INSERT INTO projects (id, name, path, created_at) VALUES ('p1', 'demo', 'C:/demo', 0)`,
+    ).run()
     db.prepare(
       `INSERT INTO tasks (id, project_id, title, intent, agent_id, state, created_at, updated_at)
        VALUES ('t1', 'p1', 'title', 'intent', 'claude-code', 'BACKLOG', 0, 0)`,

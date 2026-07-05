@@ -90,57 +90,55 @@ afterAll(() => {
 })
 
 describe.skipIf(!enabled)('FULL CYCLE with real Claude Code', () => {
-  it(
-    'plan -> approve -> execute -> verify -> merge lands the change on the user branch',
-    { timeout: 20 * 60 * 1000 },
-    async () => {
-      const project = projects.add('demo-repo', repoPath)
-      const task = tasks.create({
-        projectId: project.id,
-        title: 'Add uppercase greeting variant',
-        intent:
-          'In greeting.js, add a new exported function greetingLoud(name) that returns the same ' +
-          'greeting as greeting(name) but in ALL UPPERCASE. Keep the existing greeting function unchanged.',
-        agentId: 'claude-code',
-      })
+  it('plan -> approve -> execute -> verify -> merge lands the change on the user branch', {
+    timeout: 20 * 60 * 1000,
+  }, async () => {
+    const project = projects.add('demo-repo', repoPath)
+    const task = tasks.create({
+      projectId: project.id,
+      title: 'Add uppercase greeting variant',
+      intent:
+        'In greeting.js, add a new exported function greetingLoud(name) that returns the same ' +
+        'greeting as greeting(name) but in ALL UPPERCASE. Keep the existing greeting function unchanged.',
+      agentId: 'claude-code',
+    })
 
-      // PLAN
-      orchestrator.startPlanning(task.id)
-      const afterPlan = await waitForState(task.id, ['AWAITING_APPROVAL', 'FAILED'], 8 * 60 * 1000)
-      expect(afterPlan).toBe('AWAITING_APPROVAL')
+    // PLAN
+    orchestrator.startPlanning(task.id)
+    const afterPlan = await waitForState(task.id, ['AWAITING_APPROVAL', 'FAILED'], 8 * 60 * 1000)
+    expect(afterPlan).toBe('AWAITING_APPROVAL')
 
-      const plan = artifacts.latest(task.id, 'plan')
-      console.log(`[full-cycle] PLAN:\n${plan?.content}\n`)
-      expect(plan?.content).toContain('# Plan:')
-      expect(plan?.content).toContain('## Verification Criteria')
+    const plan = artifacts.latest(task.id, 'plan')
+    console.log(`[full-cycle] PLAN:\n${plan?.content}\n`)
+    expect(plan?.content).toContain('# Plan:')
+    expect(plan?.content).toContain('## Verification Criteria')
 
-      // APPROVE -> EXECUTE -> VERIFY (automatic chain)
-      orchestrator.approvePlan(task.id)
-      const finalState = await waitForState(task.id, ['REVIEW', 'FAILED'], 15 * 60 * 1000)
-      expect(finalState).toBe('REVIEW')
+    // APPROVE -> EXECUTE -> VERIFY (automatic chain)
+    orchestrator.approvePlan(task.id)
+    const finalState = await waitForState(task.id, ['REVIEW', 'FAILED'], 15 * 60 * 1000)
+    expect(finalState).toBe('REVIEW')
 
-      const diff = artifacts.latest(task.id, 'diff')
-      console.log(`[full-cycle] DIFF:\n${diff?.content}\n`)
-      expect(diff?.content).toContain('greetingLoud')
+    const diff = artifacts.latest(task.id, 'diff')
+    console.log(`[full-cycle] DIFF:\n${diff?.content}\n`)
+    expect(diff?.content).toContain('greetingLoud')
 
-      const reportRaw = artifacts.latest(task.id, 'verify_report')
-      const report = JSON.parse(reportRaw?.content ?? '{}')
-      console.log(`[full-cycle] VERDICT: ${JSON.stringify(report.verdict, null, 2)}`)
-      expect(report.verdict).toBeTruthy()
-      expect(['pass', 'pass_with_warnings']).toContain(report.verdict.verdict)
+    const reportRaw = artifacts.latest(task.id, 'verify_report')
+    const report = JSON.parse(reportRaw?.content ?? '{}')
+    console.log(`[full-cycle] VERDICT: ${JSON.stringify(report.verdict, null, 2)}`)
+    expect(report.verdict).toBeTruthy()
+    expect(['pass', 'pass_with_warnings']).toContain(report.verdict.verdict)
 
-      // MERGE
-      orchestrator.merge(task.id)
-      expect(tasks.get(task.id)?.state).toBe('DONE')
+    // MERGE
+    orchestrator.merge(task.id)
+    expect(tasks.get(task.id)?.state).toBe('DONE')
 
-      const merged = readFileSync(join(repoPath, 'greeting.js'), 'utf8')
-      expect(merged).toContain('greetingLoud')
-      expect(merged).toContain('greeting')
-      expect(git(repoPath, 'status', '--porcelain')).toBe('')
-      expect(git(repoPath, 'branch', '--list', 'founcode/*')).toBe('')
-      expect(existsSync(tasks.get(task.id)?.worktree ?? join(root, 'nope'))).toBe(false)
+    const merged = readFileSync(join(repoPath, 'greeting.js'), 'utf8')
+    expect(merged).toContain('greetingLoud')
+    expect(merged).toContain('greeting')
+    expect(git(repoPath, 'status', '--porcelain')).toBe('')
+    expect(git(repoPath, 'branch', '--list', 'founcode/*')).toBe('')
+    expect(existsSync(tasks.get(task.id)?.worktree ?? join(root, 'nope'))).toBe(false)
 
-      console.log('[full-cycle] ✅ merged greeting.js:\n' + merged)
-    },
-  )
+    console.log('[full-cycle] ✅ merged greeting.js:\n' + merged)
+  })
 })

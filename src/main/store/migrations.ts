@@ -58,4 +58,41 @@ export const MIGRATIONS: Migration[] = [
     // without recreating the worktree.
     sql: 'ALTER TABLE tasks ADD COLUMN base_ref TEXT;',
   },
+  {
+    version: 3,
+    // Blueprint (Spec Studio): idea -> PRD -> task graph. A blueprint
+    // owns an ordered set of tasks that feed the P-E-V pipeline.
+    sql: `
+      CREATE TABLE blueprints (
+        id           TEXT PRIMARY KEY,
+        project_id   TEXT NOT NULL REFERENCES projects(id),
+        title        TEXT NOT NULL,
+        idea         TEXT NOT NULL,
+        tech_pref    TEXT NOT NULL,      -- json: { mode: 'auto'|'manual', stack?: string }
+        answers      TEXT,               -- json: [{ question, options, answer|skipped }]
+        structure    TEXT,               -- json: feature tree
+        prd          TEXT,               -- markdown
+        advance_mode TEXT NOT NULL DEFAULT 'manual', -- 'manual' | 'auto'
+        agent_id     TEXT NOT NULL,
+        state        TEXT NOT NULL,
+        created_at   INTEGER NOT NULL,
+        updated_at   INTEGER NOT NULL
+      );
+
+      CREATE TABLE blueprint_events (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        blueprint_id TEXT NOT NULL REFERENCES blueprints(id),
+        event       TEXT NOT NULL,
+        detail      TEXT,
+        created_at  INTEGER NOT NULL
+      );
+
+      ALTER TABLE tasks ADD COLUMN blueprint_id TEXT;
+      ALTER TABLE tasks ADD COLUMN order_index INTEGER;
+
+      CREATE INDEX idx_blueprints_project ON blueprints(project_id);
+      CREATE INDEX idx_blueprint_events_bp ON blueprint_events(blueprint_id);
+      CREATE INDEX idx_tasks_blueprint ON tasks(blueprint_id);
+    `,
+  },
 ]

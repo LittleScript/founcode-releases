@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   IllegalTransitionError,
+  legalActions,
   TASK_ACTIONS,
   type TaskAction,
-  legalActions,
   transition,
 } from '../src/main/orchestrator/TaskStateMachine'
 import { TASK_STATES, type TaskState } from '../src/shared/types'
@@ -43,10 +43,9 @@ describe('TaskStateMachine', () => {
         if (expected) {
           expect(transition(state, action), `${state} --${action}-->`).toBe(expected)
         } else {
-          expect(
-            () => transition(state, action),
-            `${state} --${action}--> must throw`,
-          ).toThrow(IllegalTransitionError)
+          expect(() => transition(state, action), `${state} --${action}--> must throw`).toThrow(
+            IllegalTransitionError,
+          )
         }
       }
     }

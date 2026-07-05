@@ -82,7 +82,9 @@ describe('verify flow (mock agent + real git)', () => {
     expect(tasks.get(taskId)?.retryCount).toBe(0)
   })
 
-  it('fail verdict: bounded fix loop runs, then FAILED after retries exhausted', { timeout: 30000 }, async () => {
+  it('fail verdict: bounded fix loop runs, then FAILED after retries exhausted', {
+    timeout: 30000,
+  }, async () => {
     // Mock plan embeds the intent, verify prompt embeds the plan -> the
     // marker reaches the mock verifier, which then always fails.
     const taskId = await runToState('break it [mock:verify-fail]', 'FAILED')
