@@ -115,12 +115,14 @@ Keputusan (5 Jul): nama **Blueprint**; sequential feeding **manual + auto (toggl
 
 **Status B4: kode selesai, 96 test pass (7 baru: feeding manual/auto, PRD context). Menunggu tes manual Koko.**
 
-**B5 — Greenfield & polish**
-- [ ] Greenfield: buat folder + `git init` + commit awal (README dari PRD) + daftarkan project
-- [ ] Crash recovery blueprint (state generatif yatim → tandai perlu retry)
-- [ ] E2E: idea → PRD → 1–2 task → build, dengan Claude Code asli (gated FOUNCODE_IT)
+**B5 — Greenfield & polish** ✅ (5 Jul)
+- [x] Greenfield: `createGreenfieldRepo` (folder + git init + identity lokal + README/.gitignore + commit awal) + IPC `project:createGreenfield` + entry di NewBlueprintDialog & Onboarding
+- [x] Task blueprint auto-approve plan (gerbang manusia = review PRD + merge; via `shouldAutoApprovePlan`)
+- [x] Crash recovery blueprint (recoverOrphans di startup — dari B2/B3)
+- [x] E2E: idea → PRD → task graph → build & merge task pertama, greenfield, Claude Code asli (gated FOUNCODE_IT)
 
 **Exit criteria:** dari ide bahasa awam → PRD tervalidasi → task graph → minimal 1 task terbangun & ter-merge lewat P-E-V, pada project greenfield, dengan Claude Code asli di Windows 11.
+**Status 5 Jul 2026: TERPENUHI (M5 tercapai)** — E2E "Quote API" greenfield lolos (214 detik): questions 17s → structure 12s → PRD 8601 char/36s → 10 task terdekomposisi rapi → task#1 auto-plan→execute→verify→merge; repo greenfield berisi server.js+package.json+README+.gitignore, bersih. 99 unit/integration test + 2 full E2E (task tunggal + blueprint greenfield).
 
 ## Fase 6 — Licensing, Packaging, Polish (F6)
 

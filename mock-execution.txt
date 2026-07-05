@@ -1,4 +1,0 @@
-Mock execution output
-Prompt excerpt: You are the EXECUTION agent in Founcode's Plan -> Execute -> Verify workflow.
-
-Y

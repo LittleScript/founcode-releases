@@ -62,6 +62,7 @@ beforeEach(() => {
     broadcastAgentEvent: vi.fn(),
     getPlanContext: (task) => (task.blueprintId ? `PRD-CONTEXT for ${task.blueprintId}` : ''),
     onTaskSettled: (task) => bo.handleTaskSettled(task),
+    shouldAutoApprovePlan: (task) => task.blueprintId !== null,
   })
   bo = new BlueprintOrchestrator({
     projects,
@@ -103,12 +104,9 @@ function seed(n: number, advanceMode: 'manual' | 'auto') {
   return bp
 }
 
+// Blueprint tasks auto-approve their plan, so we just wait for REVIEW.
 async function driveToReview(taskId: string) {
-  await vi.waitFor(() => expect(tasks.get(taskId)?.state).toBe('AWAITING_APPROVAL'), {
-    timeout: 5000,
-  })
-  orchestrator.approvePlan(taskId)
-  await vi.waitFor(() => expect(tasks.get(taskId)?.state).toBe('REVIEW'), { timeout: 10000 })
+  await vi.waitFor(() => expect(tasks.get(taskId)?.state).toBe('REVIEW'), { timeout: 12000 })
 }
 
 describe('Blueprint sequential feeding', () => {

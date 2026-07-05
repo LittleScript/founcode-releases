@@ -9,13 +9,20 @@ const EXAMPLES = [
 
 export function NewBlueprintDialog({ onClose }: { onClose: () => void }) {
   const activeProjectId = useAppStore((s) => s.activeProjectId)
+  const projects = useAppStore((s) => s.projects)
   const openBlueprint = useAppStore((s) => s.openBlueprint)
+  const activeProject = projects.find((p) => p.id === activeProjectId)
+
   const [idea, setIdea] = useState('')
   const [techMode, setTechMode] = useState<'auto' | 'manual'>('auto')
   const [stack, setStack] = useState('')
   const [agents, setAgents] = useState<AgentInfo[]>([])
   const [agentId, setAgentId] = useState('claude-code')
   const [submitting, setSubmitting] = useState(false)
+  // Project target: brand-new greenfield repo, or the current project.
+  const [projectMode, setProjectMode] = useState<'new' | 'current'>('new')
+  const [newName, setNewName] = useState('')
+  const [parentDir, setParentDir] = useState<string | null>(null)
 
   useEffect(() => {
     window.founcode.invoke('agent:listInstalled', undefined).then((list) => {
@@ -25,15 +32,35 @@ export function NewBlueprintDialog({ onClose }: { onClose: () => void }) {
     })
   }, [])
 
-  const canSubmit = idea.trim().length > 12 && !submitting
+  const projectReady =
+    projectMode === 'current' ? !!activeProjectId : !!newName.trim() && !!parentDir
+  const canSubmit = idea.trim().length > 12 && projectReady && !submitting
+
+  async function pickLocation() {
+    const dir = await window.founcode.invoke('dialog:selectFolder', undefined)
+    if (dir) setParentDir(dir)
+  }
 
   async function submit() {
-    if (!canSubmit || !activeProjectId) return
+    if (!canSubmit) return
     setSubmitting(true)
     try {
+      let projectId = activeProjectId
+      if (projectMode === 'new') {
+        const project = await window.founcode.invoke('project:createGreenfield', {
+          parentDir: parentDir ?? '',
+          name: newName.trim(),
+        })
+        projectId = project.id
+        // Refresh the sidebar project list.
+        const list = await window.founcode.invoke('project:list', undefined)
+        useAppStore.setState({ projects: list, activeProjectId: project.id })
+      }
+      if (!projectId) throw new Error('No project selected')
+
       const title = idea.trim().split(/[.\n]/)[0]?.slice(0, 60) || 'Untitled'
       const bp = await window.founcode.invoke('blueprint:create', {
-        projectId: activeProjectId,
+        projectId,
         title,
         idea: idea.trim(),
         techPref:
@@ -126,7 +153,7 @@ export function NewBlueprintDialog({ onClose }: { onClose: () => void }) {
           id="bp-agent"
           value={agentId}
           onChange={(e) => setAgentId(e.target.value)}
-          className="input-field mb-6"
+          className="input-field mb-4"
         >
           {agents.map((a) => (
             <option key={a.id} value={a.id} disabled={!a.installed}>
@@ -135,6 +162,57 @@ export function NewBlueprintDialog({ onClose }: { onClose: () => void }) {
             </option>
           ))}
         </select>
+
+        <div className="field-label">Where to build</div>
+        <div className="mb-4 grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setProjectMode('new')}
+            className={`rounded-lg border p-3 text-left transition-colors ${
+              projectMode === 'new'
+                ? 'border-accent/50 bg-accent/5'
+                : 'border-edge hover:border-edge-2'
+            }`}
+          >
+            <div className="font-medium text-slate-200 text-sm">New project</div>
+            <div className="mt-0.5 text-[11px] text-slate-500">
+              Founcode creates a fresh git repo
+            </div>
+          </button>
+          <button
+            type="button"
+            onClick={() => activeProject && setProjectMode('current')}
+            disabled={!activeProject}
+            className={`rounded-lg border p-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+              projectMode === 'current'
+                ? 'border-accent/50 bg-accent/5'
+                : 'border-edge hover:border-edge-2'
+            }`}
+          >
+            <div className="truncate font-medium text-slate-200 text-sm">
+              {activeProject?.name ?? 'Current project'}
+            </div>
+            <div className="mt-0.5 text-[11px] text-slate-500">Add to the open project</div>
+          </button>
+        </div>
+        {projectMode === 'new' && (
+          <div className="mb-6 flex gap-2">
+            <input
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder="project-name"
+              className="input-field flex-1"
+            />
+            <button
+              type="button"
+              onClick={pickLocation}
+              className="btn-ghost shrink-0"
+              title={parentDir ?? undefined}
+            >
+              {parentDir ? '✓ Location' : 'Choose location…'}
+            </button>
+          </div>
+        )}
 
         <div className="flex justify-end gap-2">
           <button type="button" onClick={onClose} className="btn-ghost border-transparent">

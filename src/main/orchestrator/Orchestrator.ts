@@ -39,6 +39,9 @@ export interface OrchestratorDeps {
   // Called when a task reaches a terminal state (DONE/DISCARDED) so a
   // Blueprint can advance its sequential feeding.
   onTaskSettled?: (task: Task) => void
+  // Blueprint tasks skip the per-task plan-approval gate (the PRD review
+  // was the human gate; review returns at the verify/merge step).
+  shouldAutoApprovePlan?: (task: Task) => boolean
 }
 
 interface CollectResult {
@@ -431,6 +434,13 @@ export class Orchestrator {
         if (validation.valid) {
           this.deps.artifacts.add(taskId, 'plan', result.resultText)
           this.applyActionSafe(taskId, 'plan_ready')
+          // Blueprint tasks auto-approve their plan: the human gate was
+          // approving the PRD + task graph, and review still happens at
+          // the verify/merge step. Only a VALID plan is auto-approved.
+          const t = this.deps.tasks.get(taskId)
+          if (t?.state === 'AWAITING_APPROVAL' && this.deps.shouldAutoApprovePlan?.(t)) {
+            this.approvePlan(taskId)
+          }
           return
         }
         formatErrors = validation.errors

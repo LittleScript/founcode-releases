@@ -19,6 +19,7 @@ export interface IpcInvokeMap {
   'app:info': { args: undefined; result: AppInfo }
   'dialog:selectFolder': { args: undefined; result: string | null }
   'project:add': { args: { path: string }; result: Project }
+  'project:createGreenfield': { args: { parentDir: string; name: string }; result: Project }
   'project:list': { args: undefined; result: Project[] }
   'task:create': {
     args: { projectId: string; title: string; intent: string; agentId: string }
@@ -81,6 +82,7 @@ export const IPC_INVOKE_CHANNELS: readonly IpcInvokeChannel[] = [
   'app:info',
   'dialog:selectFolder',
   'project:add',
+  'project:createGreenfield',
   'project:list',
   'task:create',
   'task:list',

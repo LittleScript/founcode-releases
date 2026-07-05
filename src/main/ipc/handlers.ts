@@ -6,6 +6,7 @@ import { app, BrowserWindow, dialog, ipcMain } from 'electron'
 import type { IpcEventMap, IpcInvokeMap } from '../../shared/ipc-contract'
 import { AgentRegistry } from '../agents/AgentRegistry'
 import { BlueprintOrchestrator } from '../blueprint/BlueprintOrchestrator'
+import { createGreenfieldRepo } from '../git/createGreenfieldRepo'
 import { WorktreeManager } from '../git/WorktreeManager'
 import { Orchestrator } from '../orchestrator/Orchestrator'
 import { type Database, getSchemaVersion } from '../store/db'
@@ -61,6 +62,7 @@ export function createServices(db: Database, worktreesDir: string): MainServices
     broadcastAgentEvent: (payload) => broadcast('task:event', payload),
     getPlanContext: (task) => buildBlueprintPlanContext(task, blueprints, tasks),
     onTaskSettled: (task) => blueprintOrchestrator.handleTaskSettled(task),
+    shouldAutoApprovePlan: (task) => task.blueprintId !== null,
   })
   blueprintOrchestrator = new BlueprintOrchestrator({
     projects,
@@ -132,6 +134,11 @@ export function registerIpcHandlers(db: Database, dbPath: string, services: Main
     if (existing) {
       throw new Error(`Project already registered: ${existing.name}`)
     }
+    return projects.add(basename(path), path)
+  })
+
+  handle('project:createGreenfield', ({ parentDir, name }) => {
+    const { path } = createGreenfieldRepo(parentDir, name)
     return projects.add(basename(path), path)
   })
 

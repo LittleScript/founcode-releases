@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import { NewBlueprintDialog } from '../components/blueprint/NewBlueprintDialog'
 import { useAppStore } from '../stores/appStore'
 
 const PHASES = [
@@ -23,6 +25,7 @@ const PHASES = [
 
 export function Onboarding() {
   const addProject = useAppStore((s) => s.addProject)
+  const [showIdea, setShowIdea] = useState(false)
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-10 p-8">
@@ -59,14 +62,25 @@ export function Onboarding() {
         ))}
       </div>
 
-      <div className="rise-in flex flex-col items-center gap-2" style={{ animationDelay: '420ms' }}>
-        <button type="button" onClick={addProject} className="btn-primary px-6 py-2.5">
-          Add your first project
-        </button>
+      <div className="rise-in flex flex-col items-center gap-3" style={{ animationDelay: '420ms' }}>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowIdea(true)}
+            className="btn-primary px-6 py-2.5"
+          >
+            ✦ Start from an idea
+          </button>
+          <button type="button" onClick={addProject} className="btn-ghost px-6 py-2.5">
+            Add existing project
+          </button>
+        </div>
         <p className="font-mono text-[11px] text-slate-600">
-          pick a local folder that is a git repository
+          from a plain idea, or a local git folder you already have
         </p>
       </div>
+
+      {showIdea && <NewBlueprintDialog onClose={() => setShowIdea(false)} />}
     </div>
   )
 }

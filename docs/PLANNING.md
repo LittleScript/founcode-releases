@@ -26,8 +26,8 @@ Estimasi dalam **sesi kerja efektif** (1 sesi ≈ setengah hari fokus dengan ban
 | **M3 — Execute bekerja** | Fase 3 selesai: worktree + eksekusi + diff viewer | 5–6 sesi | 🔵 Kode selesai 4 Jul; menunggu verifikasi manual E2E |
 | **M4 — Siklus penuh** ⭐⭐ | Fase 4 selesai: verify + merge; **dogfooding dimulai** | 5–6 sesi | ✅ **TERCAPAI 4 Jul** — full-cycle E2E dengan Claude Code asli lolos (86 detik) |
 | **M4.5 — UI refactor** | Design system "Mission Control" | 1 sesi | ✅ **SELESAI 4 Jul** |
-| **M5 — Blueprint** ⭐⭐⭐ | Fase 5: Idea→PRD→Task Graph→build (Spec Studio); diferensiator greenfield | 8–12 sesi | 🔵 **AKTIF (mulai 5 Jul)** — desain approved, B1 berikutnya |
-| **M6 — Siap jual** | Fase 6: license, installer, QA | 5–7 sesi | ⬜ |
+| **M5 — Blueprint** ⭐⭐⭐ | Fase 5: Idea→PRD→Task Graph→build (Spec Studio); diferensiator greenfield | 8–12 sesi | ✅ **TERCAPAI 5 Jul** — B1–B5 selesai; E2E greenfield dengan Claude asli lolos (214s, ide→app) |
+| **M6 — Siap jual** | Fase 6: license, installer, QA | 5–7 sesi | 🔵 berikutnya |
 | **M7 — Launch v1.0** 🚀 | Fase 7: landing page, rilis, marketing push | 3–4 sesi | ⬜ |
 
 > **Resequence 5 Jul 2026:** Blueprint (Spec Studio) disisipkan sebagai Fase 5 atas keputusan Koko — dibangun sebagai bagian v1.0 sebelum rilis, karena greenfield "idea → app" adalah diferensiator yang tak dimiliki kompetitor mana pun. Licensing & launch bergeser ke Fase 6 & 7.
