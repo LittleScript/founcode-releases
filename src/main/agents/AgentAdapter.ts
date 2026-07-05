@@ -14,6 +14,9 @@ export interface AgentRunOptions {
   prompt: string
   mode: AgentRunMode
   abortSignal: AbortSignal
+  // Optional model alias/id passed to the agent CLI; empty/undefined =
+  // the CLI's own default.
+  model?: string
 }
 
 export interface AgentDetection {

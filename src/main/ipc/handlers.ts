@@ -13,6 +13,7 @@ import { type Database, getSchemaVersion } from '../store/db'
 import { ArtifactRepo } from '../store/repositories/ArtifactRepo'
 import { BlueprintRepo } from '../store/repositories/BlueprintRepo'
 import { ProjectRepo } from '../store/repositories/ProjectRepo'
+import { SettingsRepo } from '../store/repositories/SettingsRepo'
 import { TaskRepo } from '../store/repositories/TaskRepo'
 
 function handle<C extends keyof IpcInvokeMap>(
@@ -35,6 +36,7 @@ export interface MainServices {
   tasks: TaskRepo
   artifacts: ArtifactRepo
   blueprints: BlueprintRepo
+  settings: SettingsRepo
   registry: AgentRegistry
   orchestrator: Orchestrator
   blueprintOrchestrator: BlueprintOrchestrator
@@ -45,6 +47,7 @@ export function createServices(db: Database, worktreesDir: string): MainServices
   const tasks = new TaskRepo(db)
   const artifacts = new ArtifactRepo(db)
   const blueprints = new BlueprintRepo(db)
+  const settings = new SettingsRepo(db)
   const registry = new AgentRegistry()
   const worktrees = new WorktreeManager(worktreesDir)
 
@@ -73,7 +76,16 @@ export function createServices(db: Database, worktreesDir: string): MainServices
     broadcastEvent: (payload) => broadcast('blueprint:event', payload),
     startTaskPlanning: (taskId) => orchestrator.startPlanning(taskId),
   })
-  return { projects, tasks, artifacts, blueprints, registry, orchestrator, blueprintOrchestrator }
+  return {
+    projects,
+    tasks,
+    artifacts,
+    blueprints,
+    settings,
+    registry,
+    orchestrator,
+    blueprintOrchestrator,
+  }
 }
 
 // Injects the Blueprint's PRD + a summary of completed sibling tasks into
@@ -150,8 +162,13 @@ export function registerIpcHandlers(db: Database, dbPath: string, services: Main
     if (!services.projects.get(input.projectId)) {
       throw new Error(`Unknown project: ${input.projectId}`)
     }
-    return tasks.create(input)
+    const model = input.model ?? services.settings.get().defaultModel
+    return tasks.create({ ...input, model })
   })
+
+  handle('settings:get', () => services.settings.get())
+
+  handle('settings:set', (patch) => services.settings.set(patch))
 
   handle('task:list', ({ projectId }) => tasks.list(projectId))
 
@@ -195,7 +212,8 @@ export function registerIpcHandlers(db: Database, dbPath: string, services: Main
     // is optional there; every other mode needs an idea/goal.
     if (input.mode !== 'document' && !input.idea.trim()) throw new Error('Idea is required')
     if (!services.projects.get(input.projectId)) throw new Error('Unknown project')
-    const bp = services.blueprints.create(input)
+    const model = input.model ?? services.settings.get().defaultModel
+    const bp = services.blueprints.create({ ...input, model })
     bo.start(bp.id) // kick off immediately (routes by mode)
     return bp
   })

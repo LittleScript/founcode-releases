@@ -243,6 +243,7 @@ export class Orchestrator {
         cwd: worktreePath,
         prompt,
         mode: 'write',
+        model: task.model ?? undefined,
         abortSignal: controller.signal,
       })
       this.deps.artifacts.add(taskId, 'log', result.log)
@@ -315,6 +316,7 @@ export class Orchestrator {
           cwd: task.worktree,
           prompt,
           mode: 'verify',
+          model: task.model ?? undefined,
           abortSignal: controller.signal,
         })
         this.deps.artifacts.add(taskId, 'log', result.log)
@@ -417,6 +419,7 @@ export class Orchestrator {
           cwd: project.path,
           prompt,
           mode: 'read',
+          model: task.model ?? undefined,
           abortSignal: controller.signal,
         })
         this.deps.artifacts.add(taskId, 'log', result.log)

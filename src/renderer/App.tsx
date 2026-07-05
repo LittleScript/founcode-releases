@@ -3,6 +3,7 @@ import type { AppInfo } from '../shared/types'
 import { BlueprintStudio } from './pages/BlueprintStudio'
 import { Board } from './pages/Board'
 import { Onboarding } from './pages/Onboarding'
+import { Settings } from './pages/Settings'
 import { TaskDetail } from './pages/TaskDetail'
 import { useAppStore } from './stores/appStore'
 import { useBlueprintStore } from './stores/blueprintStore'
@@ -29,6 +30,7 @@ function Sidebar({ info }: { info: AppInfo | null }) {
   const activeProjectId = useAppStore((s) => s.activeProjectId)
   const setActiveProject = useAppStore((s) => s.setActiveProject)
   const addProject = useAppStore((s) => s.addProject)
+  const openSettings = useAppStore((s) => s.openSettings)
   const tasks = useAppStore((s) => s.tasks)
 
   const liveCount = tasks.filter((t) =>
@@ -71,14 +73,21 @@ function Sidebar({ info }: { info: AppInfo | null }) {
         </button>
       </nav>
 
-      <div className="mt-auto border-t border-edge px-4 py-3">
+      <div className="mt-auto border-t border-edge px-2 py-2">
         {liveCount > 0 && (
-          <div className="mb-2 flex items-center gap-2 font-mono text-[11px] text-accent">
+          <div className="mb-1 flex items-center gap-2 px-2 font-mono text-[11px] text-accent">
             <span className="live-dot size-1.5 rounded-full bg-accent" />
             {liveCount} agent{liveCount > 1 ? 's' : ''} running
           </div>
         )}
-        <div className="font-mono text-[10px] text-slate-600">
+        <button
+          type="button"
+          onClick={openSettings}
+          className="w-full rounded-md px-3 py-1.5 text-left text-slate-400 text-sm transition-colors hover:bg-surface-hover hover:text-slate-200"
+        >
+          ⚙ Settings
+        </button>
+        <div className="px-3 pt-1 font-mono text-[10px] text-slate-600">
           v{info?.version ?? '·'} — schema v{info?.schemaVersion ?? '·'}
         </div>
       </div>
@@ -156,6 +165,8 @@ export default function App() {
         <Onboarding />
       ) : view.name === 'task' ? (
         <TaskDetail taskId={view.taskId} />
+      ) : view.name === 'settings' ? (
+        <Settings />
       ) : (
         <Board />
       )}

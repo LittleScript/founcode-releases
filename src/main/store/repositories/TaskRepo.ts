@@ -14,6 +14,7 @@ interface TaskRow {
   base_ref: string | null
   blueprint_id: string | null
   order_index: number | null
+  model: string | null
   retry_count: number
   created_at: number
   updated_at: number
@@ -32,6 +33,7 @@ function toTask(row: TaskRow): Task {
     baseRef: row.base_ref,
     blueprintId: row.blueprint_id,
     orderIndex: row.order_index,
+    model: row.model,
     retryCount: row.retry_count,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -43,6 +45,7 @@ export interface CreateTaskInput {
   title: string
   intent: string
   agentId: string
+  model?: string | null
   // Set when the task originates from a Blueprint (sequential feeding).
   blueprintId?: string
   orderIndex?: number
@@ -65,14 +68,15 @@ export class TaskRepo {
       baseRef: null,
       blueprintId: input.blueprintId ?? null,
       orderIndex: input.orderIndex ?? null,
+      model: input.model ?? null,
       retryCount: 0,
       createdAt: now,
       updatedAt: now,
     }
     this.db
       .prepare(
-        `INSERT INTO tasks (id, project_id, title, intent, agent_id, state, branch, worktree, blueprint_id, order_index, retry_count, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO tasks (id, project_id, title, intent, agent_id, state, branch, worktree, blueprint_id, order_index, model, retry_count, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         task.id,
@@ -85,6 +89,7 @@ export class TaskRepo {
         task.worktree,
         task.blueprintId,
         task.orderIndex,
+        task.model,
         task.retryCount,
         task.createdAt,
         task.updatedAt,

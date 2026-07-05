@@ -34,6 +34,7 @@ export interface Task {
   baseRef: string | null
   blueprintId: string | null
   orderIndex: number | null
+  model: string | null
   retryCount: number
   createdAt: number
   updatedAt: number

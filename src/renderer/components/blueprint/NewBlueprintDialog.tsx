@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { BlueprintMode } from '../../../shared/blueprint-types'
+import { MODEL_OPTIONS } from '../../../shared/settings-types'
 import type { AgentInfo } from '../../../shared/types'
 import { useAppStore } from '../../stores/appStore'
 
@@ -19,6 +20,7 @@ export function NewBlueprintDialog({ onClose }: { onClose: () => void }) {
   const [stack, setStack] = useState('')
   const [agents, setAgents] = useState<AgentInfo[]>([])
   const [agentId, setAgentId] = useState('claude-code')
+  const [model, setModel] = useState('')
   const [submitting, setSubmitting] = useState(false)
   // Where to build: a brand-new greenfield repo, or the current project.
   const [projectMode, setProjectMode] = useState<'new' | 'current'>('new')
@@ -33,6 +35,7 @@ export function NewBlueprintDialog({ onClose }: { onClose: () => void }) {
       const preferred = list.find((a) => a.id === 'claude-code' && a.installed) ?? list[0]
       if (preferred) setAgentId(preferred.id)
     })
+    window.founcode.invoke('settings:get', undefined).then((s) => setModel(s.defaultModel))
   }, [])
 
   const mode: BlueprintMode = projectMode === 'new' ? 'greenfield' : brownfield
@@ -89,6 +92,7 @@ export function NewBlueprintDialog({ onClose }: { onClose: () => void }) {
             ? { mode: 'manual', stack: stack.trim() }
             : { mode: 'auto' },
         agentId,
+        model,
       })
       onClose()
       openBlueprint(bp.id)
@@ -258,21 +262,35 @@ export function NewBlueprintDialog({ onClose }: { onClose: () => void }) {
         )}
 
         <label className="field-label" htmlFor="bp-agent">
-          Agent
+          Agent &amp; model
         </label>
-        <select
-          id="bp-agent"
-          value={agentId}
-          onChange={(e) => setAgentId(e.target.value)}
-          className="input-field mb-6"
-        >
-          {agents.map((a) => (
-            <option key={a.id} value={a.id} disabled={!a.installed}>
-              {a.displayName}
-              {a.installed ? '' : ' — not installed'}
-            </option>
-          ))}
-        </select>
+        <div className="mb-6 grid grid-cols-2 gap-2">
+          <select
+            id="bp-agent"
+            value={agentId}
+            onChange={(e) => setAgentId(e.target.value)}
+            className="input-field"
+          >
+            {agents.map((a) => (
+              <option key={a.id} value={a.id} disabled={!a.installed}>
+                {a.displayName}
+                {a.installed ? '' : ' — not installed'}
+              </option>
+            ))}
+          </select>
+          <select
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+            className="input-field"
+            title="Model"
+          >
+            {MODEL_OPTIONS.map((m) => (
+              <option key={m.value} value={m.value}>
+                {m.label}
+              </option>
+            ))}
+          </select>
+        </div>
 
         <div className="flex justify-end gap-2">
           <button type="button" onClick={onClose} className="btn-ghost border-transparent">

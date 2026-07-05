@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { MODEL_OPTIONS } from '../../shared/settings-types'
 import type { AgentInfo } from '../../shared/types'
 import { useAppStore } from '../stores/appStore'
 
@@ -8,6 +9,7 @@ export function NewTaskDialog({ onClose }: { onClose: () => void }) {
   const [intent, setIntent] = useState('')
   const [agents, setAgents] = useState<AgentInfo[]>([])
   const [agentId, setAgentId] = useState('claude-code')
+  const [model, setModel] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
@@ -16,6 +18,7 @@ export function NewTaskDialog({ onClose }: { onClose: () => void }) {
       const preferred = list.find((a) => a.id === 'claude-code' && a.installed) ?? list[0]
       if (preferred) setAgentId(preferred.id)
     })
+    window.founcode.invoke('settings:get', undefined).then((s) => setModel(s.defaultModel))
   }, [])
 
   const canSubmit = title.trim() && intent.trim() && !submitting
@@ -23,7 +26,7 @@ export function NewTaskDialog({ onClose }: { onClose: () => void }) {
   async function submit() {
     if (!canSubmit) return
     setSubmitting(true)
-    await createTask({ title: title.trim(), intent: intent.trim(), agentId })
+    await createTask({ title: title.trim(), intent: intent.trim(), agentId, model })
     setSubmitting(false)
     onClose()
   }
@@ -62,22 +65,35 @@ export function NewTaskDialog({ onClose }: { onClose: () => void }) {
         />
 
         <label className="field-label" htmlFor="task-agent">
-          Agent
+          Agent &amp; model
         </label>
-        <select
-          id="task-agent"
-          value={agentId}
-          onChange={(e) => setAgentId(e.target.value)}
-          className="input-field mb-6"
-        >
-          {agents.map((a) => (
-            <option key={a.id} value={a.id} disabled={!a.installed}>
-              {a.displayName}
-              {a.version ? ` (${a.version.split(' ')[0]})` : ''}
-              {a.installed ? '' : ' — not installed'}
-            </option>
-          ))}
-        </select>
+        <div className="mb-6 grid grid-cols-2 gap-2">
+          <select
+            id="task-agent"
+            value={agentId}
+            onChange={(e) => setAgentId(e.target.value)}
+            className="input-field"
+          >
+            {agents.map((a) => (
+              <option key={a.id} value={a.id} disabled={!a.installed}>
+                {a.displayName}
+                {a.installed ? '' : ' — not installed'}
+              </option>
+            ))}
+          </select>
+          <select
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+            className="input-field"
+            title="Model"
+          >
+            {MODEL_OPTIONS.map((m) => (
+              <option key={m.value} value={m.value}>
+                {m.label}
+              </option>
+            ))}
+          </select>
+        </div>
 
         <div className="flex justify-end gap-2">
           <button type="button" onClick={onClose} className="btn-ghost border-transparent">

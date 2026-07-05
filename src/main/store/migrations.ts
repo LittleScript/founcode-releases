@@ -118,4 +118,13 @@ export const MIGRATIONS: Migration[] = [
       CREATE INDEX idx_bp_messages ON blueprint_messages(blueprint_id, phase);
     `,
   },
+  {
+    version: 6,
+    // Per-task / per-blueprint model override (null = use the app
+    // default / the agent CLI's own default).
+    sql: `
+      ALTER TABLE tasks ADD COLUMN model TEXT;
+      ALTER TABLE blueprints ADD COLUMN model TEXT;
+    `,
+  },
 ]

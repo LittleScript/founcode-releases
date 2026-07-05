@@ -13,6 +13,7 @@ import type {
   ChatPhase,
   TechPref,
 } from './blueprint-types'
+import type { AppSettings } from './settings-types'
 import type { AgentEvent, AgentInfo, AppInfo, Artifact, Project, Task, TaskState } from './types'
 
 // ---- invoke (request/response) ----
@@ -25,9 +26,11 @@ export interface IpcInvokeMap {
   'project:createGreenfield': { args: { parentDir: string; name: string }; result: Project }
   'project:list': { args: undefined; result: Project[] }
   'task:create': {
-    args: { projectId: string; title: string; intent: string; agentId: string }
+    args: { projectId: string; title: string; intent: string; agentId: string; model?: string }
     result: Task
   }
+  'settings:get': { args: undefined; result: AppSettings }
+  'settings:set': { args: Partial<AppSettings>; result: AppSettings }
   'task:list': { args: { projectId?: string }; result: Task[] }
   'task:get': { args: { taskId: string }; result: Task | null }
   'task:startPlanning': { args: { taskId: string }; result: undefined }
@@ -49,6 +52,7 @@ export interface IpcInvokeMap {
       mode?: BlueprintMode
       techPref: TechPref
       agentId: string
+      model?: string
       advanceMode?: 'manual' | 'auto'
     }
     result: Blueprint
@@ -99,6 +103,8 @@ export const IPC_INVOKE_CHANNELS: readonly IpcInvokeChannel[] = [
   'project:createGreenfield',
   'project:list',
   'task:create',
+  'settings:get',
+  'settings:set',
   'task:list',
   'task:get',
   'task:startPlanning',

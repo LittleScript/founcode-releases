@@ -72,6 +72,7 @@ export interface Blueprint {
   idea: string
   mode: BlueprintMode
   techPref: TechPref
+  model: string | null
   answers: BlueprintAnswer[] | null
   structure: BlueprintStructure | null
   prd: string | null

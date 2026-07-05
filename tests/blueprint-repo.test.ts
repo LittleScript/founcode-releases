@@ -32,6 +32,8 @@ describe('BlueprintRepo', () => {
     const bp = create()
     expect(bp.state).toBe('IDEA')
     expect(bp.advanceMode).toBe('manual')
+    expect(bp.mode).toBe('greenfield')
+    expect(bp.model).toBeNull()
     expect(bp.techPref).toEqual({ mode: 'auto' })
     expect(blueprints.get(bp.id)).toEqual(bp)
   })

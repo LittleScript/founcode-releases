@@ -317,6 +317,7 @@ export class BlueprintOrchestrator {
         title: spec.title,
         intent: spec.intent,
         agentId: bp.agentId,
+        model: bp.model,
         blueprintId: bp.id,
         orderIndex: index,
       })
@@ -421,6 +422,7 @@ export class BlueprintOrchestrator {
         cwd: project.path,
         prompt,
         mode: 'read',
+        model: bp.model ?? undefined,
         abortSignal: controller.signal,
       })) {
         this.deps.broadcastEvent({ blueprintId, event })

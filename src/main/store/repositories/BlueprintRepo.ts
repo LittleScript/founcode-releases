@@ -15,6 +15,7 @@ interface BlueprintRow {
   title: string
   idea: string
   mode: string
+  model: string | null
   tech_pref: string
   answers: string | null
   structure: string | null
@@ -33,6 +34,7 @@ function toBlueprint(row: BlueprintRow): Blueprint {
     title: row.title,
     idea: row.idea,
     mode: (row.mode ?? 'greenfield') as BlueprintMode,
+    model: row.model,
     techPref: JSON.parse(row.tech_pref) as TechPref,
     answers: row.answers ? (JSON.parse(row.answers) as BlueprintAnswer[]) : null,
     structure: row.structure ? (JSON.parse(row.structure) as BlueprintStructure) : null,
@@ -52,6 +54,7 @@ export interface CreateBlueprintInput {
   techPref: TechPref
   agentId: string
   mode?: BlueprintMode
+  model?: string | null
   advanceMode?: 'manual' | 'auto'
 }
 
@@ -66,6 +69,7 @@ export class BlueprintRepo {
       title: input.title,
       idea: input.idea,
       mode: input.mode ?? 'greenfield',
+      model: input.model ?? null,
       techPref: input.techPref,
       answers: null,
       structure: null,
@@ -79,8 +83,8 @@ export class BlueprintRepo {
     this.db
       .prepare(
         `INSERT INTO blueprints
-         (id, project_id, title, idea, mode, tech_pref, advance_mode, agent_id, state, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (id, project_id, title, idea, mode, model, tech_pref, advance_mode, agent_id, state, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         bp.id,
@@ -88,6 +92,7 @@ export class BlueprintRepo {
         bp.title,
         bp.idea,
         bp.mode,
+        bp.model,
         JSON.stringify(bp.techPref),
         bp.advanceMode,
         bp.agentId,

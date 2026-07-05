@@ -143,10 +143,11 @@ Keputusan (5 Jul): nama **Blueprint**; sequential feeding **manual + auto (toggl
 
 ## Fase 6 — Licensing, Packaging, Polish (F6)
 
+- [x] **F6.1 Settings page + model AI** (5 Jul): SettingsRepo (key/value di tabel settings), IPC `settings:get/set`; **Settings page** (agen default + model default + placeholder license/tema); **pilihan model per-task/blueprint** (migration 006 `model` di tasks+blueprints; dropdown di New Task & New Blueprint, default dari settings); plumbing `--model` ke ClaudeCodeAdapter (`AgentRunOptions.model`); task blueprint inherit model; 4 test baru (113 total). MODEL_OPTIONS: Default/Opus/Sonnet/Haiku (alias, future-proof)
 - [ ] Keputusan final: Lemon Squeezy vs Paddle (bandingkan fee + dukungan merchant Indonesia) → buat produk & tier
 - [ ] `LicenseService`: activate, re-validasi 24 jam, offline grace 7 hari, simpan via safeStorage
 - [ ] Enforcement Free tier di Orchestrator: 1 task aktif, 1 project, auto-advance = Pro (+ unit test)
-- [ ] UI: Settings page (license, pilihan agen default, tema) + upgrade prompt yang sopan
+- [ ] UI: Settings page — tambah license + tema (Settings page dasar sudah ada) + upgrade prompt yang sopan
 - [ ] electron-builder: NSIS installer + portable zip, icon & branding Founcode
 - [ ] electron-updater + repo GitHub Releases publik
 - [ ] E2E Playwright: alur penuh dengan MockAgentAdapter

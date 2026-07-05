@@ -93,6 +93,7 @@ export class ClaudeCodeAdapter implements AgentAdapter {
       '--output-format',
       'stream-json',
       '--verbose',
+      ...(opts.model ? ['--model', opts.model] : []),
       ...(modeArgs[opts.mode] ?? modeArgs.read),
     ]
 

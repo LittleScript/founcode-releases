@@ -5,6 +5,7 @@ type View =
   | { name: 'board' }
   | { name: 'task'; taskId: string }
   | { name: 'blueprint'; blueprintId: string }
+  | { name: 'settings' }
 
 interface AppState {
   view: View
@@ -16,10 +17,16 @@ interface AppState {
   init: () => Promise<void>
   addProject: () => Promise<void>
   setActiveProject: (id: string) => Promise<void>
-  createTask: (input: { title: string; intent: string; agentId: string }) => Promise<void>
+  createTask: (input: {
+    title: string
+    intent: string
+    agentId: string
+    model?: string
+  }) => Promise<void>
   refreshTasks: () => Promise<void>
   openTask: (taskId: string) => void
   openBlueprint: (blueprintId: string) => void
+  openSettings: () => void
   goBoard: () => void
   clearError: () => void
 }
@@ -55,11 +62,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     await get().refreshTasks()
   },
 
-  createTask: async ({ title, intent, agentId }) => {
+  createTask: async ({ title, intent, agentId, model }) => {
     const projectId = get().activeProjectId
     if (!projectId) return
     try {
-      await window.founcode.invoke('task:create', { projectId, title, intent, agentId })
+      await window.founcode.invoke('task:create', { projectId, title, intent, agentId, model })
       await get().refreshTasks()
     } catch (error) {
       set({ error: (error as Error).message })
@@ -78,6 +85,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   openTask: (taskId) => set({ view: { name: 'task', taskId } }),
   openBlueprint: (blueprintId) => set({ view: { name: 'blueprint', blueprintId } }),
+  openSettings: () => set({ view: { name: 'settings' } }),
   goBoard: () => set({ view: { name: 'board' } }),
   clearError: () => set({ error: null }),
 }))
