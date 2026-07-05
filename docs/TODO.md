@@ -144,6 +144,7 @@ Keputusan (5 Jul): nama **Blueprint**; sequential feeding **manual + auto (toggl
 ## Fase 6 — Licensing, Packaging, Polish (F6)
 
 - [x] **F6.1 Settings page + model AI** (5 Jul): SettingsRepo (key/value di tabel settings), IPC `settings:get/set`; **Settings page** (agen default + model default + placeholder license/tema); **pilihan model per-task/blueprint** (migration 006 `model` di tasks+blueprints; dropdown di New Task & New Blueprint, default dari settings); plumbing `--model` ke ClaudeCodeAdapter (`AgentRunOptions.model`); task blueprint inherit model; 4 test baru (113 total). MODEL_OPTIONS: Default/Opus/Sonnet/Haiku (alias, future-proof)
+- [x] **F6.2 Multi-agent adapters** (6 Jul): OpenCode + Codex + Gemini (keputusan Koko — sebelum launch, perkuat free tier). `cliResolver` bersama (exe > real-binary npm > cmd shim; prompt TIDAK PERNAH lewat argv cmd.exe), `TextCliAdapter` base (stdout teks → events + resultText). **OpenCode TERUJI vs CLI asli** (pong 11s) = gateway GLM/DeepSeek/Qwen/Kimi/lokal via `provider/model`. Codex (`exec` + sandbox) & Gemini (`--approval-mode`) sesuai kontrak dokumentasi, unit-tested, validasi nyata menunggu CLI terinstal. `ModelField` per-agen (dropdown Claude, free-text lainnya). 116 test
 - [ ] Keputusan final: Lemon Squeezy vs Paddle (bandingkan fee + dukungan merchant Indonesia) → buat produk & tier
 - [ ] `LicenseService`: activate, re-validasi 24 jam, offline grace 7 hari, simpan via safeStorage
 - [ ] Enforcement Free tier di Orchestrator: 1 task aktif, 1 project, auto-advance = Pro (+ unit test)
