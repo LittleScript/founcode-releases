@@ -43,6 +43,63 @@ function buildValidPlan(prompt: string): string {
   ].join('\n')
 }
 
+function fence(obj: unknown): string {
+  return `Here is the result.\n\n\`\`\`json\n${JSON.stringify(obj, null, 2)}\n\`\`\`\n`
+}
+
+function buildBlueprintOutput(kind: string): string {
+  switch (kind) {
+    case 'questions':
+      return fence({
+        questions: [
+          { question: 'Who is the primary user?', options: ['Customer', 'Admin'], allowSkip: true },
+          {
+            question: 'First success moment?',
+            options: ['See list', 'Book a slot', 'Pay'],
+            allowSkip: true,
+          },
+        ],
+      })
+    case 'structure':
+      return fence({
+        features: [
+          {
+            name: 'Browse',
+            priority: 'high',
+            description: 'View listings',
+            subFeatures: [{ name: 'List page' }, { name: 'Detail page' }],
+          },
+          {
+            name: 'Booking',
+            priority: 'high',
+            description: 'Reserve a slot',
+            subFeatures: [{ name: 'Pick slot' }, { name: 'Pay' }],
+          },
+        ],
+      })
+    case 'tasks':
+      return fence({
+        tasks: [
+          {
+            title: 'Scaffold project',
+            intent: 'Set up the base app structure with routing.',
+            feature: 'Browse',
+            priority: 'high',
+          },
+          {
+            title: 'Build list page',
+            intent: 'Create the listing page with mock data.',
+            feature: 'Browse',
+            priority: 'high',
+          },
+        ],
+      })
+    default:
+      // prd / revise -> markdown, not json
+      return '# PRD — Mock Product\n\n## Overview\nA mock PRD generated for testing.\n\n## Tech Stack\nNext.js, SQLite.\n'
+  }
+}
+
 export class MockAgentAdapter implements AgentAdapter {
   readonly id = 'mock'
   readonly displayName = 'Mock Agent (testing)'
@@ -76,6 +133,16 @@ export class MockAgentAdapter implements AgentAdapter {
       writeFileSync(file, `Mock execution output\nPrompt excerpt: ${opts.prompt.slice(0, 80)}\n`)
       yield { type: 'file_change', path: file, kind: 'create' }
       const resultText = 'Implemented the plan: created mock-execution.txt as requested.'
+      yield { type: 'text', content: resultText }
+      yield { type: 'done', exitCode: 0, costUsd: 0, resultText }
+      return
+    }
+
+    // Blueprint generative steps route on the founcode:gen marker the
+    // prompt templates carry.
+    const gen = opts.prompt.match(/founcode:gen=(\w+)/)?.[1]
+    if (gen) {
+      const resultText = buildBlueprintOutput(gen)
       yield { type: 'text', content: resultText }
       yield { type: 'done', exitCode: 0, costUsd: 0, resultText }
       return

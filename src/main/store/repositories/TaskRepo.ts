@@ -12,6 +12,8 @@ interface TaskRow {
   branch: string | null
   worktree: string | null
   base_ref: string | null
+  blueprint_id: string | null
+  order_index: number | null
   retry_count: number
   created_at: number
   updated_at: number
@@ -28,6 +30,8 @@ function toTask(row: TaskRow): Task {
     branch: row.branch,
     worktree: row.worktree,
     baseRef: row.base_ref,
+    blueprintId: row.blueprint_id,
+    orderIndex: row.order_index,
     retryCount: row.retry_count,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -39,6 +43,9 @@ export interface CreateTaskInput {
   title: string
   intent: string
   agentId: string
+  // Set when the task originates from a Blueprint (sequential feeding).
+  blueprintId?: string
+  orderIndex?: number
 }
 
 export class TaskRepo {
@@ -56,14 +63,16 @@ export class TaskRepo {
       branch: null,
       worktree: null,
       baseRef: null,
+      blueprintId: input.blueprintId ?? null,
+      orderIndex: input.orderIndex ?? null,
       retryCount: 0,
       createdAt: now,
       updatedAt: now,
     }
     this.db
       .prepare(
-        `INSERT INTO tasks (id, project_id, title, intent, agent_id, state, branch, worktree, retry_count, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO tasks (id, project_id, title, intent, agent_id, state, branch, worktree, blueprint_id, order_index, retry_count, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         task.id,
@@ -74,11 +83,20 @@ export class TaskRepo {
         task.state,
         task.branch,
         task.worktree,
+        task.blueprintId,
+        task.orderIndex,
         task.retryCount,
         task.createdAt,
         task.updatedAt,
       )
     return task
+  }
+
+  listByBlueprint(blueprintId: string): Task[] {
+    const rows = this.db
+      .prepare('SELECT * FROM tasks WHERE blueprint_id = ? ORDER BY order_index ASC')
+      .all(blueprintId) as unknown as TaskRow[]
+    return rows.map(toTask)
   }
 
   list(projectId?: string): Task[] {

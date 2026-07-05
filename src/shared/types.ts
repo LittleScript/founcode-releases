@@ -32,6 +32,8 @@ export interface Task {
   branch: string | null
   worktree: string | null
   baseRef: string | null
+  blueprintId: string | null
+  orderIndex: number | null
   retryCount: number
   createdAt: number
   updatedAt: number
