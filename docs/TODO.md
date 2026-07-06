@@ -165,6 +165,16 @@ Keputusan (5 Jul): nama **Blueprint**; sequential feeding **manual + auto (toggl
 - [x] Kanal feedback: GitHub Issues di founcode-releases (tercantum di README + release notes)
 - [ ] Post launch: Product Hunt, X/Twitter, r/ClaudeAI, komunitas dev Indonesia
 
+## v1.1 — CHAT-FIRST + BUILT-IN SKILLS (permintaan Koko 6 Jul, headline berikutnya)
+
+Visi: frontend Founcode = **chat dengan AI** (seperti ChatGPT) sebagai pintu masuk. User diskusi dulu (tanya-tanya project, ide, pengembangan); ketika siap, chat MENGHUBUNGKAN langsung ke pipeline P-E-V (buat blueprint dari diskusi / buat task / buka project). Chat sadar-konteks: melihat daftar project, PRD, status task. Satu app terhubung ke semua fitur.
+
+- [ ] **C1 — Chat home**: view Chat jadi layar utama; sesi chat persisten (tabel `chat_sessions` + `chat_messages`); agent read-mode + model murah default; konteks = daftar project + ringkasan PRD + status task
+- [ ] **C2 — Action chips**: balasan AI bisa mengusulkan aksi nyata → tombol "✦ Jadikan Blueprint" (idea pre-filled dari ringkasan diskusi), "+ Buat Task", "Buka Project X" (pola reuse: splitChatReply + delimiter seperti ChatPanel blueprint)
+- [ ] **C3 — Built-in skills**: permak skills terpilih jadi milik Founcode (prompt pack `prompts/skills/*.md`, ditulis ulang gaya Founcode): Design (frontend-design), Research (researcher), Debug (systematic-debugging), TDD, Security Review, Architecture (codebase-design+scalability). Dipakai: (a) dipanggil di chat via `/skill`, (b) opsi "skill" per-task yang disuntik ke prompt Plan/Execute
+- [ ] **C4 — Skills UI**: picker skill di New Task + chat; Settings menampilkan daftar skill built-in
+- [ ] **C5 — Wiring penuh**: chat → blueprint → build → kembali ke chat ("project X selesai task #3")
+
 ## P1 — Fast Follow (setelah v1.0, JANGAN dikerjakan lebih awal)
 
 - [x] ~~Adapter OpenAI Codex CLI / Gemini CLI / OpenCode~~ → DITARIK ke F6.2 atas keputusan Koko (selesai 6 Jul; Gemini CLI mati → diganti Antigravity)
