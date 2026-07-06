@@ -1,5 +1,5 @@
 import { join } from 'node:path'
-import { app, BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow, dialog, shell } from 'electron'
 import { createServices, registerIpcHandlers } from './ipc/handlers'
 import { openDatabase } from './store/db'
 
@@ -82,7 +82,24 @@ app.whenReady().then(() => {
         // land on .default instead of the namespace object.
         const autoUpdater = m.autoUpdater ?? m.default?.autoUpdater
         if (!autoUpdater) throw new Error('electron-updater interop: autoUpdater not found')
-        return autoUpdater.checkForUpdatesAndNotify()
+        // Assisted (non-oneClick) NSIS installs don't reliably apply on
+        // quit — ask explicitly and install silently on confirmation.
+        autoUpdater.on('update-downloaded', (info) => {
+          void dialog
+            .showMessageBox(BrowserWindow.getAllWindows()[0] ?? (undefined as never), {
+              type: 'info',
+              buttons: ['Restart now', 'Later'],
+              defaultId: 0,
+              cancelId: 1,
+              title: 'Update ready',
+              message: `Founcode ${info.version} has been downloaded.`,
+              detail: 'Restart to apply the update.',
+            })
+            .then(({ response }) => {
+              if (response === 0) autoUpdater.quitAndInstall(true, true)
+            })
+        })
+        return autoUpdater.checkForUpdates()
       })
       .catch((error) => console.error('[updater]', error))
   }
