@@ -149,7 +149,7 @@ Keputusan (5 Jul): nama **Blueprint**; sequential feeding **manual + auto (toggl
 - [x] Logo resmi dari Koko dipasang sebagai app icon (`build/logo-source.png` → icon.png; gen-icon.mjs pakai logo resmi bila ada)
 - [x] **F6.3 electron-builder: NSIS installer + portable zip** (6 Jul): `npm run dist` → `Founcode-Setup-0.5.0.exe` (100MB, < target 120MB) + zip + latest.yml. Icon generated (`scripts/gen-icon.mjs`, motif F/ + pipeline rail). Deps dirapikan (renderer→devDeps, main externalized via externalizeDepsPlugin). **Smoke test paketan LOLOS** (jalan + DB migrasi di `%APPDATA%\Founcode`). Auto-updater wired (packaged-only, non-fatal)
 - [x] **F6.5** (6 Jul): repo publik `founcode-releases` DIBUAT; installer di-rebuild dengan .ico dari logo resmi; **Playwright E2E** (`npm run test:e2e`, `_electron` + `FOUNCODE_USER_DATA` throwaway) — onboarding, dialog blueprint 5 agen, DB fresh; 3/3 pass ~3s; fix versi app (build-time `__APP_VERSION__`)
-- [ ] Updater E2E penuh: upload release v0.5.0 ke founcode-releases + tes update dari versi lama (butuh 2 versi — lakukan saat rilis v0.5.1)
+- [x] **Updater E2E penuh TERBUKTI DI PRODUKSI** (6 Jul): app 1.0.2 → cek GitHub → download v1.1.0 (100MB, sha512 verified) → install → registry 1.1.0. Catatan sejarah: updater ≤1.0.1 mati total (bug interop CJS `{autoUpdater}` destructure); 1.1.0+ pakai dialog eksplisit "Restart now" → `quitAndInstall(true,true)`. Gotcha test: `.VersionInfo` PowerShell DI-CACHE per sesi — verifikasi versi pakai registry uninstall key
 - [ ] E2E Playwright: alur penuh dengan MockAgentAdapter
 - [ ] QA manual di Windows 11 VM bersih (checklist §QA di bawah)
 - [ ] README.md publik + docs singkat cara pakai
@@ -169,11 +169,7 @@ Keputusan (5 Jul): nama **Blueprint**; sequential feeding **manual + auto (toggl
 
 Visi: frontend Founcode = **chat dengan AI** (seperti ChatGPT) sebagai pintu masuk. User diskusi dulu (tanya-tanya project, ide, pengembangan); ketika siap, chat MENGHUBUNGKAN langsung ke pipeline P-E-V (buat blueprint dari diskusi / buat task / buka project). Chat sadar-konteks: melihat daftar project, PRD, status task. Satu app terhubung ke semua fitur.
 
-- [ ] **C1 — Chat home**: view Chat jadi layar utama; sesi chat persisten (tabel `chat_sessions` + `chat_messages`); agent read-mode + model murah default; konteks = daftar project + ringkasan PRD + status task
-- [ ] **C2 — Action chips**: balasan AI bisa mengusulkan aksi nyata → tombol "✦ Jadikan Blueprint" (idea pre-filled dari ringkasan diskusi), "+ Buat Task", "Buka Project X" (pola reuse: splitChatReply + delimiter seperti ChatPanel blueprint)
-- [ ] **C3 — Built-in skills**: permak skills terpilih jadi milik Founcode (prompt pack `prompts/skills/*.md`, ditulis ulang gaya Founcode): Design (frontend-design), Research (researcher), Debug (systematic-debugging), TDD, Security Review, Architecture (codebase-design+scalability). Dipakai: (a) dipanggil di chat via `/skill`, (b) opsi "skill" per-task yang disuntik ke prompt Plan/Execute
-- [ ] **C4 — Skills UI**: picker skill di New Task + chat; Settings menampilkan daftar skill built-in
-- [ ] **C5 — Wiring penuh**: chat → blueprint → build → kembali ke chat ("project X selesai task #3")
+- [x] **C1–C5 SELESAI — dirilis sebagai v1.1.0 (6 Jul)**: Chat home persisten (migration 007) + action chips (protokol `===ACTIONS===`: blueprint_from_idea/create_task/add_task_to_blueprint/pause_auto/resume_auto/start_next/open_project — bisa STEER blueprint yang sedang jalan) + 6 built-in skills (migration 008 `tasks.skill`, injeksi Plan+Execute, `/slash` di chat, picker di New Task, daftar di Settings) + WorkspaceStrip live (pipeline→chat) + hapus sesi + Agent Setup guide di Settings. Chat E2E Claude asli lolos 6.5s (assistant melihat workspace). 139 test. Release: github .../releases/tag/v1.1.0
 
 ## P1 — Fast Follow (setelah v1.0, JANGAN dikerjakan lebih awal)
 
