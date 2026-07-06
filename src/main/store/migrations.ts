@@ -127,4 +127,35 @@ export const MIGRATIONS: Migration[] = [
       ALTER TABLE blueprints ADD COLUMN model TEXT;
     `,
   },
+  {
+    version: 7,
+    // Chat-first home (v1.1 C1): persistent discussion sessions. A
+    // session may be bound to a project (null = global). Assistant
+    // messages can carry proposed actions (json array) that the user
+    // triggers as chips — the bridge from discussion into the P-E-V
+    // pipeline.
+    sql: `
+      CREATE TABLE chat_sessions (
+        id         TEXT PRIMARY KEY,
+        project_id TEXT REFERENCES projects(id),
+        title      TEXT NOT NULL,
+        agent_id   TEXT NOT NULL,
+        model      TEXT,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+      );
+
+      CREATE TABLE chat_messages (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        session_id TEXT NOT NULL REFERENCES chat_sessions(id),
+        role       TEXT NOT NULL,   -- 'user' | 'assistant'
+        content    TEXT NOT NULL,
+        actions    TEXT,            -- json: ChatAction[] proposed by the assistant
+        created_at INTEGER NOT NULL
+      );
+
+      CREATE INDEX idx_chat_messages_session ON chat_messages(session_id);
+      CREATE INDEX idx_chat_sessions_updated ON chat_sessions(updated_at);
+    `,
+  },
 ]

@@ -7,6 +7,7 @@ import type { IpcEventMap, IpcInvokeMap } from '../../shared/ipc-contract'
 import { AgentRegistry } from '../agents/AgentRegistry'
 import { MockAgentAdapter } from '../agents/mock/MockAgentAdapter'
 import { BlueprintOrchestrator } from '../blueprint/BlueprintOrchestrator'
+import { ChatOrchestrator } from '../chat/ChatOrchestrator'
 import { createGreenfieldRepo } from '../git/createGreenfieldRepo'
 import { WorktreeManager } from '../git/WorktreeManager'
 import { LemonSqueezyVendor } from '../license/LemonSqueezyVendor'
@@ -15,6 +16,7 @@ import { Orchestrator } from '../orchestrator/Orchestrator'
 import { type Database, getSchemaVersion } from '../store/db'
 import { ArtifactRepo } from '../store/repositories/ArtifactRepo'
 import { BlueprintRepo } from '../store/repositories/BlueprintRepo'
+import { ChatRepo } from '../store/repositories/ChatRepo'
 import { ProjectRepo } from '../store/repositories/ProjectRepo'
 import { SettingsRepo } from '../store/repositories/SettingsRepo'
 import { TaskRepo } from '../store/repositories/TaskRepo'
@@ -43,6 +45,7 @@ export interface MainServices {
   registry: AgentRegistry
   orchestrator: Orchestrator
   blueprintOrchestrator: BlueprintOrchestrator
+  chatOrchestrator: ChatOrchestrator
   license: LicenseService
 }
 
@@ -111,6 +114,18 @@ export function createServices(
     startTaskPlanning: (taskId) => orchestrator.startPlanning(taskId),
     getTier: () => license.getTier(),
   })
+  const chatOrchestrator = new ChatOrchestrator({
+    chat: new ChatRepo(db),
+    projects,
+    tasks,
+    blueprints,
+    registry,
+    settings,
+    fallbackCwd: worktreesDir,
+    broadcastEvent: (payload) => broadcast('chat:event', payload),
+    pingUpdated: (sessionId) => broadcast('chat:updated', { sessionId }),
+    startNextTask: (blueprintId) => blueprintOrchestrator.startNextTask(blueprintId),
+  })
   return {
     projects,
     tasks,
@@ -120,6 +135,7 @@ export function createServices(
     registry,
     orchestrator,
     blueprintOrchestrator,
+    chatOrchestrator,
     license,
   }
 }
@@ -337,6 +353,28 @@ export function registerIpcHandlers(db: Database, dbPath: string, services: Main
 
   handle('blueprint:retry', ({ blueprintId }) => {
     bo.retry(blueprintId)
+    return undefined
+  })
+
+  // ---- Chat-first home ----
+  const chat = services.chatOrchestrator
+
+  handle('chat:createSession', ({ projectId }) => chat.createSession(projectId))
+
+  handle('chat:listSessions', () => chat.listSessions())
+
+  handle('chat:messages', ({ sessionId }) => chat.listMessages(sessionId))
+
+  handle('chat:send', ({ sessionId, content }) => {
+    if (!content.trim()) throw new Error('Message is empty')
+    chat.send(sessionId, content.trim())
+    return undefined
+  })
+
+  handle('chat:runAction', ({ sessionId, action }) => chat.runAction(sessionId, action))
+
+  handle('chat:deleteSession', ({ sessionId }) => {
+    chat.deleteSession(sessionId)
     return undefined
   })
 }

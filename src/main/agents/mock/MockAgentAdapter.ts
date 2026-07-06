@@ -109,6 +109,19 @@ function buildBlueprintOutput(kind: string, prompt = ''): string {
       }
       return reply
     }
+    case 'homechat': {
+      // Home-chat reply; '[mock:action]' in the user message makes it
+      // propose an actionable next step (tests the chip pipeline).
+      const reply = 'Great idea — let me summarize what we discussed.'
+      if (prompt.includes('[mock:action]')) {
+        return `${reply}\n===ACTIONS===\n[{"type":"blueprint_from_idea","idea":"A mock app from our chat","title":"Mock App"}]`
+      }
+      if (prompt.includes('[mock:pause]')) {
+        const bpId = prompt.match(/Blueprint "[^"]+" — id: (\S+),/)?.[1] ?? 'unknown'
+        return `${reply}\n===ACTIONS===\n[{"type":"pause_auto","blueprintId":"${bpId}"}]`
+      }
+      return reply
+    }
     default:
       // prd / revise -> markdown, not json
       return '# PRD — Mock Product\n\n## Overview\nA mock PRD generated for testing.\n\n## Tech Stack\nNext.js, SQLite.\n'

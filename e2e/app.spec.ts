@@ -23,21 +23,17 @@ test.afterAll(async () => {
   rmSync(userData, { recursive: true, force: true })
 })
 
-test('boots to onboarding with both entry points', async () => {
+test('boots to the chat home (the new front door)', async () => {
   const window = await app.firstWindow()
   await window.waitForLoadState('domcontentloaded')
 
-  // Fresh install -> onboarding hero + the two entry CTAs.
-  await expect(window.getByText('Trust what your agents ship.')).toBeVisible()
+  // Fresh install -> chat-first home with the empty-state pitch.
+  await expect(window.getByText('What do you want to build?')).toBeVisible()
   await expect(window.getByRole('button', { name: /Start from an idea/ })).toBeVisible()
-  await expect(window.getByRole('button', { name: /Add existing project/ })).toBeVisible()
+  await expect(window.getByRole('button', { name: /New chat/ })).toBeVisible()
+  await expect(window.getByPlaceholder(/Discuss an idea/)).toBeVisible()
 
-  // The three-phase explainer cards render.
-  for (const phase of ['Plan', 'Execute', 'Verify']) {
-    await expect(window.getByRole('heading', { name: phase, exact: true })).toBeVisible()
-  }
-
-  await window.screenshot({ path: 'e2e/artifacts/onboarding.png' })
+  await window.screenshot({ path: 'e2e/artifacts/chat-home.png' })
 })
 
 test('New-from-Idea dialog opens with mode choices and agent list', async () => {

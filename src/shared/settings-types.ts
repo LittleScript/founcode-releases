@@ -56,10 +56,22 @@ export const AGENT_MODELS: Record<string, AgentModelSpec> = {
       { value: 'zhipu/glm-5', label: 'GLM 5 (Zhipu)', hint: 'Stabil, murah' },
       { value: 'qwen/qwen3-coder', label: 'Qwen3 Coder', hint: 'Dioptimalkan untuk kode' },
       { value: 'moonshotai/kimi-k2.6', label: 'Kimi K2.6', hint: 'Agentic, context panjang' },
-      { value: 'mistral/devstral-2', label: 'Devstral 2 (Mistral)', hint: 'Agentic coding, EU-hosted' },
-      { value: 'anthropic/claude-sonnet-4-6', label: 'Claude Sonnet 4.6', hint: 'Via API key Anthropic' },
+      {
+        value: 'mistral/devstral-2',
+        label: 'Devstral 2 (Mistral)',
+        hint: 'Agentic coding, EU-hosted',
+      },
+      {
+        value: 'anthropic/claude-sonnet-4-6',
+        label: 'Claude Sonnet 4.6',
+        hint: 'Via API key Anthropic',
+      },
       { value: 'openai/gpt-5', label: 'GPT-5', hint: 'Via API key OpenAI' },
-      { value: 'ollama/qwen3-coder', label: 'Qwen3 Coder (Ollama)', hint: 'LOKAL — gratis, offline' },
+      {
+        value: 'ollama/qwen3-coder',
+        label: 'Qwen3 Coder (Ollama)',
+        hint: 'LOKAL — gratis, offline',
+      },
       {
         value: 'openrouter/deepseek/deepseek-chat',
         label: 'DeepSeek via OpenRouter',

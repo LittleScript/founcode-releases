@@ -9,13 +9,20 @@ const EXAMPLES = [
   'Aplikasi booking lapangan padel: customer pilih lapangan & bayar, admin cek slot & konfirmasi.',
 ]
 
-export function NewBlueprintDialog({ onClose }: { onClose: () => void }) {
+export function NewBlueprintDialog({
+  onClose,
+  initial,
+}: {
+  onClose: () => void
+  // Pre-fill from the chat home ("Turn into a Blueprint" chip).
+  initial?: { idea?: string; title?: string }
+}) {
   const activeProjectId = useAppStore((s) => s.activeProjectId)
   const projects = useAppStore((s) => s.projects)
   const openBlueprint = useAppStore((s) => s.openBlueprint)
   const activeProject = projects.find((p) => p.id === activeProjectId)
 
-  const [idea, setIdea] = useState('')
+  const [idea, setIdea] = useState(initial?.idea ?? '')
   const [techMode, setTechMode] = useState<'auto' | 'manual'>('auto')
   const [stack, setStack] = useState('')
   const [agents, setAgents] = useState<AgentInfo[]>([])

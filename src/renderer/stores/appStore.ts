@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { Project, Task } from '../../shared/types'
 
 type View =
+  | { name: 'chat' }
   | { name: 'board' }
   | { name: 'task'; taskId: string }
   | { name: 'blueprint'; blueprintId: string }
@@ -28,11 +29,13 @@ interface AppState {
   openBlueprint: (blueprintId: string) => void
   openSettings: () => void
   goBoard: () => void
+  goChat: () => void
   clearError: () => void
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
-  view: { name: 'board' },
+  // Chat is the front door — discussion first, pipeline when ready.
+  view: { name: 'chat' },
   projects: [],
   activeProjectId: null,
   tasks: [],
@@ -87,5 +90,6 @@ export const useAppStore = create<AppState>((set, get) => ({
   openBlueprint: (blueprintId) => set({ view: { name: 'blueprint', blueprintId } }),
   openSettings: () => set({ view: { name: 'settings' } }),
   goBoard: () => set({ view: { name: 'board' } }),
+  goChat: () => set({ view: { name: 'chat' } }),
   clearError: () => set({ error: null }),
 }))

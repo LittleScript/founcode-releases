@@ -13,6 +13,7 @@ import type {
   ChatPhase,
   TechPref,
 } from './blueprint-types'
+import type { ChatAction, ChatMessage, ChatSession } from './chat-types'
 import type { LicenseState } from './license-types'
 import type { AppSettings } from './settings-types'
 import type { AgentEvent, AgentInfo, AppInfo, Artifact, Project, Task, TaskState } from './types'
@@ -95,6 +96,16 @@ export interface IpcInvokeMap {
   }
   'blueprint:startNext': { args: { blueprintId: string }; result: undefined }
   'blueprint:retry': { args: { blueprintId: string }; result: undefined }
+  // Chat-first home
+  'chat:createSession': { args: { projectId?: string | null }; result: ChatSession }
+  'chat:listSessions': { args: undefined; result: ChatSession[] }
+  'chat:messages': { args: { sessionId: string }; result: ChatMessage[] }
+  'chat:send': { args: { sessionId: string; content: string }; result: undefined }
+  'chat:runAction': {
+    args: { sessionId: string; action: ChatAction }
+    result: { ok: boolean; message: string }
+  }
+  'chat:deleteSession': { args: { sessionId: string }; result: undefined }
 }
 
 export type IpcInvokeChannel = keyof IpcInvokeMap
@@ -141,6 +152,12 @@ export const IPC_INVOKE_CHANNELS: readonly IpcInvokeChannel[] = [
   'blueprint:startImplementation',
   'blueprint:startNext',
   'blueprint:retry',
+  'chat:createSession',
+  'chat:listSessions',
+  'chat:messages',
+  'chat:send',
+  'chat:runAction',
+  'chat:deleteSession',
 ]
 
 // ---- events (main -> renderer stream) ----
@@ -150,6 +167,8 @@ export interface IpcEventMap {
   'task:stateChanged': { taskId: string; from: TaskState; to: TaskState }
   'blueprint:event': { blueprintId: string; event: AgentEvent }
   'blueprint:stateChanged': { blueprintId: string; from: BlueprintState; to: BlueprintState }
+  'chat:event': { sessionId: string; event: AgentEvent }
+  'chat:updated': { sessionId: string }
 }
 
 export type IpcEventChannel = keyof IpcEventMap
@@ -159,6 +178,8 @@ export const IPC_EVENT_CHANNELS: readonly IpcEventChannel[] = [
   'task:stateChanged',
   'blueprint:event',
   'blueprint:stateChanged',
+  'chat:event',
+  'chat:updated',
 ]
 
 // ---- API surface exposed on window.founcode by the preload ----

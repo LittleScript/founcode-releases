@@ -4,6 +4,7 @@ import logoUrl from './assets/logo.png'
 import wordmarkUrl from './assets/wordmark.png'
 import { BlueprintStudio } from './pages/BlueprintStudio'
 import { Board } from './pages/Board'
+import { ChatPage } from './pages/ChatPage'
 import { Onboarding } from './pages/Onboarding'
 import { Settings } from './pages/Settings'
 import { TaskDetail } from './pages/TaskDetail'
@@ -31,6 +32,8 @@ function Sidebar({ info }: { info: AppInfo | null }) {
   const setActiveProject = useAppStore((s) => s.setActiveProject)
   const addProject = useAppStore((s) => s.addProject)
   const openSettings = useAppStore((s) => s.openSettings)
+  const goChat = useAppStore((s) => s.goChat)
+  const view = useAppStore((s) => s.view)
   const tasks = useAppStore((s) => s.tasks)
 
   const liveCount = tasks.filter((t) =>
@@ -40,6 +43,20 @@ function Sidebar({ info }: { info: AppInfo | null }) {
   return (
     <aside className="flex w-60 shrink-0 flex-col border-r border-edge bg-surface-raised/60">
       <Wordmark />
+
+      <div className="px-2">
+        <button
+          type="button"
+          onClick={goChat}
+          className={`w-full rounded-md px-3 py-2 text-left text-sm transition-colors duration-150 ${
+            view.name === 'chat'
+              ? 'bg-surface-hover text-slate-100'
+              : 'text-slate-400 hover:bg-surface-hover/60 hover:text-slate-200'
+          }`}
+        >
+          <span className="pl-1.5">💬 Chat</span>
+        </button>
+      </div>
 
       <div className="field-label px-4 pt-3">Projects</div>
       <nav className="flex flex-col gap-0.5 px-2">
@@ -145,11 +162,16 @@ export default function App() {
       useBlueprintStore.getState().refresh()
       refreshTasks()
     })
+    // Chat streaming, keyed by sessionId — survives view switches.
+    const offChatEvents = window.founcode.on('chat:event', ({ sessionId, event }) => {
+      useLogStore.getState().append(sessionId, event)
+    })
     return () => {
       offState()
       offEvents()
       offBpEvents()
       offBpState()
+      offChatEvents()
     }
   }, [init, refreshTasks])
 
@@ -166,7 +188,9 @@ export default function App() {
   return (
     <div className="flex h-screen">
       <Sidebar info={info} />
-      {projects.length === 0 ? (
+      {view.name === 'chat' ? (
+        <ChatPage />
+      ) : projects.length === 0 ? (
         <Onboarding />
       ) : view.name === 'task' ? (
         <TaskDetail taskId={view.taskId} />
