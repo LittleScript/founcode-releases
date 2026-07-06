@@ -77,7 +77,13 @@ app.whenReady().then(() => {
   // non-fatal — the app must never be blocked by the updater.
   if (app.isPackaged) {
     import('electron-updater')
-      .then(({ autoUpdater }) => autoUpdater.checkForUpdatesAndNotify())
+      .then((m) => {
+        // electron-updater is CJS; under bundler interop its exports can
+        // land on .default instead of the namespace object.
+        const autoUpdater = m.autoUpdater ?? m.default?.autoUpdater
+        if (!autoUpdater) throw new Error('electron-updater interop: autoUpdater not found')
+        return autoUpdater.checkForUpdatesAndNotify()
+      })
       .catch((error) => console.error('[updater]', error))
   }
 
