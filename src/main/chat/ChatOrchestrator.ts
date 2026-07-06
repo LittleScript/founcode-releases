@@ -6,8 +6,10 @@
 
 import homeTemplate from '../../../prompts/chat/home.md?raw'
 import type { ChatAction, ChatMessage, ChatSession } from '../../shared/chat-types'
+import { parseSlashSkill } from '../../shared/skills-types'
 import type { AgentEvent } from '../../shared/types'
 import type { AgentRegistry } from '../agents/AgentRegistry'
+import { skillSection } from '../skills/skillPacks'
 import type { BlueprintRepo } from '../store/repositories/BlueprintRepo'
 import type { ChatRepo } from '../store/repositories/ChatRepo'
 import type { ProjectRepo } from '../store/repositories/ProjectRepo'
@@ -75,10 +77,16 @@ export class ChatOrchestrator {
     if (isFirst) this.deps.chat.setTitle(sessionId, content.split('\n')[0] ?? content)
     this.deps.pingUpdated(sessionId)
 
-    void this.runReply(session, content)
+    // "/debug why does login loop" -> apply the debug skill pack.
+    const { skillId, rest } = parseSlashSkill(content)
+    void this.runReply(session, skillId ? rest || content : content, skillId)
   }
 
-  private async runReply(session: ChatSession, message: string): Promise<void> {
+  private async runReply(
+    session: ChatSession,
+    message: string,
+    skillId: string | null = null,
+  ): Promise<void> {
     const sessionId = session.id
     const adapter = this.deps.registry.get(session.agentId)
     if (!adapter) {
@@ -93,10 +101,11 @@ export class ChatOrchestrator {
       .map((m) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
       .join('\n\n')
 
-    const prompt = homeTemplate
-      .replace('{{context}}', this.buildContext(session))
-      .replace('{{history}}', history || '(new conversation)')
-      .replace('{{message}}', message)
+    const prompt =
+      homeTemplate
+        .replace('{{context}}', this.buildContext(session))
+        .replace('{{history}}', history || '(new conversation)')
+        .replace('{{message}}', message) + skillSection(skillId)
 
     const project = session.projectId ? this.deps.projects.get(session.projectId) : undefined
     const cwd = project?.path ?? this.deps.projects.list()[0]?.path ?? this.deps.fallbackCwd

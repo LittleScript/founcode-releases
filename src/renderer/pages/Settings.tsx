@@ -1,8 +1,41 @@
 import { useEffect, useState } from 'react'
 import type { LicenseState } from '../../shared/license-types'
 import { type AppSettings, MODEL_OPTIONS } from '../../shared/settings-types'
+import { SKILLS } from '../../shared/skills-types'
 import type { AgentInfo } from '../../shared/types'
 import { useAppStore } from '../stores/appStore'
+
+// Per-agent setup guidance — auth always lives in the CLI, not Founcode.
+const AGENT_SETUP = [
+  {
+    id: 'claude-code',
+    name: 'Claude Code',
+    install: 'npm install -g @anthropic-ai/claude-code',
+    login: 'claude  (browser login — Pro/Max plan or Anthropic API key)',
+    auth: 'Anthropic account',
+  },
+  {
+    id: 'opencode',
+    name: 'OpenCode',
+    install: 'npm install -g opencode-ai',
+    login: 'opencode auth login  (pick a provider, paste its API key)',
+    auth: '75+ providers / API keys',
+  },
+  {
+    id: 'codex',
+    name: 'Codex (OpenAI)',
+    install: 'npm install -g @openai/codex',
+    login: 'codex  (sign in with your ChatGPT plan, or API key)',
+    auth: 'ChatGPT account',
+  },
+  {
+    id: 'antigravity',
+    name: 'Antigravity (Google)',
+    install: 'iwr -useb https://antigravity.dev/install.ps1 | iex',
+    login: 'av  (Google account login)',
+    auth: 'Google account',
+  },
+]
 
 export function Settings() {
   const goBoard = useAppStore((s) => s.goBoard)
@@ -68,6 +101,80 @@ export function Settings() {
           <p className="font-mono text-slate-600 text-sm">loading…</p>
         ) : (
           <div className="flex flex-col gap-8">
+            {/* Agent setup guide */}
+            <section>
+              <div className="mb-1 flex items-center gap-3">
+                <h2 className="font-medium text-slate-100 text-sm">Agents</h2>
+                <button
+                  type="button"
+                  onClick={() =>
+                    window.founcode.invoke('agent:listInstalled', undefined).then(setAgents)
+                  }
+                  className="rounded border border-edge px-2 py-0.5 font-mono text-[10px] text-slate-400 transition-colors hover:border-edge-2 hover:text-slate-200"
+                >
+                  ↻ re-detect
+                </button>
+              </div>
+              <p className="mb-3 text-slate-500 text-xs">
+                Founcode orchestrates agent CLIs you install and log into yourself — your
+                subscriptions and API keys stay in each CLI, never in Founcode.
+              </p>
+              <div className="grid gap-2">
+                {AGENT_SETUP.map((guide) => {
+                  const detected = agents.find((a) => a.id === guide.id)
+                  return (
+                    <div key={guide.id} className="rounded-lg border border-edge p-3">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-slate-200 text-sm">{guide.name}</span>
+                        {detected?.installed ? (
+                          <span className="rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 font-mono text-[10px] text-accent">
+                            installed{detected.version ? ` · ${detected.version}` : ''}
+                          </span>
+                        ) : (
+                          <span className="rounded-full border border-edge px-2 py-0.5 font-mono text-[10px] text-slate-500">
+                            not detected
+                          </span>
+                        )}
+                        <span className="ml-auto text-[11px] text-slate-500">{guide.auth}</span>
+                      </div>
+                      {!detected?.installed && (
+                        <div className="mt-2 space-y-1 font-mono text-[11px] text-slate-400">
+                          <div>
+                            <span className="text-slate-600">install: </span>
+                            {guide.install}
+                          </div>
+                          <div>
+                            <span className="text-slate-600">login: </span>
+                            {guide.login}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </section>
+
+            {/* Built-in skills */}
+            <section>
+              <h2 className="mb-1 font-medium text-slate-100 text-sm">Built-in skills</h2>
+              <p className="mb-3 text-slate-500 text-xs">
+                Working methods the agent applies. Pick one per task, or use them in chat:{' '}
+                <code className="text-slate-400">/debug why does login loop?</code>
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {SKILLS.map((s) => (
+                  <div key={s.id} className="rounded-lg border border-edge p-3">
+                    <div className="flex items-baseline gap-2">
+                      <span className="font-medium text-slate-200 text-sm">{s.name}</span>
+                      <code className="font-mono text-[10px] text-accent">/{s.id}</code>
+                    </div>
+                    <p className="mt-1 text-[11px] text-slate-500 leading-snug">{s.description}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+
             {/* Default agent */}
             <section>
               <h2 className="mb-1 font-medium text-slate-100 text-sm">Default agent</h2>

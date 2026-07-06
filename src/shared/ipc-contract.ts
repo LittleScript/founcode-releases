@@ -28,7 +28,14 @@ export interface IpcInvokeMap {
   'project:createGreenfield': { args: { parentDir: string; name: string }; result: Project }
   'project:list': { args: undefined; result: Project[] }
   'task:create': {
-    args: { projectId: string; title: string; intent: string; agentId: string; model?: string }
+    args: {
+      projectId: string
+      title: string
+      intent: string
+      agentId: string
+      model?: string
+      skill?: string
+    }
     result: Task
   }
   'settings:get': { args: undefined; result: AppSettings }

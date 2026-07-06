@@ -158,4 +158,10 @@ export const MIGRATIONS: Migration[] = [
       CREATE INDEX idx_chat_sessions_updated ON chat_sessions(updated_at);
     `,
   },
+  {
+    version: 8,
+    // Built-in skills (v1.1 C3): optional per-task skill pack injected
+    // into the plan/execute prompts.
+    sql: 'ALTER TABLE tasks ADD COLUMN skill TEXT;',
+  },
 ]

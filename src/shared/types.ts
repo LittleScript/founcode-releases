@@ -35,6 +35,8 @@ export interface Task {
   blueprintId: string | null
   orderIndex: number | null
   model: string | null
+  // Built-in Founcode skill applied to this task's plan+execute prompts.
+  skill: string | null
   retryCount: number
   createdAt: number
   updatedAt: number

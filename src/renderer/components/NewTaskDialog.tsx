@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { SKILLS } from '../../shared/skills-types'
 import type { AgentInfo } from '../../shared/types'
 import { useAppStore } from '../stores/appStore'
 import { ModelField } from './ModelField'
@@ -10,6 +11,7 @@ export function NewTaskDialog({ onClose }: { onClose: () => void }) {
   const [agents, setAgents] = useState<AgentInfo[]>([])
   const [agentId, setAgentId] = useState('claude-code')
   const [model, setModel] = useState('')
+  const [skill, setSkill] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
@@ -26,7 +28,13 @@ export function NewTaskDialog({ onClose }: { onClose: () => void }) {
   async function submit() {
     if (!canSubmit) return
     setSubmitting(true)
-    await createTask({ title: title.trim(), intent: intent.trim(), agentId, model })
+    await createTask({
+      title: title.trim(),
+      intent: intent.trim(),
+      agentId,
+      model,
+      skill: skill || undefined,
+    })
     setSubmitting(false)
     onClose()
   }
@@ -86,6 +94,23 @@ export function NewTaskDialog({ onClose }: { onClose: () => void }) {
           </select>
           <ModelField agentId={agentId} value={model} onChange={setModel} />
         </div>
+
+        <label className="field-label" htmlFor="task-skill">
+          Skill (optional) — a working method the agent applies
+        </label>
+        <select
+          id="task-skill"
+          value={skill}
+          onChange={(e) => setSkill(e.target.value)}
+          className="input-field mb-6"
+        >
+          <option value="">None</option>
+          {SKILLS.map((s) => (
+            <option key={s.id} value={s.id} title={s.description}>
+              {s.name} — {s.description}
+            </option>
+          ))}
+        </select>
 
         <div className="flex justify-end gap-2">
           <button type="button" onClick={onClose} className="btn-ghost border-transparent">

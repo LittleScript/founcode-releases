@@ -3,9 +3,65 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { ChatAction, ChatMessage, ChatSession } from '../../shared/chat-types'
 import { MAIN_SIDE_ACTIONS } from '../../shared/chat-types'
+import type { Task, TaskState } from '../../shared/types'
 import { NewBlueprintDialog } from '../components/blueprint/NewBlueprintDialog'
 import { useAppStore } from '../stores/appStore'
 import { NO_LINES, useLogStore } from '../stores/logStore'
+
+// Pipeline → chat visibility: a slim strip of everything alive in the
+// workspace right now, clickable straight into the task.
+const LIVE_STATES: TaskState[] = [
+  'PLANNING',
+  'EXECUTING',
+  'VERIFYING',
+  'AWAITING_APPROVAL',
+  'REVIEW',
+]
+
+function WorkspaceStrip() {
+  const openTask = useAppStore((s) => s.openTask)
+  const [live, setLive] = useState<Task[]>([])
+
+  const reload = useCallback(async () => {
+    const all = await window.founcode.invoke('task:list', {})
+    setLive(all.filter((t) => LIVE_STATES.includes(t.state)))
+  }, [])
+
+  useEffect(() => {
+    void reload()
+    return window.founcode.on('task:stateChanged', () => void reload())
+  }, [reload])
+
+  if (live.length === 0) return null
+  return (
+    <div className="flex items-center gap-2 overflow-x-auto border-edge border-b bg-surface-raised/40 px-4 py-2">
+      <span className="live-dot size-1.5 shrink-0 rounded-full bg-accent" />
+      <span className="shrink-0 font-mono text-[10px] text-slate-500 uppercase tracking-wider">
+        live
+      </span>
+      {live.map((t) => (
+        <button
+          key={t.id}
+          type="button"
+          onClick={() => openTask(t.id)}
+          className="shrink-0 rounded-full border border-edge bg-surface px-2.5 py-1 font-mono text-[10px] text-slate-400 transition-colors hover:border-edge-2 hover:text-slate-200"
+          title={t.intent}
+        >
+          <span
+            className={
+              t.state === 'REVIEW' || t.state === 'AWAITING_APPROVAL'
+                ? 'text-amber-300'
+                : 'text-accent'
+            }
+          >
+            {t.state}
+          </span>{' '}
+          {t.title.slice(0, 32)}
+        </button>
+      ))}
+    </div>
+  )
+}
 
 const ACTION_LABELS: Record<ChatAction['type'], string> = {
   blueprint_from_idea: '✦ Turn into a Blueprint',
@@ -171,25 +227,42 @@ export function ChatPage() {
         </div>
         <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 pb-3">
           {sessions.map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => setActiveId(s.id)}
-              className={`w-full truncate rounded-md px-3 py-2 text-left text-[13px] transition-colors ${
-                s.id === activeId
-                  ? 'bg-surface-hover text-slate-100'
-                  : 'text-slate-400 hover:bg-surface-hover/60 hover:text-slate-200'
-              }`}
-              title={s.title}
-            >
-              {s.title}
-            </button>
+            <div key={s.id} className="group relative">
+              <button
+                type="button"
+                onClick={() => setActiveId(s.id)}
+                className={`w-full truncate rounded-md px-3 py-2 pr-7 text-left text-[13px] transition-colors ${
+                  s.id === activeId
+                    ? 'bg-surface-hover text-slate-100'
+                    : 'text-slate-400 hover:bg-surface-hover/60 hover:text-slate-200'
+                }`}
+                title={s.title}
+              >
+                {s.title}
+              </button>
+              <button
+                type="button"
+                aria-label="Delete chat"
+                onClick={async () => {
+                  await window.founcode.invoke('chat:deleteSession', { sessionId: s.id })
+                  const list = await reloadSessions()
+                  if (s.id === activeId) {
+                    setActiveId(list[0]?.id ?? null)
+                    setMessages([])
+                  }
+                }}
+                className="absolute top-1.5 right-1.5 hidden rounded px-1.5 py-0.5 text-slate-600 text-xs hover:bg-red-950/40 hover:text-red-300 group-hover:block"
+              >
+                ✕
+              </button>
+            </div>
           ))}
         </nav>
       </aside>
 
       {/* thread */}
       <div className="flex flex-1 flex-col">
+        <WorkspaceStrip />
         <div className="flex-1 overflow-y-auto">
           <div className="mx-auto max-w-3xl space-y-4 px-6 py-6">
             {messages.length === 0 && !pending && (

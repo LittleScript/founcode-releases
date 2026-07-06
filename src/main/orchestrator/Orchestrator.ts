@@ -10,6 +10,7 @@ import type { AgentEvent, Task } from '../../shared/types'
 import type { AgentAdapter, AgentRunOptions } from '../agents/AgentAdapter'
 import type { AgentRegistry } from '../agents/AgentRegistry'
 import type { WorktreeManager } from '../git/WorktreeManager'
+import { skillSection } from '../skills/skillPacks'
 import type { ArtifactRepo } from '../store/repositories/ArtifactRepo'
 import type { ProjectRepo } from '../store/repositories/ProjectRepo'
 import type { TaskRepo } from '../store/repositories/TaskRepo'
@@ -248,7 +249,7 @@ export class Orchestrator {
         })
       }
 
-      let prompt = executeTemplate.replace('{{plan}}', plan.content)
+      let prompt = executeTemplate.replace('{{plan}}', plan.content) + skillSection(task.skill)
       if (fixInstructions) {
         prompt += `\n\n## Fix required\nYour previous attempt is already in this worktree. Do NOT start over — fix it according to these findings:\n\n${fixInstructions}\n`
       }
@@ -427,7 +428,8 @@ export class Orchestrator {
           task,
           feedback,
           formatErrors,
-          this.deps.getPlanContext?.(task),
+          // Blueprint context (PRD etc.) + the task's active skill pack.
+          (this.deps.getPlanContext?.(task) ?? '') + skillSection(task.skill),
         )
         const result = await this.collect(taskId, adapter, {
           cwd: project.path,
