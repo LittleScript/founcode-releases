@@ -158,11 +158,12 @@ Keputusan (5 Jul): nama **Blueprint**; sequential feeding **manual + auto (toggl
 
 ## Fase 7 — Launch (v1.0)
 
-- [ ] Landing page founcode (nama domain: riset & beli) — bisa pakai skill build-premium-website
-- [ ] Harga final Pro tier (PRD §7: target $8–12/bln, harus < $20)
-- [ ] Rilis v1.0.0 di GitHub Releases + Lemon Squeezy/Paddle live
+- [x] **Rilis v1.0.0 PUBLIK** (6 Jul): https://github.com/LittleScript/founcode-releases/releases/tag/v1.0.0 — installer + zip + `latest.yml` (auto-update feed aktif untuk versi berikutnya) + release notes + README publik repo releases (logo, pitch, free-vs-pro, install, FAQ SmartScreen)
+- [x] Landing page DIBANGUN (`website/` — static HTML+CSS, Mission Control, hero + rail animasi + pipeline + blueprint + agents + pricing + CTA; zero build step, siap deploy Vercel/Netlify/Pages). SISA: domain (riset & beli — founcode.com/founcode.dev/founcode.app?) + deploy
+- [ ] Harga Pro: **$10/bln diusulkan & tercantum di landing** ("Coming soon") — final saat Lemon Squeezy live
+- [ ] Lemon Squeezy live: Koko buat akun + store + produk → isi STORE_ID/PRODUCT_ID di `LemonSqueezyVendor.ts` → tes activate nyata
+- [x] Kanal feedback: GitHub Issues di founcode-releases (tercantum di README + release notes)
 - [ ] Post launch: Product Hunt, X/Twitter, r/ClaudeAI, komunitas dev Indonesia
-- [ ] Setup kanal feedback (GitHub Issues publik / Discord)
 
 ## P1 — Fast Follow (setelah v1.0, JANGAN dikerjakan lebih awal)
 

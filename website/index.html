@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Founcode — Trust what your agents ship</title>
+  <meta name="description" content="The Windows-first desktop orchestrator for AI coding agents. Every task is planned, executed in isolation, and independently verified before it touches your branch." />
+  <meta property="og:title" content="Founcode — Trust what your agents ship" />
+  <meta property="og:description" content="Idea → PRD → tasks → verified code. Orchestrate Claude Code, OpenCode, Codex & Antigravity through one disciplined pipeline." />
+  <meta property="og:type" content="website" />
+  <link rel="icon" type="image/png" href="logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="scanline" aria-hidden="true"></div>
+
+  <!-- ======================= NAV ======================= -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <div class="wordmark">
+        <img src="logo.png" alt="" width="30" height="30" />
+        <div>
+          <span class="wordmark-name">Founcode</span>
+          <span class="wordmark-tag">plan · exec · verify</span>
+        </div>
+      </div>
+      <div class="nav-links">
+        <a href="#pipeline">Pipeline</a>
+        <a href="#blueprint">Blueprint</a>
+        <a href="#agents">Agents</a>
+        <a href="#pricing">Pricing</a>
+        <a class="nav-cta" href="https://github.com/LittleScript/founcode-releases/releases/latest">Download</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ======================= HERO ======================= -->
+  <header class="hero">
+    <p class="hero-kicker rise" style="--d:0">WINDOWS-FIRST · LOCAL-FIRST · VERIFICATION-FIRST</p>
+    <h1 class="rise" style="--d:1">Trust what your<br/><span class="glow">agents ship.</span></h1>
+    <p class="hero-sub rise" style="--d:2">
+      AI coding agents are powerful but unsupervised. Founcode turns them into a disciplined
+      pipeline — every task is <b>planned</b>, executed in an <b>isolated worktree</b>, and
+      <b>independently verified</b> before it reaches your branch.
+    </p>
+    <div class="hero-actions rise" style="--d:3">
+      <a class="btn-primary" href="https://github.com/LittleScript/founcode-releases/releases/latest">⬇ Download for Windows — Free</a>
+      <a class="btn-ghost" href="#pipeline">How it works</a>
+    </div>
+    <p class="hero-meta rise" style="--d:4">Windows 10/11 · bring your own agent CLI · your code never leaves your machine</p>
+
+    <!-- animated pipeline rail -->
+    <div class="rail rise" style="--d:5" aria-hidden="true">
+      <span class="rail-seg plan"><i></i>PLAN</span>
+      <span class="rail-gate">◆</span>
+      <span class="rail-seg exec"><i></i>EXECUTE</span>
+      <span class="rail-seg verify"><i></i>VERIFY</span>
+      <span class="rail-gate">◆</span>
+      <span class="rail-seg done"><i></i>MERGE</span>
+    </div>
+  </header>
+
+  <!-- ======================= PROBLEM ======================= -->
+  <section class="strip">
+    <div class="strip-inner">
+      <p><span class="strip-x">✕</span> Agents edit your working tree directly</p>
+      <p><span class="strip-x">✕</span> "Done" means <em>the agent says so</em></p>
+      <p><span class="strip-x">✕</span> One prompt, whole codebase in context, quality rots</p>
+    </div>
+  </section>
+
+  <!-- ======================= PIPELINE ======================= -->
+  <section id="pipeline" class="section">
+    <p class="section-kicker">THE PIPELINE</p>
+    <h2>Five gates between an idea<br/>and your branch.</h2>
+    <div class="steps">
+      <article class="step">
+        <span class="step-n" style="--c:var(--blue)">01</span>
+        <h3>Blueprint</h3>
+        <p>Describe what you want in plain words. Founcode interviews you, drafts a structure map and a full PRD, then decomposes it into an ordered task graph.</p>
+      </article>
+      <article class="step">
+        <span class="step-n" style="--c:var(--blue)">02</span>
+        <h3>Plan</h3>
+        <p>The agent analyzes your repo <b>read-only</b> and drafts a reviewable plan. Nothing is written until you approve it.</p>
+      </article>
+      <article class="step">
+        <span class="step-n" style="--c:var(--violet)">03</span>
+        <h3>Execute</h3>
+        <p>Work happens in an <b>isolated git worktree</b>. Your branch, your staged changes, your flow — never touched mid-flight.</p>
+      </article>
+      <article class="step">
+        <span class="step-n" style="--c:var(--purple)">04</span>
+        <h3>Verify</h3>
+        <p>A <b>separate agent run</b> checks the work against the plan and runs your build &amp; tests. Failures loop back automatically — capped, never unattended.</p>
+      </article>
+      <article class="step">
+        <span class="step-n" style="--c:var(--green)">05</span>
+        <h3>Merge</h3>
+        <p>One click — only after verification passed and <b>you</b> reviewed the diff. The worktree is cleaned. No junk branches, ever.</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ======================= BLUEPRINT ======================= -->
+  <section id="blueprint" class="section section-alt">
+    <p class="section-kicker">✦ BLUEPRINT</p>
+    <h2>From <em>"I want to build…"</em><br/>to a verified app.</h2>
+    <p class="section-sub">
+      Most tools assume you already have a spec. Founcode starts earlier: it asks the questions a good
+      engineer would ask, shows you the product structure as a node graph, writes the PRD, and feeds the
+      agent one task at a time with the PRD as shared context — so task #9 still knows what task #1 built.
+    </p>
+    <div class="bp-grid">
+      <div class="bp-card"><b>Greenfield</b><span>Idea → fresh repo → app, end to end.</span></div>
+      <div class="bp-card"><b>Extend</b><span>Half-built project? It analyzes the code and plans the remaining work toward your goal.</span></div>
+      <div class="bp-card"><b>Document</b><span>Inherited a codebase with no docs? Reverse-engineer a PRD from what exists.</span></div>
+      <div class="bp-card"><b>Discuss</b><span>Chat with the agent about the structure and PRD — every revision regenerates in place.</span></div>
+    </div>
+  </section>
+
+  <!-- ======================= AGENTS ======================= -->
+  <section id="agents" class="section">
+    <p class="section-kicker">MULTI-AGENT — FREE</p>
+    <h2>Bring the agent you<br/>already pay for.</h2>
+    <p class="section-sub">One pipeline, four adapters. Pick per task, mix within a project.</p>
+    <div class="agents">
+      <div class="agent"><b>Claude Code</b><span>Opus · Sonnet · Haiku</span></div>
+      <div class="agent"><b>OpenCode</b><span>75+ providers — DeepSeek, GLM, Qwen, Kimi, local Ollama…</span></div>
+      <div class="agent"><b>Codex</b><span>OpenAI GPT-5 Codex family</span></div>
+      <div class="agent"><b>Antigravity</b><span>Google Gemini 3 family</span></div>
+    </div>
+  </section>
+
+  <!-- ======================= PRICING ======================= -->
+  <section id="pricing" class="section section-alt">
+    <p class="section-kicker">PRICING</p>
+    <h2>Free to trust.<br/>Pro to parallelize.</h2>
+    <div class="plans">
+      <div class="plan">
+        <h3>Free</h3>
+        <p class="price">$0<span> forever</span></p>
+        <ul>
+          <li>Full Blueprint → Plan → Execute → Verify pipeline</li>
+          <li>All agents &amp; models</li>
+          <li>1 project · 1 task at a time</li>
+          <li>Local-first — works offline</li>
+        </ul>
+        <a class="btn-ghost wide" href="https://github.com/LittleScript/founcode-releases/releases/latest">Download</a>
+      </div>
+      <div class="plan plan-pro">
+        <span class="plan-badge">PRO</span>
+        <h3>Pro</h3>
+        <p class="price">$10<span>/month</span></p>
+        <ul>
+          <li>Everything in Free</li>
+          <li><b>Unlimited projects</b></li>
+          <li><b>Parallel tasks</b> — run agents side by side</li>
+          <li><b>Auto-advance</b> — Blueprint builds task after task</li>
+        </ul>
+        <a class="btn-primary wide" href="https://github.com/LittleScript/founcode-releases/releases/latest">Coming soon — start Free</a>
+      </div>
+    </div>
+    <p class="pricing-note">Your code and API keys never touch our servers. Founcode orchestrates the CLIs you already trust.</p>
+  </section>
+
+  <!-- ======================= CTA ======================= -->
+  <section class="cta">
+    <h2>Stop reviewing after the fact.</h2>
+    <p>Put five gates between your agents and your branch.</p>
+    <a class="btn-primary" href="https://github.com/LittleScript/founcode-releases/releases/latest">⬇ Download Founcode — Free</a>
+  </section>
+
+  <footer class="footer">
+    <span>© 2026 21Kent</span>
+    <span class="footer-dot">·</span>
+    <a href="https://github.com/LittleScript/founcode-releases">Releases</a>
+    <span class="footer-dot">·</span>
+    <a href="https://github.com/LittleScript/founcode-releases/issues">Feedback</a>
+    <span class="footer-dot">·</span>
+    <span>Not affiliated with Anthropic, OpenAI, or Google.</span>
+  </footer>
+</body>
+</html>
