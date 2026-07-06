@@ -95,6 +95,19 @@ export class ChatRepo {
       .run(title.slice(0, 60), Date.now(), id)
   }
 
+  // Per-chat agent/model switching (like any AI chat app).
+  updateSession(id: string, patch: { agentId?: string; model?: string | null }): void {
+    if (patch.agentId !== undefined) {
+      this.db.prepare('UPDATE chat_sessions SET agent_id = ? WHERE id = ?').run(patch.agentId, id)
+    }
+    if (patch.model !== undefined) {
+      this.db
+        .prepare('UPDATE chat_sessions SET model = ? WHERE id = ?')
+        .run(patch.model === '' ? null : patch.model, id)
+    }
+    this.touch(id)
+  }
+
   touch(id: string): void {
     this.db.prepare('UPDATE chat_sessions SET updated_at = ? WHERE id = ?').run(Date.now(), id)
   }

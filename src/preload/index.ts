@@ -1,7 +1,7 @@
 // Preload — the only bridge between renderer and main. Channels are
 // allowlisted against the shared IPC contract; anything else is rejected.
 
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import { type FouncodeApi, IPC_EVENT_CHANNELS, IPC_INVOKE_CHANNELS } from '../shared/ipc-contract'
 
 const api: FouncodeApi = {
@@ -20,6 +20,9 @@ const api: FouncodeApi = {
     ipcRenderer.on(channel, wrapped)
     return () => ipcRenderer.removeListener(channel, wrapped)
   },
+  // Drag-and-drop: File objects no longer expose .path in modern
+  // Electron; this is the sanctioned way to resolve the real path.
+  getPathForFile: (file) => webUtils.getPathForFile(file),
 }
 
 contextBridge.exposeInMainWorld('founcode', api)

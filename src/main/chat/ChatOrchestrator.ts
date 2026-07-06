@@ -66,6 +66,13 @@ export class ChatOrchestrator {
     this.deps.chat.deleteSession(sessionId)
   }
 
+  updateSession(sessionId: string, patch: { agentId?: string; model?: string }): ChatSession {
+    this.deps.chat.updateSession(sessionId, patch)
+    const session = this.deps.chat.getSession(sessionId)
+    if (!session) throw new Error(`Chat session not found: ${sessionId}`)
+    return { ...session, busy: this.active.has(sessionId) }
+  }
+
   send(sessionId: string, content: string): void {
     const session = this.deps.chat.getSession(sessionId)
     if (!session) throw new Error(`Chat session not found: ${sessionId}`)

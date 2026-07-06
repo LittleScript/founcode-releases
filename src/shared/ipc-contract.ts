@@ -113,6 +113,10 @@ export interface IpcInvokeMap {
     result: { ok: boolean; message: string }
   }
   'chat:deleteSession': { args: { sessionId: string }; result: undefined }
+  'chat:updateSession': {
+    args: { sessionId: string; agentId?: string; model?: string }
+    result: ChatSession
+  }
 }
 
 export type IpcInvokeChannel = keyof IpcInvokeMap
@@ -165,6 +169,7 @@ export const IPC_INVOKE_CHANNELS: readonly IpcInvokeChannel[] = [
   'chat:send',
   'chat:runAction',
   'chat:deleteSession',
+  'chat:updateSession',
 ]
 
 // ---- events (main -> renderer stream) ----
@@ -197,4 +202,6 @@ export interface FouncodeApi {
     args: IpcInvokeMap[C]['args'],
   ): Promise<IpcInvokeMap[C]['result']>
   on<C extends IpcEventChannel>(channel: C, listener: (payload: IpcEventMap[C]) => void): () => void
+  // Resolves a dropped File to its real filesystem path (webUtils).
+  getPathForFile(file: File): string
 }

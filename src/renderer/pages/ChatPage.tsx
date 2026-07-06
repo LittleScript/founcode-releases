@@ -4,8 +4,9 @@ import remarkGfm from 'remark-gfm'
 import type { ChatAction, ChatMessage, ChatSession } from '../../shared/chat-types'
 import { MAIN_SIDE_ACTIONS } from '../../shared/chat-types'
 import { SKILLS } from '../../shared/skills-types'
-import type { Task, TaskState } from '../../shared/types'
+import type { AgentInfo, Task, TaskState } from '../../shared/types'
 import { NewBlueprintDialog } from '../components/blueprint/NewBlueprintDialog'
+import { ModelField } from '../components/ModelField'
 import { useAppStore } from '../stores/appStore'
 import { NO_LINES, useLogStore } from '../stores/logStore'
 
@@ -198,6 +199,48 @@ function ActionChips({
           {results[i] && <span className="font-mono text-[11px] text-slate-500">{results[i]}</span>}
         </div>
       ))}
+    </div>
+  )
+}
+
+// Per-chat agent + model switcher (like any AI chat app). Changes apply
+// from the next message onward.
+function AgentModelBar({ session, onChanged }: { session: ChatSession; onChanged: () => void }) {
+  const [agents, setAgents] = useState<AgentInfo[]>([])
+  useEffect(() => {
+    window.founcode.invoke('agent:listInstalled', undefined).then(setAgents)
+  }, [])
+
+  async function patch(p: { agentId?: string; model?: string }) {
+    await window.founcode.invoke('chat:updateSession', { sessionId: session.id, ...p })
+    onChanged()
+  }
+
+  return (
+    <div className="mt-2 flex items-center gap-2">
+      <select
+        value={session.agentId}
+        onChange={(e) => void patch({ agentId: e.target.value, model: '' })}
+        className="input-field !w-auto !py-1 text-[11px]"
+        title="Agent for this chat"
+      >
+        {agents.map((a) => (
+          <option key={a.id} value={a.id} disabled={!a.installed}>
+            {a.displayName}
+            {a.installed ? '' : ' — not installed'}
+          </option>
+        ))}
+      </select>
+      <div className="max-w-xs flex-1 [&_input]:!py-1 [&_input]:text-[11px] [&_select]:!py-1 [&_select]:text-[11px]">
+        <ModelField
+          agentId={session.agentId}
+          value={session.model ?? ''}
+          onChange={(v) => void patch({ model: v })}
+        />
+      </div>
+      <span className="ml-auto font-mono text-[10px] text-slate-600">
+        drop files here — paths are shared with the agent
+      </span>
     </div>
   )
 }
@@ -418,7 +461,21 @@ export function ChatPage() {
         </div>
 
         {/* composer */}
-        <div className="border-edge border-t bg-surface-raised/40 px-6 py-4">
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: drag-and-drop file target, not an interactive control */}
+        <div
+          className="border-edge border-t bg-surface-raised/40 px-6 py-4"
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            e.preventDefault()
+            const refs = Array.from(e.dataTransfer.files)
+              .map((f) => window.founcode.getPathForFile(f))
+              .filter(Boolean)
+              .map((p) => `@"${p}"`)
+            if (refs.length > 0) {
+              setDraft((d) => `${d}${d && !d.endsWith('\n') ? '\n' : ''}${refs.join('\n')}\n`)
+            }
+          }}
+        >
           <div className="relative mx-auto max-w-3xl">
             {slashFilter !== null && slashMatches.length > 0 && (
               <SlashMenu filter={slashFilter} selected={slashIndex} onPick={pickSlash} />
@@ -467,6 +524,12 @@ export function ChatPage() {
               }
               className="input-field w-full resize-none text-[13.5px] disabled:opacity-60"
             />
+            {(() => {
+              const active = sessions.find((s) => s.id === activeId)
+              return active ? (
+                <AgentModelBar session={active} onChanged={() => void reloadSessions()} />
+              ) : null
+            })()}
           </div>
         </div>
       </div>

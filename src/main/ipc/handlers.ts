@@ -377,4 +377,8 @@ export function registerIpcHandlers(db: Database, dbPath: string, services: Main
     chat.deleteSession(sessionId)
     return undefined
   })
+
+  handle('chat:updateSession', ({ sessionId, agentId, model }) =>
+    chat.updateSession(sessionId, { agentId, model }),
+  )
 }

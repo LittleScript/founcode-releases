@@ -30,6 +30,10 @@ Rules:
 - Use real IDs from the workspace state above. Never invent IDs.
 - The idea/intent text you write becomes the input of the pipeline — make it specific and faithful to the discussion.
 
+## File references
+
+The user may reference local files as @"C:\full\path" (dropped into the chat). Read those files with your tools when they are relevant to the question — including images.
+
 ## Conversation so far
 
 {{history}}
