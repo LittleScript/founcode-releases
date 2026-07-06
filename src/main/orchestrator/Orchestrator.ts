@@ -42,6 +42,8 @@ export interface OrchestratorDeps {
   // Blueprint tasks skip the per-task plan-approval gate (the PRD review
   // was the human gate; review returns at the verify/merge step).
   shouldAutoApprovePlan?: (task: Task) => boolean
+  // Free tier runs one task at a time; Pro runs in parallel.
+  getTier?: () => 'free' | 'pro'
 }
 
 interface CollectResult {
@@ -69,11 +71,22 @@ export class Orchestrator {
     return updated
   }
 
+  // Free tier: one task in flight at a time. Called before any action
+  // that would put another task to work.
+  private ensureCapacity(): void {
+    if (this.deps.getTier?.() === 'free' && this.deps.tasks.countActive() >= 1) {
+      throw new Error(
+        'Free plan runs one task at a time — wait for the active task to finish, or upgrade to Pro for parallel tasks.',
+      )
+    }
+  }
+
   // Kicks off planning and returns immediately; progress streams to the
   // renderer via task:event, completion via task:stateChanged.
   startPlanning(taskId: string, feedback?: string): void {
     const task = this.deps.tasks.get(taskId)
     if (!task) throw new Error(`Task not found: ${taskId}`)
+    this.ensureCapacity()
     this.applyAction(
       taskId,
       task.state === 'AWAITING_APPROVAL' ? 'request_replan' : 'start_planning',
@@ -119,6 +132,7 @@ export class Orchestrator {
   }
 
   sendBack(taskId: string, feedback: string): Task {
+    this.ensureCapacity()
     const updated = this.applyAction(taskId, 'send_back')
     void this.runExecution(taskId, feedback)
     return updated

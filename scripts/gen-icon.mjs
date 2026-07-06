@@ -1,9 +1,16 @@
-// Generates build/icon.png (512x512) — the Founcode mark: a graphite
-// rounded tile carrying the pipeline rail (plan/execute/verify bars with
-// the approval-gate diamond), phosphor accent. electron-builder converts
-// the PNG to .ico for Windows automatically.
-import { mkdirSync } from 'node:fs'
+// Generates build/icon.png (512x512). The OFFICIAL logo
+// (build/logo-source.png, provided by Koko) takes precedence; the drawn
+// SVG below is only the fallback when the source asset is missing.
+// electron-builder converts the PNG to .ico for Windows automatically.
+import { existsSync, mkdirSync } from 'node:fs'
 import sharp from 'sharp'
+
+if (existsSync('build/logo-source.png')) {
+  mkdirSync('build', { recursive: true })
+  await sharp('build/logo-source.png').resize(512, 512).png().toFile('build/icon.png')
+  console.log('build/icon.png generated from official logo')
+  process.exit(0)
+}
 
 const svg = `
 <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">

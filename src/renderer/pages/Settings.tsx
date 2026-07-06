@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import type { LicenseState } from '../../shared/license-types'
 import { type AppSettings, MODEL_OPTIONS } from '../../shared/settings-types'
 import type { AgentInfo } from '../../shared/types'
 import { useAppStore } from '../stores/appStore'
@@ -8,11 +9,38 @@ export function Settings() {
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [agents, setAgents] = useState<AgentInfo[]>([])
   const [saved, setSaved] = useState(false)
+  const [license, setLicense] = useState<LicenseState | null>(null)
+  const [keyInput, setKeyInput] = useState('')
+  const [licenseBusy, setLicenseBusy] = useState(false)
 
   useEffect(() => {
     window.founcode.invoke('settings:get', undefined).then(setSettings)
     window.founcode.invoke('agent:listInstalled', undefined).then(setAgents)
+    window.founcode.invoke('license:state', undefined).then(setLicense)
   }, [])
+
+  async function activate() {
+    if (!keyInput.trim()) return
+    setLicenseBusy(true)
+    try {
+      const state = await window.founcode.invoke('license:activate', { key: keyInput.trim() })
+      setLicense(state)
+      setKeyInput('')
+    } catch (error) {
+      useAppStore.setState({ error: (error as Error).message })
+    } finally {
+      setLicenseBusy(false)
+    }
+  }
+
+  async function deactivate() {
+    setLicenseBusy(true)
+    try {
+      setLicense(await window.founcode.invoke('license:deactivate', undefined))
+    } finally {
+      setLicenseBusy(false)
+    }
+  }
 
   async function patch(next: Partial<AppSettings>) {
     const updated = await window.founcode.invoke('settings:set', next)
@@ -86,13 +114,61 @@ export function Settings() {
               </div>
             </section>
 
-            {/* Placeholder for what's coming in Phase 6 */}
-            <section className="rounded-lg border border-edge border-dashed p-4">
-              <h2 className="font-medium text-slate-400 text-sm">Coming in this phase</h2>
-              <ul className="mt-2 space-y-1 text-slate-600 text-xs">
-                <li>· License key (Founcode Pro) — unlimited projects & parallel tasks</li>
-                <li>· Theme options</li>
-              </ul>
+            {/* License */}
+            <section>
+              <div className="mb-1 flex items-center gap-2">
+                <h2 className="font-medium text-slate-100 text-sm">License</h2>
+                <span
+                  className={`rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider ${
+                    license?.tier === 'pro'
+                      ? 'border-accent/40 bg-accent/10 text-accent'
+                      : 'border-edge text-slate-400'
+                  }`}
+                >
+                  {license?.tier === 'pro' ? 'Pro' : 'Free'}
+                </span>
+                {license?.inGrace && (
+                  <span className="font-mono text-[10px] text-amber-400">
+                    offline — grace period active
+                  </span>
+                )}
+              </div>
+              <p className="mb-3 text-slate-500 text-xs">
+                Free: 1 project, 1 active task. Pro: unlimited projects, parallel tasks, and
+                auto-advance for Blueprints.
+              </p>
+              {license?.tier === 'pro' ? (
+                <div className="flex max-w-md items-center gap-3 rounded-lg border border-edge bg-surface-raised/50 px-3 py-2.5">
+                  <span className="font-mono text-[12px] text-slate-400">
+                    {license.key ? `${license.key.slice(0, 8)}…${license.key.slice(-4)}` : 'active'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={deactivate}
+                    disabled={licenseBusy}
+                    className="btn-danger ml-auto"
+                  >
+                    Deactivate
+                  </button>
+                </div>
+              ) : (
+                <div className="flex max-w-md gap-2">
+                  <input
+                    value={keyInput}
+                    onChange={(e) => setKeyInput(e.target.value)}
+                    placeholder="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+                    className="input-field flex-1 font-mono text-[12px]"
+                  />
+                  <button
+                    type="button"
+                    onClick={activate}
+                    disabled={!keyInput.trim() || licenseBusy}
+                    className="btn-primary shrink-0"
+                  >
+                    {licenseBusy ? 'Checking…' : 'Activate'}
+                  </button>
+                </div>
+              )}
             </section>
           </div>
         )}

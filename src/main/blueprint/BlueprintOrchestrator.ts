@@ -40,6 +40,8 @@ export interface BlueprintDeps {
   onQuestions?: (blueprintId: string, questions: BlueprintQuestion[]) => void
   // Kicks off a task's Plan phase (points at the task Orchestrator).
   startTaskPlanning?: (taskId: string) => void
+  // Auto-advance is a Pro feature.
+  getTier?: () => 'free' | 'pro'
 }
 
 interface GenResult {
@@ -343,6 +345,11 @@ export class BlueprintOrchestrator {
 
   // ---- step 5: implementation (sequential feeding) ----
   startImplementation(blueprintId: string, advanceMode?: 'manual' | 'auto'): void {
+    if (advanceMode === 'auto' && this.deps.getTier?.() === 'free') {
+      throw new Error(
+        'Auto-advance is a Pro feature — on the Free plan, click "Start next task" after each merge.',
+      )
+    }
     if (advanceMode) this.deps.blueprints.setAdvanceMode(blueprintId, advanceMode)
     this.apply(blueprintId, 'start_implementation') // TASK_REVIEW -> IMPLEMENTING
     this.startNextTask(blueprintId)
@@ -378,7 +385,9 @@ export class BlueprintOrchestrator {
     if (bp?.state !== 'IMPLEMENTING') return
     // Auto mode advances on a successful merge; manual waits for the
     // user. A discarded/failed task never auto-advances (user decides).
-    if (task.state === 'DONE' && bp.advanceMode === 'auto') {
+    // Defensive tier check: auto stays Pro even if the mode was set
+    // while a license was active.
+    if (task.state === 'DONE' && bp.advanceMode === 'auto' && this.deps.getTier?.() !== 'free') {
       this.startNextTask(bp.id)
     } else if (task.state === 'DONE') {
       // Manual: check whether that was the last one.

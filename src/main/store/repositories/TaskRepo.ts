@@ -97,6 +97,16 @@ export class TaskRepo {
     return task
   }
 
+  // Tasks currently consuming an agent (the free-tier concurrency unit).
+  countActive(): number {
+    const row = this.db
+      .prepare(
+        "SELECT COUNT(*) AS n FROM tasks WHERE state IN ('PLANNING','EXECUTING','VERIFYING')",
+      )
+      .get() as { n: number }
+    return row.n
+  }
+
   listByBlueprint(blueprintId: string): Task[] {
     const rows = this.db
       .prepare('SELECT * FROM tasks WHERE blueprint_id = ? ORDER BY order_index ASC')

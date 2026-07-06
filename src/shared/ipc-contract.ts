@@ -13,6 +13,7 @@ import type {
   ChatPhase,
   TechPref,
 } from './blueprint-types'
+import type { LicenseState } from './license-types'
 import type { AppSettings } from './settings-types'
 import type { AgentEvent, AgentInfo, AppInfo, Artifact, Project, Task, TaskState } from './types'
 
@@ -31,6 +32,9 @@ export interface IpcInvokeMap {
   }
   'settings:get': { args: undefined; result: AppSettings }
   'settings:set': { args: Partial<AppSettings>; result: AppSettings }
+  'license:state': { args: undefined; result: LicenseState }
+  'license:activate': { args: { key: string }; result: LicenseState }
+  'license:deactivate': { args: undefined; result: LicenseState }
   'task:list': { args: { projectId?: string }; result: Task[] }
   'task:get': { args: { taskId: string }; result: Task | null }
   'task:startPlanning': { args: { taskId: string }; result: undefined }
@@ -105,6 +109,9 @@ export const IPC_INVOKE_CHANNELS: readonly IpcInvokeChannel[] = [
   'task:create',
   'settings:get',
   'settings:set',
+  'license:state',
+  'license:activate',
+  'license:deactivate',
   'task:list',
   'task:get',
   'task:startPlanning',

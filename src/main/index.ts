@@ -52,11 +52,20 @@ function createWindow(): void {
 app.whenReady().then(() => {
   const dbPath = join(app.getPath('userData'), 'founcode.db')
   const db = openDatabase(dbPath)
-  const services = createServices(db, join(app.getPath('userData'), 'worktrees'))
+  const services = createServices(
+    db,
+    join(app.getPath('userData'), 'worktrees'),
+    join(app.getPath('userData'), 'license.bin'),
+  )
   services.orchestrator.recoverOrphans()
   services.blueprintOrchestrator.recoverOrphans()
   registerIpcHandlers(db, dbPath, services)
   createWindow()
+
+  // License re-validation: at startup and every 6 hours (internally it
+  // only contacts the vendor when the last check is older than a day).
+  void services.license.revalidate()
+  setInterval(() => void services.license.revalidate(), 6 * 60 * 60 * 1000)
 
   // Auto-update from GitHub Releases (packaged builds only). Failures are
   // non-fatal — the app must never be blocked by the updater.

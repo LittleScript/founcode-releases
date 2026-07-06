@@ -2,12 +2,14 @@
 
 import { existsSync } from 'node:fs'
 import { basename, join } from 'node:path'
-import { app, BrowserWindow, dialog, ipcMain } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, safeStorage } from 'electron'
 import type { IpcEventMap, IpcInvokeMap } from '../../shared/ipc-contract'
 import { AgentRegistry } from '../agents/AgentRegistry'
 import { BlueprintOrchestrator } from '../blueprint/BlueprintOrchestrator'
 import { createGreenfieldRepo } from '../git/createGreenfieldRepo'
 import { WorktreeManager } from '../git/WorktreeManager'
+import { LemonSqueezyVendor } from '../license/LemonSqueezyVendor'
+import { FREE_LIMITS, LicenseService } from '../license/LicenseService'
 import { Orchestrator } from '../orchestrator/Orchestrator'
 import { type Database, getSchemaVersion } from '../store/db'
 import { ArtifactRepo } from '../store/repositories/ArtifactRepo'
@@ -40,9 +42,14 @@ export interface MainServices {
   registry: AgentRegistry
   orchestrator: Orchestrator
   blueprintOrchestrator: BlueprintOrchestrator
+  license: LicenseService
 }
 
-export function createServices(db: Database, worktreesDir: string): MainServices {
+export function createServices(
+  db: Database,
+  worktreesDir: string,
+  licenseFilePath: string,
+): MainServices {
   const projects = new ProjectRepo(db)
   const tasks = new TaskRepo(db)
   const artifacts = new ArtifactRepo(db)
@@ -50,6 +57,20 @@ export function createServices(db: Database, worktreesDir: string): MainServices
   const settings = new SettingsRepo(db)
   const registry = new AgentRegistry()
   const worktrees = new WorktreeManager(worktreesDir)
+  const license = new LicenseService(new LemonSqueezyVendor(), licenseFilePath, {
+    // DPAPI when available; plaintext fallback keeps the app functional.
+    encrypt: (plain) =>
+      safeStorage.isEncryptionAvailable() ? safeStorage.encryptString(plain) : Buffer.from(plain),
+    decrypt: (blob) => {
+      try {
+        return safeStorage.isEncryptionAvailable()
+          ? safeStorage.decryptString(blob)
+          : blob.toString()
+      } catch {
+        return blob.toString()
+      }
+    },
+  })
 
   // Mutual reference resolved via closure: the task orchestrator notifies
   // the blueprint orchestrator when a task settles; the blueprint
@@ -66,6 +87,7 @@ export function createServices(db: Database, worktreesDir: string): MainServices
     getPlanContext: (task) => buildBlueprintPlanContext(task, blueprints, tasks),
     onTaskSettled: (task) => blueprintOrchestrator.handleTaskSettled(task),
     shouldAutoApprovePlan: (task) => task.blueprintId !== null,
+    getTier: () => license.getTier(),
   })
   blueprintOrchestrator = new BlueprintOrchestrator({
     projects,
@@ -75,6 +97,7 @@ export function createServices(db: Database, worktreesDir: string): MainServices
     broadcastState: (change) => broadcast('blueprint:stateChanged', change),
     broadcastEvent: (payload) => broadcast('blueprint:event', payload),
     startTaskPlanning: (taskId) => orchestrator.startPlanning(taskId),
+    getTier: () => license.getTier(),
   })
   return {
     projects,
@@ -85,6 +108,7 @@ export function createServices(db: Database, worktreesDir: string): MainServices
     registry,
     orchestrator,
     blueprintOrchestrator,
+    license,
   }
 }
 
@@ -135,7 +159,17 @@ export function registerIpcHandlers(db: Database, dbPath: string, services: Main
     return result.canceled ? null : (result.filePaths[0] ?? null)
   })
 
+  const ensureProjectCapacity = () => {
+    if (
+      services.license.getTier() === 'free' &&
+      projects.list().length >= FREE_LIMITS.maxProjects
+    ) {
+      throw new Error('Free plan supports one project — upgrade to Pro for unlimited projects.')
+    }
+  }
+
   handle('project:add', ({ path }) => {
+    ensureProjectCapacity()
     if (!existsSync(path)) {
       throw new Error(`Folder does not exist: ${path}`)
     }
@@ -150,6 +184,7 @@ export function registerIpcHandlers(db: Database, dbPath: string, services: Main
   })
 
   handle('project:createGreenfield', ({ parentDir, name }) => {
+    ensureProjectCapacity()
     const { path } = createGreenfieldRepo(parentDir, name)
     return projects.add(basename(path), path)
   })
@@ -169,6 +204,15 @@ export function registerIpcHandlers(db: Database, dbPath: string, services: Main
   handle('settings:get', () => services.settings.get())
 
   handle('settings:set', (patch) => services.settings.set(patch))
+
+  handle('license:state', () => ({
+    ...services.license.getState(),
+    tier: services.license.getTier(),
+  }))
+
+  handle('license:activate', ({ key }) => services.license.activate(key))
+
+  handle('license:deactivate', () => services.license.deactivate())
 
   handle('task:list', ({ projectId }) => tasks.list(projectId))
 
