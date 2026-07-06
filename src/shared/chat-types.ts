@@ -8,6 +8,8 @@ export interface ChatSession {
   model: string | null
   createdAt: number
   updatedAt: number
+  // Transient (computed by main): a reply is currently streaming.
+  busy?: boolean
 }
 
 export interface ChatMessage {

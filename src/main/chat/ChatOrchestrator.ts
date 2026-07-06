@@ -55,7 +55,7 @@ export class ChatOrchestrator {
   }
 
   listSessions(): ChatSession[] {
-    return this.deps.chat.listSessions()
+    return this.deps.chat.listSessions().map((s) => ({ ...s, busy: this.active.has(s.id) }))
   }
 
   listMessages(sessionId: string): ChatMessage[] {
@@ -112,6 +112,8 @@ export class ChatOrchestrator {
 
     const controller = new AbortController()
     this.active.set(sessionId, controller)
+    // Second ping now that busy=true is observable via listSessions.
+    this.deps.pingUpdated(sessionId)
     const timeout = setTimeout(() => controller.abort(), CHAT_TIMEOUT_MS)
     const parts: string[] = []
     let exitCode = -1

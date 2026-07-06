@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import type { LicenseState } from '../../shared/license-types'
-import { type AppSettings, MODEL_OPTIONS } from '../../shared/settings-types'
+import type { AppSettings } from '../../shared/settings-types'
 import { SKILLS } from '../../shared/skills-types'
 import type { AgentInfo } from '../../shared/types'
+import { ModelField } from '../components/ModelField'
 import { useAppStore } from '../stores/appStore'
 
 // Per-agent setup guidance — auth always lives in the CLI, not Founcode.
@@ -183,7 +184,10 @@ export function Settings() {
               </p>
               <select
                 value={settings.defaultAgentId}
-                onChange={(e) => patch({ defaultAgentId: e.target.value })}
+                onChange={(e) =>
+                  // Model formats differ per agent — never carry one across.
+                  patch({ defaultAgentId: e.target.value, defaultModel: '' })
+                }
                 className="input-field max-w-sm"
               >
                 {agents.map((a) => (
@@ -195,29 +199,20 @@ export function Settings() {
               </select>
             </section>
 
-            {/* Default model */}
+            {/* Default model — follows the default agent's own catalog */}
             <section>
               <h2 className="mb-1 font-medium text-slate-100 text-sm">Default model</h2>
               <p className="mb-3 text-slate-500 text-xs">
-                Passed to the agent CLI (Claude Code <code className="text-slate-400">--model</code>
-                ). Can be overridden per task/blueprint.
+                The catalog follows the default agent above — each agent only ever shows its own
+                models. Empty = the agent CLI's configured default. Can be overridden per
+                task/blueprint.
               </p>
-              <div className="grid max-w-lg grid-cols-2 gap-2">
-                {MODEL_OPTIONS.map((m) => (
-                  <button
-                    key={m.value}
-                    type="button"
-                    onClick={() => patch({ defaultModel: m.value })}
-                    className={`rounded-lg border p-3 text-left transition-colors ${
-                      settings.defaultModel === m.value
-                        ? 'border-accent/50 bg-accent/5'
-                        : 'border-edge hover:border-edge-2'
-                    }`}
-                  >
-                    <div className="font-medium text-slate-200 text-sm">{m.label}</div>
-                    <div className="mt-0.5 text-[11px] text-slate-500">{m.hint}</div>
-                  </button>
-                ))}
+              <div className="max-w-lg">
+                <ModelField
+                  agentId={settings.defaultAgentId}
+                  value={settings.defaultModel}
+                  onChange={(v) => patch({ defaultModel: v })}
+                />
               </div>
             </section>
 

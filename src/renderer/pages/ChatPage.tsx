@@ -131,11 +131,16 @@ export function ChatPage() {
   const [activeId, setActiveId] = useState<string | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [draft, setDraft] = useState('')
-  const [pending, setPending] = useState(false)
+  // Instant optimistic flag; authoritative busy comes per-session from main.
+  const [justSent, setJustSent] = useState(false)
   const [ideaDialog, setIdeaDialog] = useState<{ idea: string; title?: string } | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   const streamLines = useLogStore((s) => (activeId ? (s.logs[activeId] ?? NO_LINES) : NO_LINES))
+
+  // Pending is PER SESSION (main tracks it) — switching sessions while
+  // one is replying can't leak state or slip past the guard anymore.
+  const pending = justSent || (sessions.find((s) => s.id === activeId)?.busy ?? false)
 
   const reloadSessions = useCallback(async () => {
     const list = await window.founcode.invoke('chat:listSessions', undefined)
@@ -146,7 +151,7 @@ export function ChatPage() {
   const reloadMessages = useCallback(async (sessionId: string) => {
     const m = await window.founcode.invoke('chat:messages', { sessionId })
     setMessages(m)
-    setPending((p) => (p && m.at(-1)?.role === 'assistant' ? false : p))
+    setJustSent((p) => (p && m.at(-1)?.role === 'assistant' ? false : p))
   }, [])
 
   // Initial load: latest session or a fresh one.
@@ -160,6 +165,7 @@ export function ChatPage() {
   }, [reloadSessions])
 
   useEffect(() => {
+    setJustSent(false) // optimistic flag never crosses sessions
     if (activeId) void reloadMessages(activeId)
   }, [activeId, reloadMessages])
 
@@ -194,7 +200,7 @@ export function ChatPage() {
       await reloadSessions()
     }
     setDraft('')
-    setPending(true)
+    setJustSent(true)
     setMessages((m) => [
       ...m,
       {
@@ -210,7 +216,7 @@ export function ChatPage() {
       await window.founcode.invoke('chat:send', { sessionId, content: text })
     } catch (error) {
       useAppStore.setState({ error: (error as Error).message })
-      setPending(false)
+      setJustSent(false)
     }
   }
 
@@ -238,6 +244,9 @@ export function ChatPage() {
                 }`}
                 title={s.title}
               >
+                {s.busy && (
+                  <span className="live-dot mr-1.5 inline-block size-1.5 rounded-full bg-accent align-middle" />
+                )}
                 {s.title}
               </button>
               <button
@@ -346,8 +355,13 @@ export function ChatPage() {
                 }
               }}
               rows={2}
-              placeholder="Discuss an idea, ask about a project, steer a running build… (Enter to send)"
-              className="input-field w-full resize-none text-[13.5px]"
+              disabled={pending}
+              placeholder={
+                pending
+                  ? 'The assistant is replying…'
+                  : 'Discuss an idea, ask about a project, steer a running build… (Enter to send, /skill for methods)'
+              }
+              className="input-field w-full resize-none text-[13.5px] disabled:opacity-60"
             />
           </div>
         </div>

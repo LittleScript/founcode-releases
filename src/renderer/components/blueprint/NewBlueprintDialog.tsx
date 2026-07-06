@@ -37,12 +37,23 @@ export function NewBlueprintDialog({
   const [brownfield, setBrownfield] = useState<'extend' | 'document'>('extend')
 
   useEffect(() => {
-    window.founcode.invoke('agent:listInstalled', undefined).then((list) => {
+    void (async () => {
+      const [list, s] = await Promise.all([
+        window.founcode.invoke('agent:listInstalled', undefined),
+        window.founcode.invoke('settings:get', undefined),
+      ])
       setAgents(list)
-      const preferred = list.find((a) => a.id === 'claude-code' && a.installed) ?? list[0]
-      if (preferred) setAgentId(preferred.id)
-    })
-    window.founcode.invoke('settings:get', undefined).then((s) => setModel(s.defaultModel))
+      // Default agent from Settings (if installed); its default model only
+      // applies when the agent matches — model formats differ per agent.
+      const preferred =
+        list.find((a) => a.id === s.defaultAgentId && a.installed) ??
+        list.find((a) => a.installed) ??
+        list[0]
+      if (preferred) {
+        setAgentId(preferred.id)
+        setModel(preferred.id === s.defaultAgentId ? s.defaultModel : '')
+      }
+    })()
   }, [])
 
   const mode: BlueprintMode = projectMode === 'new' ? 'greenfield' : brownfield
