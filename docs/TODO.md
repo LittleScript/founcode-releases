@@ -178,6 +178,9 @@ Visi: frontend Founcode = **chat dengan AI** (seperti ChatGPT) sebagai pintu mas
 - [ ] **v1.2 — Dependency graph + Parallel dispatch (Pro)** (Hermes #3): decompose prompt hasilkan `depends_on`; task independen jalan paralel (Pro), dependen auto-block; gagal → block children. Pairing natural dengan monetisasi parallel capacity
 - [ ] **v1.3 — Task Patterns / self-evolving templates** (Hermes #2): `.founcode/patterns/*.md` dari N task sukses yang mirip → inject sebagai starting point plan (klaim hemat token 30-85%). Butuh data dari v1.1 dulu
 - [ ] **"Deep Verify" toggle (Pro)** — MoA multi-agent verification (Hermes #4). DIPUTUSKAN Koko (6 Jul): opsional, Pro-only, BUKAN default (verify standar sudah build+test objektif; MoA = 3x biaya token)
+- [ ] **Artifacts browser tab** (inspirasi HermesAgent): view global semua artefak (plan/diff/verdict/log per task, sudah ada di ArtifactRepo) — searchable, filter per jenis & project, klik → task
+- [ ] **Skills & Tools tab** (inspirasi HermesAgent): browser skill dengan kategori (saat ini: slash palette + daftar di Settings); nanti + custom skill user (buat/edit skill sendiri, disimpan lokal)
+- [ ] Attachment picker "+" di composer chat (Files/Folder/Paste image/URL) melengkapi drag-drop yang sudah ada
 - [ ] Preset env per-agen di Settings (integrasi 9Router tanpa env global)
 - [ ] Validasi nyata adapter Codex & Antigravity saat CLI terinstal (integration test gated sudah siap polanya)
 - [ ] Riwayat & pencarian task
