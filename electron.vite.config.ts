@@ -1,12 +1,16 @@
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
+import { version } from './package.json'
 
 export default defineConfig({
   // Main/preload keep runtime deps (electron-updater, nanoid) external so
   // electron-builder packages them from node_modules; renderer deps are
   // fully bundled by vite and live in devDependencies.
-  main: { plugins: [externalizeDepsPlugin()] },
+  main: {
+    plugins: [externalizeDepsPlugin()],
+    define: { __APP_VERSION__: JSON.stringify(version) },
+  },
   preload: { plugins: [externalizeDepsPlugin()] },
   renderer: {
     plugins: [react(), tailwindcss()],

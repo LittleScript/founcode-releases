@@ -3,6 +3,12 @@ import { app, BrowserWindow, shell } from 'electron'
 import { createServices, registerIpcHandlers } from './ipc/handlers'
 import { openDatabase } from './store/db'
 
+// E2E tests point the app at a throwaway data dir (must happen before
+// app is ready).
+if (process.env.FOUNCODE_USER_DATA) {
+  app.setPath('userData', process.env.FOUNCODE_USER_DATA)
+}
+
 function createWindow(): void {
   const win = new BrowserWindow({
     width: 1280,

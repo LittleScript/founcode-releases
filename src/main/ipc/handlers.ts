@@ -146,7 +146,9 @@ export function registerIpcHandlers(db: Database, dbPath: string, services: Main
   handle('app:ping', () => 'pong')
 
   handle('app:info', () => ({
-    version: app.getVersion(),
+    // app.getVersion() reports Electron's version when unpackaged; the
+    // build-time constant is correct everywhere.
+    version: typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : app.getVersion(),
     schemaVersion: getSchemaVersion(db),
     dbPath,
   }))
