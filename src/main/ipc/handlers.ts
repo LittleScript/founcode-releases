@@ -62,20 +62,27 @@ export function createServices(
     registry.register(new MockAgentAdapter())
   }
   const worktrees = new WorktreeManager(worktreesDir)
-  const license = new LicenseService(new LemonSqueezyVendor(), licenseFilePath, {
-    // DPAPI when available; plaintext fallback keeps the app functional.
-    encrypt: (plain) =>
-      safeStorage.isEncryptionAvailable() ? safeStorage.encryptString(plain) : Buffer.from(plain),
-    decrypt: (blob) => {
-      try {
-        return safeStorage.isEncryptionAvailable()
-          ? safeStorage.decryptString(blob)
-          : blob.toString()
-      } catch {
-        return blob.toString()
-      }
+  const license = new LicenseService(
+    new LemonSqueezyVendor(),
+    licenseFilePath,
+    {
+      // DPAPI when available; plaintext fallback keeps the app functional.
+      encrypt: (plain) =>
+        safeStorage.isEncryptionAvailable() ? safeStorage.encryptString(plain) : Buffer.from(plain),
+      decrypt: (blob) => {
+        try {
+          return safeStorage.isEncryptionAvailable()
+            ? safeStorage.decryptString(blob)
+            : blob.toString()
+        } catch {
+          return blob.toString()
+        }
+      },
     },
-  })
+    Date.now,
+    // FOUNCODE_TIER=pro is honored in dev builds only.
+    !app.isPackaged,
+  )
 
   // Mutual reference resolved via closure: the task orchestrator notifies
   // the blueprint orchestrator when a task settles; the blueprint

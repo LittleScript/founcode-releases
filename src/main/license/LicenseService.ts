@@ -40,6 +40,9 @@ export class LicenseService {
     private filePath: string,
     private crypto: LicenseCrypto,
     private now: () => number = Date.now,
+    // Dev/QA env override — the caller must gate this on unpackaged
+    // builds so shipped binaries never honor FOUNCODE_TIER.
+    private allowEnvOverride = false,
   ) {
     this.load()
   }
@@ -49,8 +52,7 @@ export class LicenseService {
   }
 
   getTier(): Tier {
-    // Dev/QA override.
-    if (process.env.FOUNCODE_TIER === 'pro') return 'pro'
+    if (this.allowEnvOverride && process.env.FOUNCODE_TIER === 'pro') return 'pro'
     return this.state.tier
   }
 
