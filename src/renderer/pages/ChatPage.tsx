@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { ChatAction, ChatMessage, ChatSession } from '../../shared/chat-types'
 import { MAIN_SIDE_ACTIONS } from '../../shared/chat-types'
+import { SKILLS } from '../../shared/skills-types'
 import type { Task, TaskState } from '../../shared/types'
 import { NewBlueprintDialog } from '../components/blueprint/NewBlueprintDialog'
 import { useAppStore } from '../stores/appStore'
@@ -57,6 +58,81 @@ function WorkspaceStrip() {
             {t.state}
           </span>{' '}
           {t.title.slice(0, 32)}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+// While the agent works, cycle through increasingly confident verbs —
+// same energy as Claude Code's "Percolating…", with house flavor.
+const THINKING_WORDS = [
+  'Thinking',
+  'Contemplating',
+  'Scheming',
+  'Percolating',
+  'Synthesizing',
+  'Orchestrating',
+  'Pondering',
+  'Brewing',
+  'Calibrating',
+  'Distilling',
+  'Assembling',
+  'Founcoding',
+]
+
+function ThinkingIndicator({ streamLine }: { streamLine?: string }) {
+  const [word, setWord] = useState(() => Math.floor(Math.random() * THINKING_WORDS.length))
+  useEffect(() => {
+    const t = setInterval(() => setWord((w) => (w + 1) % THINKING_WORDS.length), 1800)
+    return () => clearInterval(t)
+  }, [])
+  return (
+    <div className="flex justify-start">
+      <div className="flex items-center gap-2.5 rounded-xl border border-edge bg-surface-raised px-4 py-2.5">
+        <span className="think-spark text-[15px] text-accent">✦</span>
+        <span key={word} className="think-word font-mono text-[12px] text-slate-400">
+          {THINKING_WORDS[word]}…
+        </span>
+        {streamLine && (
+          <span className="max-w-md truncate border-edge border-l pl-2.5 font-mono text-[11px] text-slate-600">
+            {streamLine}
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// Typing "/" opens the command palette of built-in skills.
+function SlashMenu({
+  filter,
+  selected,
+  onPick,
+}: {
+  filter: string
+  selected: number
+  onPick: (id: string) => void
+}) {
+  const matches = SKILLS.filter((s) => s.id.startsWith(filter.toLowerCase()))
+  if (matches.length === 0) return null
+  return (
+    <div className="rise-in absolute bottom-full left-0 mb-2 w-full max-w-md overflow-hidden rounded-lg border border-edge bg-surface-raised shadow-black/50 shadow-xl">
+      {matches.map((s, i) => (
+        <button
+          key={s.id}
+          type="button"
+          onMouseDown={(e) => {
+            e.preventDefault() // keep textarea focus
+            onPick(s.id)
+          }}
+          className={`flex w-full items-baseline gap-3 px-3 py-2 text-left transition-colors ${
+            i === selected % matches.length ? 'bg-surface-hover' : 'hover:bg-surface-hover/60'
+          }`}
+        >
+          <code className="shrink-0 font-mono text-[12px] text-accent">/{s.id}</code>
+          <span className="text-[12px] text-slate-300">{s.name}</span>
+          <span className="truncate text-[11px] text-slate-500">{s.description}</span>
         </button>
       ))}
     </div>
@@ -131,6 +207,7 @@ export function ChatPage() {
   const [activeId, setActiveId] = useState<string | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [draft, setDraft] = useState('')
+  const [slashIndex, setSlashIndex] = useState(0)
   // Instant optimistic flag; authoritative busy comes per-session from main.
   const [justSent, setJustSent] = useState(false)
   const [ideaDialog, setIdeaDialog] = useState<{ idea: string; title?: string } | null>(null)
@@ -221,6 +298,17 @@ export function ChatPage() {
   }
 
   const lastStreamLine = pending ? streamLines.at(-1)?.content : undefined
+
+  // "/de" -> slash menu open, filtering skills. Only while the draft is
+  // still just the command token (no space yet).
+  const slashFilter = draft.match(/^\/(\w*)$/)?.[1] ?? null
+  const slashMatches =
+    slashFilter !== null ? SKILLS.filter((s) => s.id.startsWith(slashFilter.toLowerCase())) : []
+
+  function pickSlash(id: string) {
+    setDraft(`/${id} `)
+    setSlashIndex(0)
+  }
 
   return (
     <div className="flex flex-1 overflow-hidden">
@@ -324,31 +412,47 @@ export function ChatPage() {
               </div>
             ))}
 
-            {pending && (
-              <div className="flex justify-start">
-                <div className="flex items-center gap-2 rounded-xl border border-edge bg-surface-raised px-4 py-2.5">
-                  <span className="size-1.5 animate-bounce rounded-full bg-accent [animation-delay:0ms]" />
-                  <span className="size-1.5 animate-bounce rounded-full bg-accent [animation-delay:150ms]" />
-                  <span className="size-1.5 animate-bounce rounded-full bg-accent [animation-delay:300ms]" />
-                  {lastStreamLine && (
-                    <span className="max-w-md truncate font-mono text-[11px] text-slate-500">
-                      {lastStreamLine}
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
+            {pending && <ThinkingIndicator streamLine={lastStreamLine} />}
             <div ref={bottomRef} />
           </div>
         </div>
 
         {/* composer */}
         <div className="border-edge border-t bg-surface-raised/40 px-6 py-4">
-          <div className="mx-auto max-w-3xl">
+          <div className="relative mx-auto max-w-3xl">
+            {slashFilter !== null && slashMatches.length > 0 && (
+              <SlashMenu filter={slashFilter} selected={slashIndex} onPick={pickSlash} />
+            )}
             <textarea
               value={draft}
-              onChange={(e) => setDraft(e.target.value)}
+              onChange={(e) => {
+                setDraft(e.target.value)
+                setSlashIndex(0)
+              }}
               onKeyDown={(e) => {
+                // Slash menu navigation takes precedence while open.
+                if (slashFilter !== null && slashMatches.length > 0) {
+                  if (e.key === 'ArrowDown') {
+                    e.preventDefault()
+                    setSlashIndex((i) => (i + 1) % slashMatches.length)
+                    return
+                  }
+                  if (e.key === 'ArrowUp') {
+                    e.preventDefault()
+                    setSlashIndex((i) => (i - 1 + slashMatches.length) % slashMatches.length)
+                    return
+                  }
+                  if (e.key === 'Enter' || e.key === 'Tab') {
+                    e.preventDefault()
+                    const pick = slashMatches[slashIndex % slashMatches.length]
+                    if (pick) pickSlash(pick.id)
+                    return
+                  }
+                  if (e.key === 'Escape') {
+                    setDraft('')
+                    return
+                  }
+                }
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault()
                   void send()

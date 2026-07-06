@@ -142,3 +142,45 @@ body {
     transform: rotate(360deg);
   }
 }
+
+/* Chat thinking indicator: the ✦ spark breathes and slowly spins,
+   trailing a phosphor glow — the pipeline's idle heartbeat. */
+@keyframes think-spark {
+  0%,
+  100% {
+    transform: rotate(0deg) scale(1);
+    text-shadow: 0 0 6px rgb(52 232 169 / 0.55);
+    opacity: 0.9;
+  }
+  50% {
+    transform: rotate(180deg) scale(1.25);
+    text-shadow:
+      0 0 14px rgb(52 232 169 / 0.9),
+      0 0 28px rgb(76 184 255 / 0.35);
+    opacity: 1;
+  }
+}
+.think-spark {
+  display: inline-block;
+  animation: think-spark 1.6s ease-in-out infinite;
+}
+
+@keyframes think-word {
+  0% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  12%,
+  85% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+.think-word {
+  display: inline-block;
+  animation: think-word 1.8s ease-in-out infinite;
+}
