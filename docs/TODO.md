@@ -149,8 +149,8 @@ Keputusan (5 Jul): nama **Blueprint**; sequential feeding **manual + auto (toggl
 - [ ] `LicenseService`: activate, re-validasi 24 jam, offline grace 7 hari, simpan via safeStorage
 - [ ] Enforcement Free tier di Orchestrator: 1 task aktif, 1 project, auto-advance = Pro (+ unit test)
 - [ ] UI: Settings page — tambah license + tema (Settings page dasar sudah ada) + upgrade prompt yang sopan
-- [ ] electron-builder: NSIS installer + portable zip, icon & branding Founcode
-- [ ] electron-updater + repo GitHub Releases publik
+- [x] **F6.3 electron-builder: NSIS installer + portable zip** (6 Jul): `npm run dist` → `Founcode-Setup-0.5.0.exe` (100MB, < target 120MB) + zip + latest.yml. Icon generated (`scripts/gen-icon.mjs`, motif F/ + pipeline rail). Deps dirapikan (renderer→devDeps, main externalized via externalizeDepsPlugin). **Smoke test paketan LOLOS** (jalan + DB migrasi di `%APPDATA%\Founcode`). Auto-updater wired (packaged-only, non-fatal)
+- [ ] electron-updater end-to-end: buat repo publik `founcode-releases` + upload release + tes update dari versi lama (butuh 2 versi)
 - [ ] E2E Playwright: alur penuh dengan MockAgentAdapter
 - [ ] QA manual di Windows 11 VM bersih (checklist §QA di bawah)
 - [ ] README.md publik + docs singkat cara pakai

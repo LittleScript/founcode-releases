@@ -1,0 +1,38 @@
+appId: com.founcode.app
+productName: Founcode
+copyright: © 2026 21Kent
+
+directories:
+  buildResources: build
+  output: release
+
+# electron-builder auto-packages production node_modules (electron-updater,
+# nanoid) alongside these.
+files:
+  - out/**
+  - package.json
+
+# Zero native modules (node:sqlite) — nothing to rebuild.
+npmRebuild: false
+
+win:
+  icon: build/icon.png
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: zip
+      arch: [x64]
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  shortcutName: Founcode
+  artifactName: Founcode-Setup-${version}.${ext}
+
+# Public releases repo (the source stays private). Publishing is manual:
+# `electron-builder --publish always` once the repo + GH_TOKEN exist.
+publish:
+  provider: github
+  owner: LittleScript
+  repo: founcode-releases

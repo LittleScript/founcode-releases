@@ -58,6 +58,14 @@ app.whenReady().then(() => {
   registerIpcHandlers(db, dbPath, services)
   createWindow()
 
+  // Auto-update from GitHub Releases (packaged builds only). Failures are
+  // non-fatal — the app must never be blocked by the updater.
+  if (app.isPackaged) {
+    import('electron-updater')
+      .then(({ autoUpdater }) => autoUpdater.checkForUpdatesAndNotify())
+      .catch((error) => console.error('[updater]', error))
+  }
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })

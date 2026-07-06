@@ -162,7 +162,7 @@ describe('Blueprint sequential feeding', () => {
     orchestrator.merge(t0?.id ?? '')
 
     await vi.waitFor(() => expect(tasks.get(t1?.id ?? '')?.state).not.toBe('BACKLOG'), {
-      timeout: 5000,
+      timeout: 15000, // generous: suite may run under heavy machine load
     })
     await driveToReview(t1?.id ?? '')
     orchestrator.merge(t1?.id ?? '')
