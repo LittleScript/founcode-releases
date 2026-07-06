@@ -166,11 +166,13 @@ Keputusan (5 Jul): nama **Blueprint**; sequential feeding **manual + auto (toggl
 
 ## P1 — Fast Follow (setelah v1.0, JANGAN dikerjakan lebih awal)
 
-- [ ] Adapter OpenAI Codex CLI
-- [ ] Adapter Gemini CLI
-- [ ] Adapter OpenCode
-- [ ] Parallel tasks (multi-task EXECUTING bersamaan) untuk Pro
-- [ ] Template plan per jenis task (bugfix/feature/refactor)
+- [x] ~~Adapter OpenAI Codex CLI / Gemini CLI / OpenCode~~ → DITARIK ke F6.2 atas keputusan Koko (selesai 6 Jul; Gemini CLI mati → diganti Antigravity)
+- [ ] **v1.1 — Persistent Memory + Post-merge Extraction** (dari analisis Hermes, prioritas #1): `.founcode/memory.md` (pattern kode, keputusan arsitektur, gotcha) + `user.md` (preferensi) di repo user; setelah merge, agent kecil read-mode baca plan+diff+verdict (semua sudah ada di ArtifactRepo) → update memory async; inject ke plan prompt via `getPlanContext` bersama PRD. Fondasi untuk patterns & drift-check
+- [ ] **v1.2 — Dependency graph + Parallel dispatch (Pro)** (Hermes #3): decompose prompt hasilkan `depends_on`; task independen jalan paralel (Pro), dependen auto-block; gagal → block children. Pairing natural dengan monetisasi parallel capacity
+- [ ] **v1.3 — Task Patterns / self-evolving templates** (Hermes #2): `.founcode/patterns/*.md` dari N task sukses yang mirip → inject sebagai starting point plan (klaim hemat token 30-85%). Butuh data dari v1.1 dulu
+- [ ] MoA Verify (Hermes #4) — SKEPTIS: verify kita sudah menjalankan build+test (sinyal objektif); 3 agen = 3x biaya untuk marginal catch. Kalau dibuat: opsional "Deep Verify" toggle Pro, bukan default
+- [ ] Preset env per-agen di Settings (integrasi 9Router tanpa env global)
+- [ ] Validasi nyata adapter Codex & Antigravity saat CLI terinstal (integration test gated sudah siap polanya)
 - [ ] Riwayat & pencarian task
 
 ---

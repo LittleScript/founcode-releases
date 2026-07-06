@@ -56,11 +56,16 @@ describe('AntigravityAdapter invocation', () => {
 })
 
 describe('AgentRegistry defaults', () => {
-  it('registers all five agents (gemini replaced by antigravity)', () => {
+  it('ships the four production agents; mock is dev-only via register()', async () => {
     const registry = new AgentRegistry()
-    for (const id of ['claude-code', 'opencode', 'codex', 'antigravity', 'mock']) {
+    for (const id of ['claude-code', 'opencode', 'codex', 'antigravity']) {
       expect(registry.get(id), id).toBeDefined()
     }
     expect(registry.get('gemini')).toBeUndefined()
+    expect(registry.get('mock')).toBeUndefined()
+
+    const { MockAgentAdapter } = await import('../src/main/agents/mock/MockAgentAdapter')
+    registry.register(new MockAgentAdapter())
+    expect(registry.get('mock')).toBeDefined()
   })
 })

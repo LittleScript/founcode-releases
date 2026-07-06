@@ -5,6 +5,7 @@ import { basename, join } from 'node:path'
 import { app, BrowserWindow, dialog, ipcMain, safeStorage } from 'electron'
 import type { IpcEventMap, IpcInvokeMap } from '../../shared/ipc-contract'
 import { AgentRegistry } from '../agents/AgentRegistry'
+import { MockAgentAdapter } from '../agents/mock/MockAgentAdapter'
 import { BlueprintOrchestrator } from '../blueprint/BlueprintOrchestrator'
 import { createGreenfieldRepo } from '../git/createGreenfieldRepo'
 import { WorktreeManager } from '../git/WorktreeManager'
@@ -56,6 +57,10 @@ export function createServices(
   const blueprints = new BlueprintRepo(db)
   const settings = new SettingsRepo(db)
   const registry = new AgentRegistry()
+  // Mock agent is for developing/testing Founcode itself — dev builds only.
+  if (!app.isPackaged || process.env.FOUNCODE_DEV_AGENTS === '1') {
+    registry.register(new MockAgentAdapter())
+  }
   const worktrees = new WorktreeManager(worktreesDir)
   const license = new LicenseService(new LemonSqueezyVendor(), licenseFilePath, {
     // DPAPI when available; plaintext fallback keeps the app functional.

@@ -3,12 +3,13 @@ import type { AgentAdapter } from './AgentAdapter'
 import { AntigravityAdapter } from './antigravity/AntigravityAdapter'
 import { ClaudeCodeAdapter } from './claude/ClaudeCodeAdapter'
 import { CodexAdapter } from './codex/CodexAdapter'
-import { MockAgentAdapter } from './mock/MockAgentAdapter'
 import { OpenCodeAdapter } from './opencode/OpenCodeAdapter'
 
 export class AgentRegistry {
   private adapters = new Map<string, AgentAdapter>()
 
+  // Default = production agents. The Mock agent is dev-only; main
+  // registers it explicitly when the app is unpackaged.
   constructor(adapters?: AgentAdapter[]) {
     for (const adapter of adapters ?? [
       new ClaudeCodeAdapter(),
@@ -17,10 +18,13 @@ export class AgentRegistry {
       // Gemini CLI was retired by Google on 2026-06-18; Antigravity is
       // its successor.
       new AntigravityAdapter(),
-      new MockAgentAdapter(),
     ]) {
       this.adapters.set(adapter.id, adapter)
     }
+  }
+
+  register(adapter: AgentAdapter): void {
+    this.adapters.set(adapter.id, adapter)
   }
 
   get(id: string): AgentAdapter | undefined {
