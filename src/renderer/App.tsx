@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { AppInfo } from '../shared/types'
 import logoUrl from './assets/logo.png'
+import wordmarkUrl from './assets/wordmark.png'
 import { BlueprintStudio } from './pages/BlueprintStudio'
 import { Board } from './pages/Board'
 import { Onboarding } from './pages/Onboarding'
@@ -13,10 +14,10 @@ import { useLogStore } from './stores/logStore'
 function Wordmark() {
   return (
     <div className="flex items-center gap-2.5 px-4 pt-5 pb-4">
-      <img src={logoUrl} alt="Founcode" className="size-8 rounded-md" />
+      <img src={logoUrl} alt="" className="size-8 rounded-md" />
       <div className="leading-tight">
-        <div className="font-semibold text-[15px] text-slate-100 tracking-tight">Founcode</div>
-        <div className="font-mono text-[9px] text-slate-600 uppercase tracking-[0.2em]">
+        <img src={wordmarkUrl} alt="Founcode" className="h-[15px] w-auto" />
+        <div className="mt-1 font-mono text-[9px] text-slate-600 uppercase tracking-[0.2em]">
           plan · exec · verify
         </div>
       </div>

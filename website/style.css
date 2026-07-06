@@ -54,6 +54,7 @@ em { font-style: italic; color: var(--green); }
 .wordmark { display: flex; align-items: center; gap: 10px; }
 .wordmark img { border-radius: 7px; }
 .wordmark-name { display: block; font-weight: 600; font-size: 15px; line-height: 1.2; }
+.wordmark-img { display: block; height: 14px; width: auto; margin-bottom: 3px; }
 .wordmark-tag {
   display: block; font-family: var(--mono); font-size: 8.5px;
   letter-spacing: 0.22em; text-transform: uppercase; color: var(--dim);
