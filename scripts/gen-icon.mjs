@@ -1,50 +1,64 @@
-// Generates build/icon.png (512x512). The OFFICIAL logo
-// (build/logo-source.png, provided by Koko) takes precedence; the drawn
-// SVG below is only the fallback when the source asset is missing.
-// electron-builder converts the PNG to .ico for Windows automatically.
-import { existsSync, mkdirSync } from 'node:fs'
+// Generates the app icons from the OFFICIAL logo (build/logo-source.png):
+//   build/icon.png            512px (electron-builder fallback / linux)
+//   build/icon.ico            multi-size ICO (256/128/64/48/32/16, PNG-embedded)
+//   src/renderer/assets/logo.png  trimmed logo for in-app use
+// The source has generous transparent margins; small icon sizes need a
+// tight crop to stay legible, so we trim and re-pad slightly.
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import sharp from 'sharp'
 
-if (existsSync('build/logo-source.png')) {
-  mkdirSync('build', { recursive: true })
-  await sharp('build/logo-source.png').resize(512, 512).png().toFile('build/icon.png')
-  console.log('build/icon.png generated from official logo')
-  process.exit(0)
+if (!existsSync('build/logo-source.png')) {
+  console.error('build/logo-source.png missing — add the official logo first.')
+  process.exit(1)
 }
 
-const svg = `
-<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#12181f"/>
-      <stop offset="1" stop-color="#0a0d12"/>
-    </linearGradient>
-    <linearGradient id="glow" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#34e8a9"/>
-      <stop offset="1" stop-color="#14b886"/>
-    </linearGradient>
-  </defs>
-
-  <rect x="16" y="16" width="480" height="480" rx="96" fill="url(#bg)"/>
-  <rect x="16" y="16" width="480" height="480" rx="96" fill="none"
-        stroke="#34e8a9" stroke-opacity="0.28" stroke-width="6"/>
-
-  <!-- F/ monogram -->
-  <g fill="none" stroke-linecap="round">
-    <path d="M150 150 h130 M150 150 v212 M150 252 h96"
-          stroke="#e8edf4" stroke-width="34"/>
-    <path d="M368 140 L294 372" stroke="url(#glow)" stroke-width="34"/>
-  </g>
-
-  <!-- pipeline rail: plan · gate · execute · verify -->
-  <g>
-    <rect x="112" y="404" width="96" height="14" rx="7" fill="#4cb8ff"/>
-    <rect x="230" y="404" width="14" height="14" fill="#34e8a9" transform="rotate(45 237 411)"/>
-    <rect x="266" y="404" width="60" height="14" rx="7" fill="#8b8cf9"/>
-    <rect x="340" y="404" width="60" height="14" rx="7" fill="#c084fc"/>
-  </g>
-</svg>`
-
 mkdirSync('build', { recursive: true })
-await sharp(Buffer.from(svg)).resize(512, 512).png().toFile('build/icon.png')
-console.log('build/icon.png generated')
+mkdirSync('src/renderer/assets', { recursive: true })
+
+// Tight-trim the transparent margins, then add back a small breathing room.
+const trimmed = await sharp('build/logo-source.png').trim().toBuffer()
+const meta = await sharp(trimmed).metadata()
+const pad = Math.round(Math.max(meta.width ?? 0, meta.height ?? 0) * 0.04)
+const squared = await sharp(trimmed)
+  .extend({ top: pad, bottom: pad, left: pad, right: pad, background: { r: 0, g: 0, b: 0, alpha: 0 } })
+  .toBuffer()
+
+async function pngAt(size) {
+  return sharp(squared)
+    .resize(size, size, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .png()
+    .toBuffer()
+}
+
+// icon.png (512) + in-app logo
+writeFileSync('build/icon.png', await pngAt(512))
+writeFileSync('src/renderer/assets/logo.png', await pngAt(256))
+
+// Multi-size ICO container with PNG-compressed entries (valid on Vista+).
+const sizes = [256, 128, 64, 48, 32, 16]
+const images = await Promise.all(sizes.map(pngAt))
+
+const header = Buffer.alloc(6)
+header.writeUInt16LE(0, 0) // reserved
+header.writeUInt16LE(1, 2) // type: icon
+header.writeUInt16LE(images.length, 4)
+
+const entries = []
+let offset = 6 + images.length * 16
+images.forEach((img, i) => {
+  const size = sizes[i]
+  const entry = Buffer.alloc(16)
+  entry.writeUInt8(size === 256 ? 0 : size, 0) // width (0 = 256)
+  entry.writeUInt8(size === 256 ? 0 : size, 1) // height
+  entry.writeUInt8(0, 2) // palette
+  entry.writeUInt8(0, 3) // reserved
+  entry.writeUInt16LE(1, 4) // planes
+  entry.writeUInt16LE(32, 6) // bpp
+  entry.writeUInt32LE(img.length, 8)
+  entry.writeUInt32LE(offset, 12)
+  entries.push(entry)
+  offset += img.length
+})
+
+writeFileSync('build/icon.ico', Buffer.concat([header, ...entries, ...images]))
+console.log('generated: build/icon.png, build/icon.ico (6 sizes), src/renderer/assets/logo.png')

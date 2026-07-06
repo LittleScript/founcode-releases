@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import logoUrl from './assets/logo.png'
 import type { AppInfo } from '../shared/types'
 import { BlueprintStudio } from './pages/BlueprintStudio'
 import { Board } from './pages/Board'
@@ -12,9 +13,7 @@ import { useLogStore } from './stores/logStore'
 function Wordmark() {
   return (
     <div className="flex items-center gap-2.5 px-4 pt-5 pb-4">
-      <div className="relative flex size-8 items-center justify-center rounded-md border border-accent/30 bg-accent-ghost">
-        <span className="font-mono font-semibold text-accent text-sm">F/</span>
-      </div>
+      <img src={logoUrl} alt="Founcode" className="size-8 rounded-md" />
       <div className="leading-tight">
         <div className="font-semibold text-[15px] text-slate-100 tracking-tight">Founcode</div>
         <div className="font-mono text-[9px] text-slate-600 uppercase tracking-[0.2em]">

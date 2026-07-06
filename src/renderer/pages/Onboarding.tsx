@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import logoUrl from '../assets/logo.png'
 import { NewBlueprintDialog } from '../components/blueprint/NewBlueprintDialog'
 import { useAppStore } from '../stores/appStore'
 
@@ -30,9 +31,7 @@ export function Onboarding() {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-10 p-8">
       <div className="rise-in flex flex-col items-center gap-4 text-center">
-        <div className="flex size-14 items-center justify-center rounded-xl border border-accent/30 bg-accent-ghost">
-          <span className="font-mono font-semibold text-accent text-xl">F/</span>
-        </div>
+        <img src={logoUrl} alt="Founcode" className="size-16 rounded-xl" />
         <div>
           <h1 className="font-semibold text-2xl text-slate-100 tracking-tight">
             Trust what your agents ship.
