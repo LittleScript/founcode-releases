@@ -85,11 +85,17 @@ export function PlanReviewer({ task, planContent }: { task: Task; planContent: s
     )
   }
 
-  if (task.state === 'FAILED') {
+  if (task.state === 'FAILED' || task.state === 'DISCARDED') {
     return (
       <div className="rise-in flex flex-1 flex-col items-center justify-center gap-5">
-        <p className="max-w-md text-center text-phase-fail text-sm">
-          The agent run failed. Check the Log tab for details.
+        <p
+          className={`max-w-md text-center text-sm ${
+            task.state === 'FAILED' ? 'text-phase-fail' : 'text-slate-400'
+          }`}
+        >
+          {task.state === 'FAILED'
+            ? 'The agent run failed. Check the Log tab for details.'
+            : 'This task was stopped and its work discarded. Retry to start over from the backlog.'}
         </p>
         <button
           type="button"

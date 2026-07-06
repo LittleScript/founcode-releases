@@ -14,10 +14,10 @@ const LEGAL: [TaskState, TaskAction, TaskState][] = [
   ['BACKLOG', 'start_planning', 'PLANNING'],
   ['PLANNING', 'plan_ready', 'AWAITING_APPROVAL'],
   ['PLANNING', 'plan_failed', 'FAILED'],
-  ['PLANNING', 'cancel', 'DISCARDED'],
+  ['PLANNING', 'cancel', 'BACKLOG'],
   ['AWAITING_APPROVAL', 'request_replan', 'PLANNING'],
   ['AWAITING_APPROVAL', 'approve_plan', 'EXECUTING'],
-  ['AWAITING_APPROVAL', 'cancel', 'DISCARDED'],
+  ['AWAITING_APPROVAL', 'cancel', 'BACKLOG'],
   ['EXECUTING', 'execution_finished', 'VERIFYING'],
   ['EXECUTING', 'execution_failed', 'FAILED'],
   ['EXECUTING', 'cancel', 'DISCARDED'],
@@ -29,6 +29,7 @@ const LEGAL: [TaskState, TaskAction, TaskState][] = [
   ['REVIEW', 'send_back', 'EXECUTING'],
   ['REVIEW', 'discard', 'DISCARDED'],
   ['FAILED', 'retry', 'BACKLOG'],
+  ['DISCARDED', 'retry', 'BACKLOG'],
 ]
 
 function expectedResult(state: TaskState, action: TaskAction): TaskState | undefined {
@@ -51,19 +52,17 @@ describe('TaskStateMachine', () => {
     }
   })
 
-  it('terminal states DONE and DISCARDED allow no actions at all', () => {
+  it('DONE is terminal; DISCARDED and FAILED can only be retried', () => {
     expect(legalActions('DONE')).toEqual([])
-    expect(legalActions('DISCARDED')).toEqual([])
-  })
-
-  it('FAILED can only be retried', () => {
+    expect(legalActions('DISCARDED')).toEqual(['retry'])
     expect(legalActions('FAILED')).toEqual(['retry'])
   })
 
-  it('every active state can be cancelled', () => {
-    for (const state of ['PLANNING', 'AWAITING_APPROVAL', 'EXECUTING', 'VERIFYING'] as const) {
-      expect(transition(state, 'cancel')).toBe('DISCARDED')
-    }
+  it('cancel before execution returns to backlog; after, discards the work', () => {
+    expect(transition('PLANNING', 'cancel')).toBe('BACKLOG')
+    expect(transition('AWAITING_APPROVAL', 'cancel')).toBe('BACKLOG')
+    expect(transition('EXECUTING', 'cancel')).toBe('DISCARDED')
+    expect(transition('VERIFYING', 'cancel')).toBe('DISCARDED')
   })
 
   it('reports legal actions per state', () => {

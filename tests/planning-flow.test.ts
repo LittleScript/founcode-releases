@@ -126,7 +126,7 @@ describe('planning flow (mock agent)', () => {
     expect(artifacts.listByTask(t.id).filter((a) => a.kind === 'plan').length).toBe(2)
   })
 
-  it('cancel during planning discards the task and the runner stays silent', async () => {
+  it('cancel during planning returns the task to backlog and the runner stays silent', async () => {
     const slow = new MockAgentAdapter(200)
     orchestrator = new Orchestrator({
       projects,
@@ -140,10 +140,10 @@ describe('planning flow (mock agent)', () => {
     const t = createTask()
     orchestrator.startPlanning(t.id)
     const cancelled = orchestrator.cancel(t.id)
-    expect(cancelled.state).toBe('DISCARDED')
+    expect(cancelled.state).toBe('BACKLOG') // no work product yet — revivable in place
 
     // Give the aborted runner time to finish; state must not move again.
     await new Promise((r) => setTimeout(r, 500))
-    expect(tasks.get(t.id)?.state).toBe('DISCARDED')
+    expect(tasks.get(t.id)?.state).toBe('BACKLOG')
   })
 })

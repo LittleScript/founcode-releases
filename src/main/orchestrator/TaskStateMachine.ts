@@ -44,12 +44,15 @@ const TRANSITIONS: Record<TaskAction, Partial<Record<TaskState, TaskState>>> = {
   send_back: { REVIEW: 'EXECUTING' },
   discard: { REVIEW: 'DISCARDED' },
   cancel: {
-    PLANNING: 'DISCARDED',
-    AWAITING_APPROVAL: 'DISCARDED',
+    // No work product exists yet during planning — return to the
+    // backlog instead of vanishing into DISCARDED (QA feedback).
+    PLANNING: 'BACKLOG',
+    AWAITING_APPROVAL: 'BACKLOG',
     EXECUTING: 'DISCARDED',
     VERIFYING: 'DISCARDED',
   },
-  retry: { FAILED: 'BACKLOG' },
+  // Discarded tasks can be revived — retry puts them back in the backlog.
+  retry: { FAILED: 'BACKLOG', DISCARDED: 'BACKLOG' },
 }
 
 export class IllegalTransitionError extends Error {

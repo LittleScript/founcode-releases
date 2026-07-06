@@ -8,7 +8,7 @@ import { PipelineRail } from '../components/PipelineRail'
 import { STATE_LABELS } from '../components/StateBadge'
 import { useAppStore } from '../stores/appStore'
 
-// DISCARDED tasks are intentionally hidden from the board.
+// DISCARDED sits last, muted — stopped work stays visible and revivable.
 const BOARD_STATES: TaskState[] = [
   'BACKLOG',
   'PLANNING',
@@ -18,6 +18,7 @@ const BOARD_STATES: TaskState[] = [
   'REVIEW',
   'DONE',
   'FAILED',
+  'DISCARDED',
 ]
 
 const COLUMN_ACCENT: Record<TaskState, string> = {

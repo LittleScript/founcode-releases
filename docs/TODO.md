@@ -170,7 +170,7 @@ Keputusan (5 Jul): nama **Blueprint**; sequential feeding **manual + auto (toggl
 - [ ] **v1.1 — Persistent Memory + Post-merge Extraction** (dari analisis Hermes, prioritas #1): `.founcode/memory.md` (pattern kode, keputusan arsitektur, gotcha) + `user.md` (preferensi) di repo user; setelah merge, agent kecil read-mode baca plan+diff+verdict (semua sudah ada di ArtifactRepo) → update memory async; inject ke plan prompt via `getPlanContext` bersama PRD. Fondasi untuk patterns & drift-check
 - [ ] **v1.2 — Dependency graph + Parallel dispatch (Pro)** (Hermes #3): decompose prompt hasilkan `depends_on`; task independen jalan paralel (Pro), dependen auto-block; gagal → block children. Pairing natural dengan monetisasi parallel capacity
 - [ ] **v1.3 — Task Patterns / self-evolving templates** (Hermes #2): `.founcode/patterns/*.md` dari N task sukses yang mirip → inject sebagai starting point plan (klaim hemat token 30-85%). Butuh data dari v1.1 dulu
-- [ ] MoA Verify (Hermes #4) — SKEPTIS: verify kita sudah menjalankan build+test (sinyal objektif); 3 agen = 3x biaya untuk marginal catch. Kalau dibuat: opsional "Deep Verify" toggle Pro, bukan default
+- [ ] **"Deep Verify" toggle (Pro)** — MoA multi-agent verification (Hermes #4). DIPUTUSKAN Koko (6 Jul): opsional, Pro-only, BUKAN default (verify standar sudah build+test objektif; MoA = 3x biaya token)
 - [ ] Preset env per-agen di Settings (integrasi 9Router tanpa env global)
 - [ ] Validasi nyata adapter Codex & Antigravity saat CLI terinstal (integration test gated sudah siap polanya)
 - [ ] Riwayat & pencarian task
