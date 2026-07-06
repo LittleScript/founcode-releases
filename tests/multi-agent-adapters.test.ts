@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { AgentRunOptions } from '../src/main/agents/AgentAdapter'
 import { AgentRegistry } from '../src/main/agents/AgentRegistry'
+import { AntigravityAdapter } from '../src/main/agents/antigravity/AntigravityAdapter'
 import { CodexAdapter } from '../src/main/agents/codex/CodexAdapter'
-import { GeminiAdapter } from '../src/main/agents/gemini/GeminiAdapter'
 import { OpenCodeAdapter } from '../src/main/agents/opencode/OpenCodeAdapter'
 
 function opts(mode: AgentRunOptions['mode'], model?: string): AgentRunOptions {
@@ -38,28 +38,29 @@ describe('CodexAdapter invocation', () => {
   })
 })
 
-describe('GeminiAdapter invocation', () => {
-  const a = new GeminiAdapter()
-  it('maps read to default approval and write/verify to yolo, prompt via stdin', () => {
-    expect(a.invocation(opts('read')).args).toEqual(['--approval-mode', 'default'])
-    expect(a.invocation(opts('write')).args).toEqual(['--approval-mode', 'yolo'])
-    expect(a.invocation(opts('read')).promptVia).toBe('stdin')
+describe('AntigravityAdapter invocation', () => {
+  const a = new AntigravityAdapter()
+  it('uses av gen with plain streaming and a positional prompt', () => {
+    const inv = a.invocation(opts('read'))
+    expect(inv.args).toEqual(['gen', '--stream-format=plain'])
+    expect(inv.promptVia).toBe('arg')
   })
-  it('passes -m model', () => {
-    expect(a.invocation(opts('read', 'gemini-2.5-pro')).args).toEqual([
-      '-m',
-      'gemini-2.5-pro',
-      '--approval-mode',
-      'default',
+  it('passes --model', () => {
+    expect(a.invocation(opts('write', 'gemini-3-pro')).args).toEqual([
+      'gen',
+      '--stream-format=plain',
+      '--model',
+      'gemini-3-pro',
     ])
   })
 })
 
 describe('AgentRegistry defaults', () => {
-  it('registers all five agents', () => {
+  it('registers all five agents (gemini replaced by antigravity)', () => {
     const registry = new AgentRegistry()
-    for (const id of ['claude-code', 'opencode', 'codex', 'gemini', 'mock']) {
+    for (const id of ['claude-code', 'opencode', 'codex', 'antigravity', 'mock']) {
       expect(registry.get(id), id).toBeDefined()
     }
+    expect(registry.get('gemini')).toBeUndefined()
   })
 })

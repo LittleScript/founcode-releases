@@ -15,11 +15,24 @@ if (!existsSync('build/logo-source.png')) {
 mkdirSync('build', { recursive: true })
 mkdirSync('src/renderer/assets', { recursive: true })
 
-// Tight-trim the transparent margins, then add back a small breathing room.
+// Tight-trim the margins, then mask with a rounded rectangle so the
+// black background corners (outside the tile's curve) become
+// transparent, and finally add a little breathing room back.
 const trimmed = await sharp('build/logo-source.png').trim().toBuffer()
 const meta = await sharp(trimmed).metadata()
-const pad = Math.round(Math.max(meta.width ?? 0, meta.height ?? 0) * 0.04)
-const squared = await sharp(trimmed)
+const w = meta.width ?? 0
+const h = meta.height ?? 0
+// The tile's corner radius is ~22.5% of its width.
+const radius = Math.round(Math.min(w, h) * 0.225)
+const mask = Buffer.from(
+  `<svg width="${w}" height="${h}"><rect x="0" y="0" width="${w}" height="${h}" rx="${radius}" fill="#fff"/></svg>`,
+)
+const rounded = await sharp(trimmed)
+  .composite([{ input: mask, blend: 'dest-in' }])
+  .toBuffer()
+
+const pad = Math.round(Math.max(w, h) * 0.04)
+const squared = await sharp(rounded)
   .extend({ top: pad, bottom: pad, left: pad, right: pad, background: { r: 0, g: 0, b: 0, alpha: 0 } })
   .toBuffer()
 

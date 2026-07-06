@@ -42,7 +42,7 @@ export const AGENT_MODELS: Record<string, AgentModelSpec> = {
     placeholder: 'provider/model — mis. zhipu/glm-5, deepseek/deepseek-v4 (kosong = default)',
   },
   codex: { kind: 'free', placeholder: 'mis. gpt-5-codex (kosong = default)' },
-  gemini: { kind: 'free', placeholder: 'mis. gemini-2.5-pro (kosong = default)' },
+  antigravity: { kind: 'free', placeholder: 'mis. gemini-3-pro (kosong = default)' },
   mock: { kind: 'options', options: [MODEL_OPTIONS[0] as ModelOption] },
 }
 

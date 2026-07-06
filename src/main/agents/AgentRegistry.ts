@@ -1,8 +1,8 @@
 import type { AgentInfo } from '../../shared/types'
 import type { AgentAdapter } from './AgentAdapter'
+import { AntigravityAdapter } from './antigravity/AntigravityAdapter'
 import { ClaudeCodeAdapter } from './claude/ClaudeCodeAdapter'
 import { CodexAdapter } from './codex/CodexAdapter'
-import { GeminiAdapter } from './gemini/GeminiAdapter'
 import { MockAgentAdapter } from './mock/MockAgentAdapter'
 import { OpenCodeAdapter } from './opencode/OpenCodeAdapter'
 
@@ -14,7 +14,9 @@ export class AgentRegistry {
       new ClaudeCodeAdapter(),
       new OpenCodeAdapter(),
       new CodexAdapter(),
-      new GeminiAdapter(),
+      // Gemini CLI was retired by Google on 2026-06-18; Antigravity is
+      // its successor.
+      new AntigravityAdapter(),
       new MockAgentAdapter(),
     ]) {
       this.adapters.set(adapter.id, adapter)

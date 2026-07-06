@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import logoUrl from './assets/logo.png'
 import type { AppInfo } from '../shared/types'
+import logoUrl from './assets/logo.png'
 import { BlueprintStudio } from './pages/BlueprintStudio'
 import { Board } from './pages/Board'
 import { Onboarding } from './pages/Onboarding'
@@ -99,16 +99,21 @@ function ErrorToast() {
   const clearError = useAppStore((s) => s.clearError)
   if (!error) return null
   return (
-    <div className="rise-in fixed right-4 bottom-4 z-50 flex max-w-md items-start gap-3 rounded-lg border border-red-900/70 bg-surface-raised px-4 py-3 shadow-black/50 shadow-xl">
-      <span className="mt-0.5 font-mono text-red-400 text-xs">✕</span>
-      <p className="text-red-300 text-sm leading-snug">{error}</p>
-      <button
-        type="button"
-        onClick={clearError}
-        className="ml-1 text-slate-600 text-xs transition-colors hover:text-slate-300"
-      >
-        ✕
-      </button>
+    <div className="rise-in fixed right-4 bottom-4 z-50 max-w-md rounded-lg border border-red-900/70 bg-surface-raised shadow-black/50 shadow-xl">
+      <div className="flex items-center justify-between border-red-900/40 border-b px-4 py-2">
+        <span className="font-medium font-mono text-[11px] text-red-400 uppercase tracking-wider">
+          Error
+        </span>
+        <button
+          type="button"
+          onClick={clearError}
+          aria-label="Dismiss"
+          className="rounded px-2 py-0.5 text-slate-400 text-xs transition-colors hover:bg-red-950/40 hover:text-red-300"
+        >
+          ✕ Close
+        </button>
+      </div>
+      <p className="px-4 py-3 text-slate-200 text-sm leading-snug">{error}</p>
     </div>
   )
 }
