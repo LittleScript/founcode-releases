@@ -125,6 +125,7 @@ export class ChatOrchestrator {
     const parts: string[] = []
     let exitCode = -1
     let resultText: string | undefined
+    let lastError: string | undefined
 
     try {
       for await (const event of adapter.run({
@@ -136,6 +137,7 @@ export class ChatOrchestrator {
       })) {
         this.deps.broadcastEvent({ sessionId, event })
         if (event.type === 'text') parts.push(event.content)
+        if (event.type === 'error') lastError = event.message
         if (event.type === 'done') {
           exitCode = event.exitCode
           resultText = event.resultText
@@ -143,7 +145,12 @@ export class ChatOrchestrator {
       }
       const raw = (resultText ?? parts.join('\n')).trim()
       if (exitCode !== 0 || !raw) {
-        this.deps.chat.addMessage(sessionId, 'assistant', '(no response — try again)')
+        // Tell the user WHY (CLI missing, auth, crash) — not just "try again".
+        this.deps.chat.addMessage(
+          sessionId,
+          'assistant',
+          lastError ? `⚠ ${lastError.slice(0, 500)}` : '(no response — try again)',
+        )
       } else {
         const { reply, actions } = parseChatReply(raw)
         this.deps.chat.addMessage(sessionId, 'assistant', reply || '(empty reply)', actions)

@@ -6,10 +6,10 @@ describe('parseStreamJsonLine', () => {
     expect(parseStreamJsonLine('')).toEqual([])
   })
 
-  it('maps system init to a session-started text event', () => {
+  it('maps system init to a session tool_use event (meta, never prose)', () => {
     expect(
       parseStreamJsonLine('{"type":"system","subtype":"init","model":"claude-fable-5"}'),
-    ).toEqual([{ type: 'text', content: '· session started (claude-fable-5)' }])
+    ).toEqual([{ type: 'tool_use', name: 'session', detail: 'claude-fable-5' }])
     expect(parseStreamJsonLine('{"type":"system","subtype":"other"}')).toEqual([])
   })
 

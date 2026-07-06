@@ -16,7 +16,17 @@ import type {
 import type { ChatAction, ChatMessage, ChatSession } from './chat-types'
 import type { LicenseState } from './license-types'
 import type { AppSettings } from './settings-types'
-import type { AgentEvent, AgentInfo, AppInfo, Artifact, Project, Task, TaskState } from './types'
+import type {
+  AgentEvent,
+  AgentInfo,
+  AppInfo,
+  Artifact,
+  ArtifactKind,
+  ArtifactSummary,
+  Project,
+  Task,
+  TaskState,
+} from './types'
 
 // ---- invoke (request/response) ----
 
@@ -24,6 +34,7 @@ export interface IpcInvokeMap {
   'app:ping': { args: undefined; result: 'pong' }
   'app:info': { args: undefined; result: AppInfo }
   'dialog:selectFolder': { args: undefined; result: string | null }
+  'dialog:selectFiles': { args: undefined; result: string[] }
   'project:add': { args: { path: string }; result: Project }
   'project:createGreenfield': { args: { parentDir: string; name: string }; result: Project }
   'project:list': { args: undefined; result: Project[] }
@@ -54,6 +65,7 @@ export interface IpcInvokeMap {
   'task:sendBack': { args: { taskId: string; feedback: string }; result: Task }
   'task:discard': { args: { taskId: string }; result: Task }
   'task:artifacts': { args: { taskId: string }; result: Artifact[] }
+  'artifact:listAll': { args: { kind?: ArtifactKind }; result: ArtifactSummary[] }
   'agent:listInstalled': { args: undefined; result: AgentInfo[] }
   // Blueprint (Spec Studio)
   'blueprint:create': {
@@ -125,6 +137,7 @@ export const IPC_INVOKE_CHANNELS: readonly IpcInvokeChannel[] = [
   'app:ping',
   'app:info',
   'dialog:selectFolder',
+  'dialog:selectFiles',
   'project:add',
   'project:createGreenfield',
   'project:list',
@@ -145,6 +158,7 @@ export const IPC_INVOKE_CHANNELS: readonly IpcInvokeChannel[] = [
   'task:sendBack',
   'task:discard',
   'task:artifacts',
+  'artifact:listAll',
   'agent:listInstalled',
   'blueprint:create',
   'blueprint:get',

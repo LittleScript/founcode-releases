@@ -170,8 +170,8 @@ body {
     opacity: 0;
     transform: translateY(4px);
   }
-  12%,
-  85% {
+  6%,
+  92% {
     opacity: 1;
     transform: none;
   }
@@ -182,5 +182,6 @@ body {
 }
 .think-word {
   display: inline-block;
-  animation: think-word 1.8s ease-in-out infinite;
+  /* Matches WORD_INTERVAL_MS in ChatPage — unhurried, Claude-Code pace. */
+  animation: think-word 5.2s ease-in-out infinite;
 }

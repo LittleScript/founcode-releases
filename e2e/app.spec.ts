@@ -31,7 +31,7 @@ test('boots to the chat home (the new front door)', async () => {
   await expect(window.getByText('What do you want to build?')).toBeVisible()
   await expect(window.getByRole('button', { name: /Start from an idea/ })).toBeVisible()
   await expect(window.getByRole('button', { name: /New chat/ })).toBeVisible()
-  await expect(window.getByPlaceholder(/Discuss an idea/)).toBeVisible()
+  await expect(window.getByPlaceholder(/How can I help you today/)).toBeVisible()
 
   await window.screenshot({ path: 'e2e/artifacts/chat-home.png' })
 })

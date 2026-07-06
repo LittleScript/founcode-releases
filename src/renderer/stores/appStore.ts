@@ -1,8 +1,12 @@
 import { create } from 'zustand'
 import type { Project, Task } from '../../shared/types'
 
+// Claude-app-style IA: New chat / Chats / Projects / Artifacts.
 type View =
-  | { name: 'chat' }
+  | { name: 'chat'; sessionId: string | null } // null = latest session
+  | { name: 'chats' }
+  | { name: 'projects' }
+  | { name: 'artifacts' }
   | { name: 'board' }
   | { name: 'task'; taskId: string }
   | { name: 'blueprint'; blueprintId: string }
@@ -30,13 +34,16 @@ interface AppState {
   openBlueprint: (blueprintId: string) => void
   openSettings: () => void
   goBoard: () => void
-  goChat: () => void
+  goChat: (sessionId?: string | null) => void
+  goChats: () => void
+  goProjects: () => void
+  goArtifacts: () => void
   clearError: () => void
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
   // Chat is the front door — discussion first, pipeline when ready.
-  view: { name: 'chat' },
+  view: { name: 'chat', sessionId: null },
   projects: [],
   activeProjectId: null,
   tasks: [],
@@ -98,6 +105,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   openBlueprint: (blueprintId) => set({ view: { name: 'blueprint', blueprintId } }),
   openSettings: () => set({ view: { name: 'settings' } }),
   goBoard: () => set({ view: { name: 'board' } }),
-  goChat: () => set({ view: { name: 'chat' } }),
+  goChat: (sessionId = null) => set({ view: { name: 'chat', sessionId } }),
+  goChats: () => set({ view: { name: 'chats' } }),
+  goProjects: () => set({ view: { name: 'projects' } }),
+  goArtifacts: () => set({ view: { name: 'artifacts' } }),
   clearError: () => set({ error: null }),
 }))

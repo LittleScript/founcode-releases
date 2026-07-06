@@ -189,6 +189,14 @@ export function registerIpcHandlers(db: Database, dbPath: string, services: Main
     return result.canceled ? null : (result.filePaths[0] ?? null)
   })
 
+  handle('dialog:selectFiles', async () => {
+    const result = await dialog.showOpenDialog({
+      title: 'Attach files to the chat',
+      properties: ['openFile', 'multiSelections'],
+    })
+    return result.canceled ? [] : result.filePaths
+  })
+
   const ensureProjectCapacity = () => {
     if (
       services.license.getTier() === 'free' &&
@@ -275,6 +283,8 @@ export function registerIpcHandlers(db: Database, dbPath: string, services: Main
   handle('task:discard', ({ taskId }) => services.orchestrator.discard(taskId))
 
   handle('task:artifacts', ({ taskId }) => services.artifacts.listByTask(taskId))
+
+  handle('artifact:listAll', ({ kind }) => services.artifacts.listAll(kind))
 
   handle('agent:listInstalled', () => services.registry.listInstalled())
 

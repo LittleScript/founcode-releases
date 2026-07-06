@@ -160,8 +160,10 @@ export function parseStreamJsonLine(line: string): AgentEvent[] {
   const events: AgentEvent[] = []
 
   if (msg.type === 'system' && msg.subtype === 'init') {
+    // Meta, not prose — as a 'text' event it leaked into chat replies
+    // whenever the result fallback joined the stream (QA finding).
     const model = typeof msg.model === 'string' ? msg.model : 'unknown model'
-    events.push({ type: 'text', content: `· session started (${model})` })
+    events.push({ type: 'tool_use', name: 'session', detail: model })
   } else if (msg.type === 'assistant') {
     const message = msg.message as { content?: unknown[] } | undefined
     for (const block of message?.content ?? []) {

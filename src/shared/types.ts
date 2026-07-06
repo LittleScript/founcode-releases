@@ -54,6 +54,20 @@ export interface Artifact {
   createdAt: number
 }
 
+// Global artifacts browser: artifact metadata + owning task/project
+// (content excluded — listing 100s of diffs would be heavy; fetch the
+// full artifact via task:artifacts when opened).
+export interface ArtifactSummary {
+  id: string
+  taskId: string
+  kind: ArtifactKind
+  preview: string
+  createdAt: number
+  taskTitle: string
+  projectId: string
+  projectName: string
+}
+
 export interface AgentInfo {
   id: string
   displayName: string

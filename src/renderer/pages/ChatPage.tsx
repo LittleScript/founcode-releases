@@ -3,10 +3,10 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { ChatAction, ChatMessage, ChatSession } from '../../shared/chat-types'
 import { MAIN_SIDE_ACTIONS } from '../../shared/chat-types'
+import { agentModelSpec, MODEL_OPTIONS } from '../../shared/settings-types'
 import { SKILLS } from '../../shared/skills-types'
 import type { AgentInfo, Task, TaskState } from '../../shared/types'
 import { NewBlueprintDialog } from '../components/blueprint/NewBlueprintDialog'
-import { ModelField } from '../components/ModelField'
 import { useAppStore } from '../stores/appStore'
 import { NO_LINES, useLogStore } from '../stores/logStore'
 
@@ -66,7 +66,7 @@ function WorkspaceStrip() {
 }
 
 // While the agent works, cycle through increasingly confident verbs —
-// same energy as Claude Code's "Percolating…", with house flavor.
+// unhurried, Claude-Code pace (matches the think-word CSS duration).
 const THINKING_WORDS = [
   'Thinking',
   'Contemplating',
@@ -81,11 +81,12 @@ const THINKING_WORDS = [
   'Assembling',
   'Founcoding',
 ]
+const WORD_INTERVAL_MS = 5200
 
 function ThinkingIndicator({ streamLine }: { streamLine?: string }) {
   const [word, setWord] = useState(() => Math.floor(Math.random() * THINKING_WORDS.length))
   useEffect(() => {
-    const t = setInterval(() => setWord((w) => (w + 1) % THINKING_WORDS.length), 1800)
+    const t = setInterval(() => setWord((w) => (w + 1) % THINKING_WORDS.length), WORD_INTERVAL_MS)
     return () => clearInterval(t)
   }, [])
   return (
@@ -203,64 +204,34 @@ function ActionChips({
   )
 }
 
-// Per-chat agent + model switcher (like any AI chat app). Changes apply
-// from the next message onward.
-function AgentModelBar({ session, onChanged }: { session: ChatSession; onChanged: () => void }) {
-  const [agents, setAgents] = useState<AgentInfo[]>([])
-  useEffect(() => {
-    window.founcode.invoke('agent:listInstalled', undefined).then(setAgents)
-  }, [])
-
-  async function patch(p: { agentId?: string; model?: string }) {
-    await window.founcode.invoke('chat:updateSession', { sessionId: session.id, ...p })
-    onChanged()
-  }
-
-  return (
-    <div className="mt-2 flex items-center gap-2">
-      <select
-        value={session.agentId}
-        onChange={(e) => void patch({ agentId: e.target.value, model: '' })}
-        className="input-field !w-auto !py-1 text-[11px]"
-        title="Agent for this chat"
-      >
-        {agents.map((a) => (
-          <option key={a.id} value={a.id} disabled={!a.installed}>
-            {a.displayName}
-            {a.installed ? '' : ' — not installed'}
-          </option>
-        ))}
-      </select>
-      <div className="max-w-xs flex-1 [&_input]:!py-1 [&_input]:text-[11px] [&_select]:!py-1 [&_select]:text-[11px]">
-        <ModelField
-          agentId={session.agentId}
-          value={session.model ?? ''}
-          onChange={(v) => void patch({ model: v })}
-        />
-      </div>
-      <span className="ml-auto font-mono text-[10px] text-slate-600">
-        drop files here — paths are shared with the agent
-      </span>
-    </div>
+function modelDisplay(agentId: string, model: string | null): string {
+  if (!model) return 'Default'
+  const spec = agentModelSpec(agentId)
+  const known = [...(spec.options ?? []), ...(spec.suggestions ?? []), ...MODEL_OPTIONS].find(
+    (m) => m.value === model,
   )
+  return known?.label ?? model
 }
 
-export function ChatPage() {
+export function ChatPage({ sessionId }: { sessionId: string | null }) {
+  const goChat = useAppStore((s) => s.goChat)
   const [sessions, setSessions] = useState<ChatSession[]>([])
-  const [activeId, setActiveId] = useState<string | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [draft, setDraft] = useState('')
   const [slashIndex, setSlashIndex] = useState(0)
+  const [agents, setAgents] = useState<AgentInfo[]>([])
+  const [modelOpen, setModelOpen] = useState(false)
   // Instant optimistic flag; authoritative busy comes per-session from main.
   const [justSent, setJustSent] = useState(false)
   const [ideaDialog, setIdeaDialog] = useState<{ idea: string; title?: string } | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
 
-  const streamLines = useLogStore((s) => (activeId ? (s.logs[activeId] ?? NO_LINES) : NO_LINES))
+  // null = "the latest session" (app open / New chat before first message).
+  const activeId = sessionId ?? sessions[0]?.id ?? null
+  const active = sessions.find((s) => s.id === activeId)
 
-  // Pending is PER SESSION (main tracks it) — switching sessions while
-  // one is replying can't leak state or slip past the guard anymore.
-  const pending = justSent || (sessions.find((s) => s.id === activeId)?.busy ?? false)
+  const streamLines = useLogStore((s) => (activeId ? (s.logs[activeId] ?? NO_LINES) : NO_LINES))
+  const pending = justSent || (active?.busy ?? false)
 
   const reloadSessions = useCallback(async () => {
     const list = await window.founcode.invoke('chat:listSessions', undefined)
@@ -268,55 +239,46 @@ export function ChatPage() {
     return list
   }, [])
 
-  const reloadMessages = useCallback(async (sessionId: string) => {
-    const m = await window.founcode.invoke('chat:messages', { sessionId })
+  const reloadMessages = useCallback(async (id: string) => {
+    const m = await window.founcode.invoke('chat:messages', { sessionId: id })
     setMessages(m)
     setJustSent((p) => (p && m.at(-1)?.role === 'assistant' ? false : p))
   }, [])
 
-  // Initial load: latest session or a fresh one.
   useEffect(() => {
-    void (async () => {
-      const list = await reloadSessions()
-      if (list.length > 0) {
-        setActiveId(list[0]?.id ?? null)
-      }
-    })()
+    void reloadSessions()
   }, [reloadSessions])
 
   useEffect(() => {
     setJustSent(false) // optimistic flag never crosses sessions
     if (activeId) void reloadMessages(activeId)
+    else setMessages([])
   }, [activeId, reloadMessages])
 
-  // Live reload when main pings (reply arrived / user msg persisted).
   useEffect(() => {
-    return window.founcode.on('chat:updated', ({ sessionId }) => {
+    return window.founcode.on('chat:updated', ({ sessionId: updated }) => {
       void reloadSessions()
-      if (sessionId === activeId) void reloadMessages(sessionId)
+      if (updated === activeId) void reloadMessages(updated)
     })
   }, [activeId, reloadSessions, reloadMessages])
+
+  useEffect(() => {
+    window.founcode.invoke('agent:listInstalled', undefined).then(setAgents)
+  }, [])
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: autoscroll on updates
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages.length, pending, streamLines.length])
 
-  async function newSession() {
-    const session = await window.founcode.invoke('chat:createSession', {})
-    await reloadSessions()
-    setActiveId(session.id)
-    setMessages([])
-  }
-
   async function send() {
     const text = draft.trim()
     if (!text || pending) return
-    let sessionId = activeId
-    if (!sessionId) {
+    let id = activeId
+    if (!id) {
       const session = await window.founcode.invoke('chat:createSession', {})
-      sessionId = session.id
-      setActiveId(sessionId)
+      id = session.id
+      goChat(id)
       await reloadSessions()
     }
     setDraft('')
@@ -325,7 +287,7 @@ export function ChatPage() {
       ...m,
       {
         id: -Date.now(),
-        sessionId,
+        sessionId: id,
         role: 'user',
         content: text,
         actions: [],
@@ -333,17 +295,33 @@ export function ChatPage() {
       },
     ])
     try {
-      await window.founcode.invoke('chat:send', { sessionId, content: text })
+      await window.founcode.invoke('chat:send', { sessionId: id, content: text })
     } catch (error) {
       useAppStore.setState({ error: (error as Error).message })
       setJustSent(false)
     }
   }
 
+  async function patchSession(p: { agentId?: string; model?: string }) {
+    if (!activeId) return
+    await window.founcode.invoke('chat:updateSession', { sessionId: activeId, ...p })
+    await reloadSessions()
+  }
+
+  async function attachFiles() {
+    const paths = await window.founcode.invoke('dialog:selectFiles', undefined)
+    insertPaths(paths)
+  }
+
+  function insertPaths(paths: string[]) {
+    const refs = paths.filter(Boolean).map((p) => `@"${p}"`)
+    if (refs.length > 0) {
+      setDraft((d) => `${d}${d && !d.endsWith('\n') ? '\n' : ''}${refs.join('\n')}\n`)
+    }
+  }
+
   const lastStreamLine = pending ? streamLines.at(-1)?.content : undefined
 
-  // "/de" -> slash menu open, filtering skills. Only while the draft is
-  // still just the command token (no space yet).
   const slashFilter = draft.match(/^\/(\w*)$/)?.[1] ?? null
   const slashMatches =
     slashFilter !== null ? SKILLS.filter((s) => s.id.startsWith(slashFilter.toLowerCase())) : []
@@ -353,133 +331,88 @@ export function ChatPage() {
     setSlashIndex(0)
   }
 
+  const spec = active ? agentModelSpec(active.agentId) : null
+  const modelChoices = spec ? (spec.options ?? spec.suggestions ?? []) : []
+
   return (
-    <div className="flex flex-1 overflow-hidden">
-      {/* sessions rail */}
-      <aside className="flex w-56 shrink-0 flex-col border-edge border-r bg-surface-raised/30">
-        <div className="p-3">
-          <button type="button" onClick={newSession} className="btn-ghost w-full text-[13px]">
-            + New chat
-          </button>
-        </div>
-        <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 pb-3">
-          {sessions.map((s) => (
-            <div key={s.id} className="group relative">
+    <div className="flex flex-1 flex-col overflow-hidden">
+      <WorkspaceStrip />
+
+      <div className="flex-1 overflow-y-auto">
+        <div className="mx-auto max-w-3xl space-y-4 px-6 py-6">
+          {messages.length === 0 && !pending && (
+            <div className="rise-in mt-16 text-center">
+              <p className="font-semibold text-slate-200 text-xl tracking-tight">
+                What do you want to build?
+              </p>
+              <p className="mx-auto mt-2 max-w-md text-slate-500 text-sm leading-relaxed">
+                Think out loud — discuss an idea, ask about your projects, or steer a build that's
+                already running. When you're ready, one click turns the discussion into a verified
+                pipeline.
+              </p>
               <button
                 type="button"
-                onClick={() => setActiveId(s.id)}
-                className={`w-full truncate rounded-md px-3 py-2 pr-7 text-left text-[13px] transition-colors ${
-                  s.id === activeId
-                    ? 'bg-surface-hover text-slate-100'
-                    : 'text-slate-400 hover:bg-surface-hover/60 hover:text-slate-200'
-                }`}
-                title={s.title}
+                onClick={() => setIdeaDialog({ idea: '' })}
+                className="btn-ghost mt-5 border-accent/30 text-accent hover:border-accent/50 hover:bg-accent/5"
               >
-                {s.busy && (
-                  <span className="live-dot mr-1.5 inline-block size-1.5 rounded-full bg-accent align-middle" />
-                )}
-                {s.title}
-              </button>
-              <button
-                type="button"
-                aria-label="Delete chat"
-                onClick={async () => {
-                  await window.founcode.invoke('chat:deleteSession', { sessionId: s.id })
-                  const list = await reloadSessions()
-                  if (s.id === activeId) {
-                    setActiveId(list[0]?.id ?? null)
-                    setMessages([])
-                  }
-                }}
-                className="absolute top-1.5 right-1.5 hidden rounded px-1.5 py-0.5 text-slate-600 text-xs hover:bg-red-950/40 hover:text-red-300 group-hover:block"
-              >
-                ✕
+                ✦ Start from an idea
               </button>
             </div>
-          ))}
-        </nav>
-      </aside>
+          )}
 
-      {/* thread */}
-      <div className="flex flex-1 flex-col">
-        <WorkspaceStrip />
-        <div className="flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-3xl space-y-4 px-6 py-6">
-            {messages.length === 0 && !pending && (
-              <div className="rise-in mt-16 text-center">
-                <p className="font-semibold text-slate-200 text-xl tracking-tight">
-                  What do you want to build?
-                </p>
-                <p className="mx-auto mt-2 max-w-md text-slate-500 text-sm leading-relaxed">
-                  Think out loud — discuss an idea, ask about your projects, or steer a build that's
-                  already running. When you're ready, one click turns the discussion into a verified
-                  pipeline.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setIdeaDialog({ idea: '' })}
-                  className="btn-ghost mt-5 border-accent/30 text-accent hover:border-accent/50 hover:bg-accent/5"
-                >
-                  ✦ Start from an idea
-                </button>
-              </div>
-            )}
-
-            {messages.map((m) => (
+          {messages.map((m) => (
+            <div
+              key={m.id}
+              className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            >
               <div
-                key={m.id}
-                className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                className={`max-w-[85%] rounded-xl px-4 py-2.5 text-[13.5px] leading-relaxed ${
+                  m.role === 'user'
+                    ? 'whitespace-pre-wrap bg-accent-dim/20 text-slate-100'
+                    : 'border border-edge bg-surface-raised text-slate-300'
+                }`}
               >
-                <div
-                  className={`max-w-[85%] rounded-xl px-4 py-2.5 text-[13.5px] leading-relaxed ${
-                    m.role === 'user'
-                      ? 'bg-accent-dim/20 text-slate-100 whitespace-pre-wrap'
-                      : 'border border-edge bg-surface-raised text-slate-300'
-                  }`}
-                >
-                  {m.role === 'assistant' ? (
-                    <div className="prose prose-sm prose-invert max-w-none prose-p:my-1.5 prose-pre:my-2">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
-                      {activeId && (
-                        <ActionChips
-                          sessionId={activeId}
-                          actions={m.actions}
-                          onBlueprintIdea={(idea, title) => setIdeaDialog({ idea, title })}
-                        />
-                      )}
-                    </div>
-                  ) : (
-                    m.content
-                  )}
-                </div>
+                {m.role === 'assistant' ? (
+                  <div className="prose prose-sm prose-invert max-w-none prose-p:my-1.5 prose-pre:my-2">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
+                    {activeId && (
+                      <ActionChips
+                        sessionId={activeId}
+                        actions={m.actions}
+                        onBlueprintIdea={(idea, title) => setIdeaDialog({ idea, title })}
+                      />
+                    )}
+                  </div>
+                ) : (
+                  m.content
+                )}
               </div>
-            ))}
+            </div>
+          ))}
 
-            {pending && <ThinkingIndicator streamLine={lastStreamLine} />}
-            <div ref={bottomRef} />
-          </div>
+          {pending && <ThinkingIndicator streamLine={lastStreamLine} />}
+          <div ref={bottomRef} />
         </div>
+      </div>
 
-        {/* composer */}
-        {/* biome-ignore lint/a11y/noStaticElementInteractions: drag-and-drop file target, not an interactive control */}
-        <div
-          className="border-edge border-t bg-surface-raised/40 px-6 py-4"
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => {
-            e.preventDefault()
-            const refs = Array.from(e.dataTransfer.files)
-              .map((f) => window.founcode.getPathForFile(f))
-              .filter(Boolean)
-              .map((p) => `@"${p}"`)
-            if (refs.length > 0) {
-              setDraft((d) => `${d}${d && !d.endsWith('\n') ? '\n' : ''}${refs.join('\n')}\n`)
-            }
-          }}
-        >
-          <div className="relative mx-auto max-w-3xl">
-            {slashFilter !== null && slashMatches.length > 0 && (
-              <SlashMenu filter={slashFilter} selected={slashIndex} onPick={pickSlash} />
-            )}
+      {/* composer — Claude-style: one container, input on top, controls below */}
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: drag-and-drop file target, not an interactive control */}
+      <div
+        className="px-6 pb-5"
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => {
+          e.preventDefault()
+          insertPaths(
+            Array.from(e.dataTransfer.files).map((f) => window.founcode.getPathForFile(f)),
+          )
+        }}
+      >
+        <div className="relative mx-auto max-w-3xl">
+          {slashFilter !== null && slashMatches.length > 0 && (
+            <SlashMenu filter={slashFilter} selected={slashIndex} onPick={pickSlash} />
+          )}
+
+          <div className="rounded-2xl border border-edge bg-surface-raised shadow-black/30 shadow-lg transition-colors focus-within:border-edge-2">
             <textarea
               value={draft}
               onChange={(e) => {
@@ -487,7 +420,6 @@ export function ChatPage() {
                 setSlashIndex(0)
               }}
               onKeyDown={(e) => {
-                // Slash menu navigation takes precedence while open.
                 if (slashFilter !== null && slashMatches.length > 0) {
                   if (e.key === 'ArrowDown') {
                     e.preventDefault()
@@ -520,16 +452,98 @@ export function ChatPage() {
               placeholder={
                 pending
                   ? 'The assistant is replying…'
-                  : 'Discuss an idea, ask about a project, steer a running build… (Enter to send, /skill for methods)'
+                  : 'How can I help you today? ( / for skills, drop files to share paths )'
               }
-              className="input-field w-full resize-none text-[13.5px] disabled:opacity-60"
+              className="w-full resize-none border-none bg-transparent px-4 pt-3.5 pb-1 text-[13.5px] text-slate-100 outline-none placeholder:text-slate-600 disabled:opacity-60"
             />
-            {(() => {
-              const active = sessions.find((s) => s.id === activeId)
-              return active ? (
-                <AgentModelBar session={active} onChanged={() => void reloadSessions()} />
-              ) : null
-            })()}
+
+            <div className="flex items-center gap-1 px-2.5 pb-2.5">
+              <button
+                type="button"
+                onClick={() => void attachFiles()}
+                title="Attach files — paths are shared with the agent"
+                className="flex size-8 items-center justify-center rounded-lg text-lg text-slate-400 transition-colors hover:bg-surface-hover hover:text-slate-200"
+              >
+                +
+              </button>
+
+              <div className="ml-auto flex items-center gap-1">
+                {active && (
+                  <>
+                    <select
+                      value={active.agentId}
+                      onChange={(e) => void patchSession({ agentId: e.target.value, model: '' })}
+                      title="Agent for this chat"
+                      className="cursor-pointer rounded-lg border-none bg-transparent px-2 py-1.5 text-[12px] text-slate-300 outline-none transition-colors hover:bg-surface-hover"
+                    >
+                      {agents.map((a) => (
+                        <option key={a.id} value={a.id} disabled={!a.installed}>
+                          {a.displayName}
+                          {a.installed ? '' : ' — not installed'}
+                        </option>
+                      ))}
+                    </select>
+
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setModelOpen((o) => !o)}
+                        title="Model for this chat"
+                        className="rounded-lg px-2 py-1.5 text-[12px] text-slate-400 transition-colors hover:bg-surface-hover hover:text-slate-200"
+                      >
+                        {modelDisplay(active.agentId, active.model)}{' '}
+                        <span className="text-slate-600">⌄</span>
+                      </button>
+                      {modelOpen && (
+                        <div className="rise-in absolute right-0 bottom-full mb-2 max-h-72 w-72 overflow-y-auto rounded-lg border border-edge bg-surface-raised py-1 shadow-black/50 shadow-xl">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              void patchSession({ model: '' })
+                              setModelOpen(false)
+                            }}
+                            className="flex w-full flex-col px-3 py-1.5 text-left hover:bg-surface-hover"
+                          >
+                            <span className="text-[12px] text-slate-200">Default</span>
+                            <span className="text-[10px] text-slate-500">
+                              Agent CLI's configured model
+                            </span>
+                          </button>
+                          {modelChoices
+                            .filter((m) => m.value !== '')
+                            .map((m) => (
+                              <button
+                                key={m.value}
+                                type="button"
+                                onClick={() => {
+                                  void patchSession({ model: m.value })
+                                  setModelOpen(false)
+                                }}
+                                className={`flex w-full flex-col px-3 py-1.5 text-left hover:bg-surface-hover ${
+                                  active.model === m.value ? 'bg-surface-hover' : ''
+                                }`}
+                              >
+                                <span className="text-[12px] text-slate-200">{m.label}</span>
+                                <span className="text-[10px] text-slate-500">{m.hint}</span>
+                              </button>
+                            ))}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => void send()}
+                  disabled={!draft.trim() || pending}
+                  title="Send (Enter)"
+                  className="ml-1 flex size-8 items-center justify-center rounded-full bg-accent font-semibold text-[#06281c] transition-all hover:shadow-[0_0_16px_rgba(52,232,169,0.4)] disabled:bg-surface-hover disabled:text-slate-600"
+                >
+                  ↑
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>

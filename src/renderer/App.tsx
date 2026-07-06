@@ -1,11 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import type { ChatSession } from '../shared/chat-types'
 import type { AppInfo } from '../shared/types'
 import logoUrl from './assets/logo.png'
 import wordmarkUrl from './assets/wordmark.png'
+import { ArtifactsPage } from './pages/ArtifactsPage'
 import { BlueprintStudio } from './pages/BlueprintStudio'
 import { Board } from './pages/Board'
 import { ChatPage } from './pages/ChatPage'
-import { Onboarding } from './pages/Onboarding'
+import { ChatsPage } from './pages/ChatsPage'
+import { ProjectsPage } from './pages/ProjectsPage'
 import { Settings } from './pages/Settings'
 import { TaskDetail } from './pages/TaskDetail'
 import { useAppStore } from './stores/appStore'
@@ -26,68 +29,91 @@ function Wordmark() {
   )
 }
 
+// Claude-app-style navigation: New chat / Chats / Projects / Artifacts,
+// with recent chats underneath.
 function Sidebar({ info }: { info: AppInfo | null }) {
-  const projects = useAppStore((s) => s.projects)
-  const activeProjectId = useAppStore((s) => s.activeProjectId)
-  const setActiveProject = useAppStore((s) => s.setActiveProject)
-  const addProject = useAppStore((s) => s.addProject)
-  const openSettings = useAppStore((s) => s.openSettings)
-  const goChat = useAppStore((s) => s.goChat)
   const view = useAppStore((s) => s.view)
+  const goChat = useAppStore((s) => s.goChat)
+  const goChats = useAppStore((s) => s.goChats)
+  const goProjects = useAppStore((s) => s.goProjects)
+  const goArtifacts = useAppStore((s) => s.goArtifacts)
+  const openSettings = useAppStore((s) => s.openSettings)
   const tasks = useAppStore((s) => s.tasks)
+  const [recents, setRecents] = useState<ChatSession[]>([])
+
+  const reloadRecents = useCallback(async () => {
+    const list = await window.founcode.invoke('chat:listSessions', undefined)
+    setRecents(list.slice(0, 8))
+  }, [])
+
+  useEffect(() => {
+    void reloadRecents()
+    return window.founcode.on('chat:updated', () => void reloadRecents())
+  }, [reloadRecents])
 
   const liveCount = tasks.filter((t) =>
     ['PLANNING', 'EXECUTING', 'VERIFYING'].includes(t.state),
   ).length
 
+  const navItem = (active: boolean) =>
+    `w-full rounded-md px-3 py-2 text-left text-sm transition-colors duration-150 ${
+      active
+        ? 'bg-surface-hover text-slate-100'
+        : 'text-slate-400 hover:bg-surface-hover/60 hover:text-slate-200'
+    }`
+
   return (
     <aside className="flex w-60 shrink-0 flex-col border-r border-edge bg-surface-raised/60">
       <Wordmark />
 
-      <div className="px-2">
-        <button
-          type="button"
-          onClick={goChat}
-          className={`w-full rounded-md px-3 py-2 text-left text-sm transition-colors duration-150 ${
-            view.name === 'chat'
-              ? 'bg-surface-hover text-slate-100'
-              : 'text-slate-400 hover:bg-surface-hover/60 hover:text-slate-200'
-          }`}
-        >
-          <span className="pl-1.5">💬 Chat</span>
-        </button>
-      </div>
-
-      <div className="field-label px-4 pt-3">Projects</div>
       <nav className="flex flex-col gap-0.5 px-2">
-        {projects.map((p) => {
-          const active = p.id === activeProjectId
-          return (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => setActiveProject(p.id)}
-              title={p.path}
-              className={`group relative truncate rounded-md px-3 py-2 text-left text-sm transition-colors duration-150 ${
-                active
-                  ? 'bg-surface-hover text-slate-100'
-                  : 'text-slate-400 hover:bg-surface-hover/60 hover:text-slate-200'
-              }`}
-            >
-              {active && (
-                <span className="absolute top-1.5 bottom-1.5 left-0 w-[2px] rounded-full bg-accent" />
-              )}
-              <span className="pl-1.5">{p.name}</span>
-            </button>
-          )
-        })}
         <button
           type="button"
-          onClick={addProject}
-          className="rounded-md px-3 py-2 text-left text-slate-600 text-sm transition-colors duration-150 hover:bg-surface-hover/60 hover:text-slate-300"
+          onClick={async () => {
+            const session = await window.founcode.invoke('chat:createSession', {})
+            goChat(session.id)
+          }}
+          className="mb-1 w-full rounded-md border border-accent/30 px-3 py-2 text-left text-accent text-sm transition-colors hover:border-accent/50 hover:bg-accent/5"
         >
-          <span className="pl-1.5">+ Add project</span>
+          <span className="pl-1.5">⊕ New chat</span>
         </button>
+        <button type="button" onClick={goChats} className={navItem(view.name === 'chats')}>
+          <span className="pl-1.5">💬 Chats</span>
+        </button>
+        <button
+          type="button"
+          onClick={goProjects}
+          className={navItem(
+            view.name === 'projects' || view.name === 'board' || view.name === 'task',
+          )}
+        >
+          <span className="pl-1.5">▦ Projects</span>
+        </button>
+        <button type="button" onClick={goArtifacts} className={navItem(view.name === 'artifacts')}>
+          <span className="pl-1.5">◈ Artifacts</span>
+        </button>
+      </nav>
+
+      <div className="field-label px-4 pt-4">Recents</div>
+      <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-2">
+        {recents.map((s) => (
+          <button
+            key={s.id}
+            type="button"
+            onClick={() => goChat(s.id)}
+            title={s.title}
+            className={`w-full truncate rounded-md px-3 py-1.5 text-left text-[12.5px] transition-colors ${
+              view.name === 'chat' && view.sessionId === s.id
+                ? 'bg-surface-hover text-slate-100'
+                : 'text-slate-500 hover:bg-surface-hover/60 hover:text-slate-300'
+            }`}
+          >
+            {s.busy && (
+              <span className="live-dot mr-1.5 inline-block size-1.5 rounded-full bg-accent align-middle" />
+            )}
+            {s.title}
+          </button>
+        ))}
       </nav>
 
       <div className="mt-auto border-t border-edge px-2 py-2">
@@ -138,7 +164,6 @@ function ErrorToast() {
 
 export default function App() {
   const view = useAppStore((s) => s.view)
-  const projects = useAppStore((s) => s.projects)
   const init = useAppStore((s) => s.init)
   const refreshTasks = useAppStore((s) => s.refreshTasks)
   const [info, setInfo] = useState<AppInfo | null>(null)
@@ -176,7 +201,7 @@ export default function App() {
   }, [init, refreshTasks])
 
   // Blueprint Studio is a focused full-screen wizard — no sidebar.
-  if (projects.length > 0 && view.name === 'blueprint') {
+  if (view.name === 'blueprint') {
     return (
       <div className="flex h-screen">
         <BlueprintStudio blueprintId={view.blueprintId} />
@@ -189,9 +214,13 @@ export default function App() {
     <div className="flex h-screen">
       <Sidebar info={info} />
       {view.name === 'chat' ? (
-        <ChatPage />
-      ) : projects.length === 0 ? (
-        <Onboarding />
+        <ChatPage sessionId={view.sessionId} />
+      ) : view.name === 'chats' ? (
+        <ChatsPage />
+      ) : view.name === 'projects' ? (
+        <ProjectsPage />
+      ) : view.name === 'artifacts' ? (
+        <ArtifactsPage />
       ) : view.name === 'task' ? (
         <TaskDetail taskId={view.taskId} />
       ) : view.name === 'settings' ? (
