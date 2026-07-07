@@ -43,7 +43,7 @@ export function ArtifactsPage() {
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       <header className="flex items-center justify-between border-edge border-b px-6 py-4">
-        <h1 className="font-semibold text-[15px] text-slate-100">Artifacts</h1>
+        <h1 className="font-semibold text-[15px] text-slate-100">Foundry</h1>
         <span className="font-mono text-[10px] text-slate-600">
           {filtered.length} item{filtered.length === 1 ? '' : 's'}
         </span>

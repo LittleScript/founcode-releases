@@ -288,6 +288,11 @@ export function registerIpcHandlers(db: Database, dbPath: string, services: Main
 
   handle('agent:listInstalled', () => services.registry.listInstalled())
 
+  handle('agent:listModels', ({ agentId }) => {
+    const adapter = services.registry.get(agentId) as { listModels?: () => string[] } | undefined
+    return adapter?.listModels?.() ?? []
+  })
+
   // ---- Blueprint ----
   const bo = services.blueprintOrchestrator
 

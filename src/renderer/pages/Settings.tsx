@@ -49,7 +49,6 @@ const AGENT_SETUP = [
 ]
 
 export function Settings() {
-  const goBoard = useAppStore((s) => s.goBoard)
   const goSkills = useAppStore((s) => s.goSkills)
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [agents, setAgents] = useState<AgentInfo[]>([])
@@ -110,10 +109,10 @@ export function Settings() {
       <header className="flex items-center gap-4 border-edge border-b px-6 py-4">
         <button
           type="button"
-          onClick={goBoard}
-          className="font-mono text-[11px] text-slate-500 transition-colors hover:text-slate-300"
+          onClick={() => useAppStore.getState().goChat(null)}
+          className="rounded-md border border-edge px-2.5 py-1 text-[12px] text-slate-300 transition-colors hover:border-edge-2 hover:bg-surface-hover"
         >
-          ← board
+          ← Back
         </button>
         <h1 className="font-semibold text-slate-100">Settings</h1>
         {saved && <span className="font-mono text-[11px] text-accent">saved ✓</span>}

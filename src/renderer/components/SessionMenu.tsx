@@ -17,6 +17,9 @@ export function SessionMenu({
   const [open, setOpen] = useState(false)
   const [mode, setMode] = useState<'menu' | 'rename' | 'project'>('menu')
   const [title, setTitle] = useState(session.title)
+  // Fixed-position coords so the popup escapes the sidebar's clipping
+  // (a narrow sidebar was cutting the menu off).
+  const [pos, setPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 })
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -52,6 +55,11 @@ export function SessionMenu({
         aria-label="Chat options"
         onClick={(e) => {
           e.stopPropagation()
+          const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+          setPos({
+            top: Math.min(rect.bottom + 4, window.innerHeight - 220),
+            left: Math.min(rect.left, window.innerWidth - 220),
+          })
           setOpen((o) => !o)
           setMode('menu')
           setTitle(session.title)
@@ -64,7 +72,10 @@ export function SessionMenu({
       </button>
 
       {open && (
-        <div className="rise-in absolute top-full right-0 z-30 mt-1 w-52 overflow-hidden rounded-lg border border-edge bg-surface-raised py-1 shadow-black/50 shadow-xl">
+        <div
+          style={{ top: pos.top, left: pos.left }}
+          className="rise-in fixed z-50 w-52 overflow-hidden rounded-lg border border-edge bg-surface-raised py-1 shadow-black/50 shadow-xl"
+        >
           {mode === 'menu' && (
             <>
               <button

@@ -48,12 +48,14 @@ export const AGENT_MODELS: Record<string, AgentModelSpec> = {
     placeholder: 'provider/model — pilih dari daftar atau ketik sendiri',
     hint: 'Daftar lengkap & login provider: jalankan `opencode models` / `opencode auth login`',
     suggestions: [
-      { value: 'deepseek/deepseek-v4', label: 'DeepSeek V4', hint: 'Coding kuat, sangat murah' },
+      // Names confirmed by opencode's own "did you mean" hints.
+      { value: 'deepseek/deepseek-v4-pro', label: 'DeepSeek V4 Pro', hint: 'Coding kuat, murah' },
       {
         value: 'deepseek/deepseek-v4-flash',
         label: 'DeepSeek V4 Flash',
         hint: 'Lebih cepat & lebih murah lagi',
       },
+      { value: 'deepseek/deepseek-chat', label: 'DeepSeek Chat', hint: 'General chat' },
       { value: 'zhipu/glm-5.1', label: 'GLM 5.1 (Zhipu)', hint: 'Flagship Zhipu terbaru' },
       { value: 'zhipu/glm-5', label: 'GLM 5 (Zhipu)', hint: 'Stabil, murah' },
       { value: 'qwen/qwen3-coder', label: 'Qwen3 Coder', hint: 'Dioptimalkan untuk kode' },
@@ -73,11 +75,6 @@ export const AGENT_MODELS: Record<string, AgentModelSpec> = {
         value: 'ollama/qwen3-coder',
         label: 'Qwen3 Coder (Ollama)',
         hint: 'LOKAL — gratis, offline',
-      },
-      {
-        value: 'openrouter/deepseek/deepseek-chat',
-        label: 'DeepSeek via OpenRouter',
-        hint: '1 key OpenRouter = ratusan model',
       },
     ],
   },

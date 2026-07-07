@@ -67,6 +67,8 @@ export interface IpcInvokeMap {
   'task:artifacts': { args: { taskId: string }; result: Artifact[] }
   'artifact:listAll': { args: { kind?: ArtifactKind }; result: ArtifactSummary[] }
   'agent:listInstalled': { args: undefined; result: AgentInfo[] }
+  // Live model catalog from the agent's own CLI (currently OpenCode).
+  'agent:listModels': { args: { agentId: string }; result: string[] }
   // Blueprint (Spec Studio)
   'blueprint:create': {
     args: {
@@ -169,6 +171,7 @@ export const IPC_INVOKE_CHANNELS: readonly IpcInvokeChannel[] = [
   'task:artifacts',
   'artifact:listAll',
   'agent:listInstalled',
+  'agent:listModels',
   'blueprint:create',
   'blueprint:get',
   'blueprint:list',

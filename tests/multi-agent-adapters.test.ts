@@ -4,10 +4,18 @@ import { AgentRegistry } from '../src/main/agents/AgentRegistry'
 import { AntigravityAdapter } from '../src/main/agents/antigravity/AntigravityAdapter'
 import { CodexAdapter } from '../src/main/agents/codex/CodexAdapter'
 import { OpenCodeAdapter } from '../src/main/agents/opencode/OpenCodeAdapter'
+import { stripAnsi } from '../src/main/agents/TextCliAdapter'
 
 function opts(mode: AgentRunOptions['mode'], model?: string): AgentRunOptions {
   return { cwd: 'C:/x', prompt: 'p', mode, model, abortSignal: new AbortController().signal }
 }
+
+describe('stripAnsi', () => {
+  it('removes color escapes that leaked into chat bubbles', () => {
+    expect(stripAnsi('[91m[1mError: [0mModel not found')).toBe('Error: Model not found')
+    expect(stripAnsi('plain text')).toBe('plain text')
+  })
+})
 
 describe('OpenCodeAdapter invocation', () => {
   const a = new OpenCodeAdapter()

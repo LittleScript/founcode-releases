@@ -9,13 +9,31 @@
 // The prompt travels as the positional message (safe: cliResolver finds
 // the real opencode.exe inside node_modules, so no cmd.exe re-parsing).
 
+import { spawnSync } from 'node:child_process'
 import type { AgentRunOptions } from '../AgentAdapter'
-import { type CliInvocation, TextCliAdapter } from '../TextCliAdapter'
+import { type CliInvocation, stripAnsi, TextCliAdapter } from '../TextCliAdapter'
 
 export class OpenCodeAdapter extends TextCliAdapter {
   readonly id = 'opencode'
   readonly displayName = 'OpenCode'
   protected readonly cliName = 'opencode'
+
+  // The REAL model catalog straight from the CLI (`opencode models`) —
+  // curated suggestions went stale within a day (QA: "Model not found").
+  listModels(): string[] {
+    const cli = this.resolve()
+    if (!cli) return []
+    const result = spawnSync(cli.file, [...cli.prefixArgs, 'models'], {
+      encoding: 'utf8',
+      windowsHide: true,
+      timeout: 30_000,
+    })
+    if (result.status !== 0) return []
+    return stripAnsi(result.stdout)
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter((l) => /^[\w.-]+\/[\w.@:/-]+$/.test(l))
+  }
 
   invocation(opts: AgentRunOptions): CliInvocation {
     const args = ['run']

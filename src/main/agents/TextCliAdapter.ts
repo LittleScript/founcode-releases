@@ -10,6 +10,15 @@ import type { AgentEvent } from '../../shared/types'
 import type { AgentAdapter, AgentDetection, AgentRunOptions } from './AgentAdapter'
 import { detectVersion, killTree, type ResolvedCli, resolveCli } from './cliResolver'
 
+// CLIs color their output; ANSI escapes leaked into chat bubbles as
+// "←[91m…" (QA finding). Strip them from every surfaced line.
+// biome-ignore lint/suspicious/noControlCharactersInRegex: matching the ESC byte is the point
+const ANSI_RE = /[][[\]()#;?]*(?:\d{1,4}(?:;\d{0,4})*)?[0-9A-ORZcf-nqry=><]/g
+
+export function stripAnsi(text: string): string {
+  return text.replace(ANSI_RE, '')
+}
+
 export interface CliInvocation {
   args: string[]
   // 'stdin': write the prompt to stdin. 'arg': append as the final argv
@@ -78,7 +87,8 @@ export abstract class TextCliAdapter implements AgentAdapter {
 
     const outLines: string[] = []
     try {
-      for await (const line of createInterface({ input: child.stdout })) {
+      for await (const rawLine of createInterface({ input: child.stdout })) {
+        const line = stripAnsi(rawLine)
         outLines.push(line)
         if (line.trim()) yield { type: 'text', content: line }
       }
@@ -88,7 +98,7 @@ export abstract class TextCliAdapter implements AgentAdapter {
 
     const exitCode = await waitForExit(child)
     if (exitCode !== 0 && !opts.abortSignal.aborted) {
-      const stderr = stderrChunks.join('').trim()
+      const stderr = stripAnsi(stderrChunks.join('')).trim()
       if (stderr) yield { type: 'error', message: stderr.slice(0, 4000) }
     }
     yield {

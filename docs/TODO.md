@@ -196,6 +196,15 @@ Rangkuman rilis (di atas v1.1.0 chat-first):
 - [ ] Validasi nyata adapter Codex & Antigravity saat CLI terinstal (integration test gated sudah siap polanya)
 - [ ] Riwayat & pencarian task
 
+## Gap vs Traycer (studi 7 Jul — "Nerve Center for Agentic Coding")
+
+Sudah setara: BYO subscription multi-agen ✓, built-in skills ✓, shared context per task (PRD injection) ✓, switch model per chat ✓, local runtimes via OpenCode ✓. Yang BELUM ada di kita:
+- [ ] **A2A (agent-to-agent) communication** — agen saling tanya/review/hand-off antar chat/task ("walkie-talkie"). Fondasi kita cocok (chat sessions + action protocol); desain: agen bisa post pesan ke sesi lain / spawn sub-task. Kandidat v1.4
+- [ ] **Multiplayer workspaces / cloud sync** — kolaborasi tim + lanjut kerja lintas device. BUTUH backend + akun = bertentangan dengan local-first; posisikan sebagai **cloud opsional** (v2) & justifikasi tier Team
+- [ ] **Direct API connector (tanpa CLI)** — user punya API key DeepSeek/OpenAI tapi ogah pasang OpenCode: chat-mode bisa dilayani HTTP langsung (runner sendiri); P-E-V tetap butuh CLI agentic. Kandidat v1.3 (chat-only)
+- [ ] Adapter **Cursor** (Traycer punya; cek dulu apakah cursor CLI headless tersedia)
+- [ ] **Pricing**: Traycer 5 tier (kami 2). Mereka jual cloud+credits — kami local (2 tier = fitur, bukan kekurangan). Rencana bertahap: Free / **Pro $10** (launch) → + **Pro Annual $96** (2 bln gratis, murni konfigurasi Lemon Squeezy) → + **Team $25/user** saat multiplayer ada → Enterprise nanti. TIDAK meniru credits — kita tak menanggung biaya inference
+
 ---
 
 ## QA Checklist Manual (sebelum setiap rilis)

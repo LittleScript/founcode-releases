@@ -101,7 +101,16 @@ function Sidebar({ info }: { info: AppInfo | null }) {
   useEffect(() => {
     const move = (e: PointerEvent) => {
       if (!dragging.current) return
+      // Drag all the way in -> snaps to the collapsed icon rail; drag
+      // back out -> expands. No separate toggle button needed.
+      if (e.clientX < 130) {
+        setCollapsed(true)
+        localStorage.setItem('fc.sb.collapsed', '1')
+        return
+      }
       const w = Math.min(360, Math.max(200, e.clientX))
+      setCollapsed(false)
+      localStorage.setItem('fc.sb.collapsed', '0')
       setWidth(w)
       localStorage.setItem('fc.sb.width', String(w))
     }
@@ -116,13 +125,6 @@ function Sidebar({ info }: { info: AppInfo | null }) {
       window.removeEventListener('pointerup', up)
     }
   }, [])
-
-  function toggleCollapsed() {
-    setCollapsed((c) => {
-      localStorage.setItem('fc.sb.collapsed', c ? '0' : '1')
-      return !c
-    })
-  }
 
   const liveCount = tasks.filter((t) =>
     ['PLANNING', 'EXECUTING', 'VERIFYING'].includes(t.state),
@@ -143,15 +145,6 @@ function Sidebar({ info }: { info: AppInfo | null }) {
       className="relative flex shrink-0 flex-col border-r border-edge bg-surface-raised/60"
     >
       <Wordmark collapsed={collapsed} />
-
-      <button
-        type="button"
-        onClick={toggleCollapsed}
-        title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        className="absolute top-6 -right-3 z-20 flex size-6 items-center justify-center rounded-full border border-edge bg-surface-raised text-[10px] text-slate-500 shadow transition-colors hover:border-edge-2 hover:text-slate-200"
-      >
-        {collapsed ? '›' : '‹'}
-      </button>
 
       <nav className="flex flex-col gap-0.5 px-2">
         <button
@@ -200,11 +193,11 @@ function Sidebar({ info }: { info: AppInfo | null }) {
         <button
           type="button"
           onClick={goArtifacts}
-          title="Artifacts"
+          title="Foundry — everything the pipeline has produced"
           className={navItem(view.name === 'artifacts')}
         >
           <Icon d={ICONS.artifacts} />
-          {!collapsed && 'Artifacts'}
+          {!collapsed && 'Foundry'}
         </button>
       </nav>
 
@@ -271,16 +264,14 @@ function Sidebar({ info }: { info: AppInfo | null }) {
         )}
       </div>
 
-      {!collapsed && (
-        // biome-ignore lint/a11y/noStaticElementInteractions: resize handle
-        <div
-          onPointerDown={() => {
-            dragging.current = true
-            document.body.style.cursor = 'col-resize'
-          }}
-          className="absolute top-0 right-0 h-full w-1 cursor-col-resize transition-colors hover:bg-accent/30"
-        />
-      )}
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: resize handle — drag in to collapse, out to expand */}
+      <div
+        onPointerDown={() => {
+          dragging.current = true
+          document.body.style.cursor = 'col-resize'
+        }}
+        className="absolute top-0 right-0 h-full w-1.5 cursor-col-resize transition-colors hover:bg-accent/30"
+      />
     </aside>
   )
 }
