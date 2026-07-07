@@ -1,12 +1,15 @@
 import { useEffect, useRef } from 'react'
 import { type LogLine, NO_LINES, useLogStore } from '../stores/logStore'
 
+// The log panel is ALWAYS a dark terminal — fixed colors, independent
+// of the app theme (the slate ladder inverts in light mode and made
+// the log unreadable — QA).
 const COLORS: Record<LogLine['kind'], string> = {
-  text: 'text-slate-300',
-  tool: 'text-phase-plan',
-  file: 'text-amber-300',
-  error: 'text-phase-fail',
-  done: 'text-slate-600',
+  text: 'text-[#cbd5e1]',
+  tool: 'text-[#4cb8ff]',
+  file: 'text-[#fbbf24]',
+  error: 'text-[#f87171]',
+  done: 'text-[#64748b]',
 }
 
 export function LogViewer({ taskId, storedLog }: { taskId: string; storedLog: string | null }) {
@@ -27,9 +30,9 @@ export function LogViewer({ taskId, storedLog }: { taskId: string; storedLog: st
   }
 
   return (
-    <div className="m-4 flex-1 overflow-y-auto rounded-lg border border-edge bg-[#070a0e] p-4 font-mono text-xs leading-relaxed">
+    <div className="m-4 flex-1 overflow-y-auto rounded-lg border border-[#1e2734] bg-[#070a0e] p-4 font-mono text-xs leading-relaxed">
       {storedLog && lines.length === 0 && (
-        <pre className="whitespace-pre-wrap text-slate-500">{storedLog}</pre>
+        <pre className="whitespace-pre-wrap text-[#94a3b8]">{storedLog}</pre>
       )}
       {lines.map((line) => (
         <div key={line.key} className={`whitespace-pre-wrap ${COLORS[line.kind]}`}>

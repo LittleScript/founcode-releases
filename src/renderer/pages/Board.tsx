@@ -32,6 +32,20 @@ const GROUPS: { key: string; title: string; accent: string; states: TaskState[] 
 const ATTENTION_STATES: TaskState[] = ['AWAITING_APPROVAL', 'REVIEW', 'FAILED']
 const RUNNING_STATES: TaskState[] = ['PLANNING', 'EXECUTING', 'VERIFYING']
 
+// Drag-and-drop moves (QA request): dropping a card runs the real
+// pipeline action — no shortcuts around the state machine.
+//   Backlog card  → Working   = start planning
+//   Failed card   → Backlog   = retry (back to backlog)
+//   Discarded card→ Backlog   = retry
+const DND_MOVES: Record<string, { to: string; run: (taskId: string) => Promise<unknown> }> = {
+  BACKLOG: {
+    to: 'working',
+    run: (taskId) => window.founcode.invoke('task:startPlanning', { taskId }),
+  },
+  FAILED: { to: 'backlog', run: (taskId) => window.founcode.invoke('task:retry', { taskId }) },
+  DISCARDED: { to: 'backlog', run: (taskId) => window.founcode.invoke('task:retry', { taskId }) },
+}
+
 // Terminal-style live line: while an agent runs, the card shows what it
 // is doing right now (QA: "user harus tau apa yang ai lakukan").
 function LiveLine({ taskId }: { taskId: string }) {
@@ -56,13 +70,31 @@ function LiveLine({ taskId }: { taskId: string }) {
   )
 }
 
-function TaskCard({ task }: { task: Task }) {
+function TaskCard({
+  task,
+  onDragState,
+}: {
+  task: Task
+  onDragState: (state: TaskState | null) => void
+}) {
   const openTask = useAppStore((s) => s.openTask)
   const needsYou = ATTENTION_STATES.includes(task.state)
   const running = RUNNING_STATES.includes(task.state)
+  const draggable = task.state in DND_MOVES
   return (
     <button
       type="button"
+      draggable={draggable}
+      onDragStart={(e) => {
+        e.dataTransfer.setData(
+          'text/founcode-task',
+          JSON.stringify({ id: task.id, state: task.state }),
+        )
+        e.dataTransfer.effectAllowed = 'move'
+        onDragState(task.state)
+      }}
+      onDragEnd={() => onDragState(null)}
+      title={draggable ? 'Drag to move (Backlog → Working starts planning)' : undefined}
       onClick={() => openTask(task.id)}
       className={`group w-full rounded-lg border bg-surface p-3 text-left transition-all duration-150 hover:translate-y-[-1px] hover:border-edge-2 hover:shadow-black/30 hover:shadow-lg ${
         needsYou ? 'border-amber-500/25' : 'border-edge'
@@ -96,9 +128,29 @@ export function Board() {
   const projects = useAppStore((s) => s.projects)
   const activeProjectId = useAppStore((s) => s.activeProjectId)
   const openBlueprint = useAppStore((s) => s.openBlueprint)
+  const refreshTasks = useAppStore((s) => s.refreshTasks)
   const [showNewTask, setShowNewTask] = useState(false)
   const [showNewBlueprint, setShowNewBlueprint] = useState(false)
   const [activeBlueprints, setActiveBlueprints] = useState<Blueprint[]>([])
+  // State of the card currently being dragged — highlights valid targets.
+  const [dragState, setDragState] = useState<TaskState | null>(null)
+
+  async function dropOn(groupKey: string, e: React.DragEvent) {
+    e.preventDefault()
+    setDragState(null)
+    try {
+      const payload = JSON.parse(e.dataTransfer.getData('text/founcode-task')) as {
+        id: string
+        state: TaskState
+      }
+      const move = DND_MOVES[payload.state]
+      if (!move || move.to !== groupKey) return
+      await move.run(payload.id)
+      await refreshTasks()
+    } catch (error) {
+      useAppStore.setState({ error: (error as Error).message })
+    }
+  }
 
   const project = projects.find((p) => p.id === activeProjectId)
 
@@ -147,10 +199,18 @@ export function Board() {
       <div className="grid flex-1 grid-cols-4 gap-3 overflow-y-auto p-4">
         {GROUPS.map((group, i) => {
           const columnTasks = tasks.filter((t) => group.states.includes(t.state))
+          const droppable = dragState !== null && DND_MOVES[dragState]?.to === group.key
           return (
+            // biome-ignore lint/a11y/noStaticElementInteractions: drop target for the kanban drag
             <section
               key={group.key}
-              className="rise-in flex min-w-0 flex-col"
+              onDragOver={(e) => {
+                if (droppable) e.preventDefault()
+              }}
+              onDrop={(e) => void dropOn(group.key, e)}
+              className={`rise-in flex min-w-0 flex-col ${
+                droppable ? 'rounded-lg ring-2 ring-accent/40' : ''
+              }`}
               style={{ animationDelay: `${i * 35}ms` }}
             >
               <div className="mb-2 flex items-center gap-2 px-1">
@@ -170,7 +230,9 @@ export function Board() {
                     —
                   </span>
                 ) : (
-                  columnTasks.map((task) => <TaskCard key={task.id} task={task} />)
+                  columnTasks.map((task) => (
+                    <TaskCard key={task.id} task={task} onDragState={setDragState} />
+                  ))
                 )}
               </div>
             </section>
