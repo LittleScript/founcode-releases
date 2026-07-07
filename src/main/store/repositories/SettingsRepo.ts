@@ -26,12 +26,14 @@ export class SettingsRepo {
     return {
       defaultAgentId: this.raw('default_agent') ?? DEFAULT_SETTINGS.defaultAgentId,
       defaultModel: this.raw('default_model') ?? DEFAULT_SETTINGS.defaultModel,
+      theme: (this.raw('theme') as AppSettings['theme']) ?? DEFAULT_SETTINGS.theme,
     }
   }
 
   set(next: Partial<AppSettings>): AppSettings {
     if (next.defaultAgentId !== undefined) this.write('default_agent', next.defaultAgentId)
     if (next.defaultModel !== undefined) this.write('default_model', next.defaultModel)
+    if (next.theme !== undefined) this.write('theme', next.theme)
     return this.get()
   }
 }

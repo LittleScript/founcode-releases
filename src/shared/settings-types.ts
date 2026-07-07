@@ -4,11 +4,13 @@ export interface AppSettings {
   defaultAgentId: string
   // Model alias passed to the agent CLI; '' = the CLI's own default.
   defaultModel: string
+  theme: 'dark' | 'light'
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
   defaultAgentId: 'claude-code',
   defaultModel: '',
+  theme: 'dark',
 }
 
 // Curated model choices. Aliases (opus/sonnet/haiku) stay valid across

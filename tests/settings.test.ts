@@ -14,15 +14,23 @@ afterEach(() => db.close())
 
 describe('SettingsRepo', () => {
   it('returns defaults when unset', () => {
-    expect(settings.get()).toEqual({ defaultAgentId: 'claude-code', defaultModel: '' })
+    expect(settings.get()).toEqual({
+      defaultAgentId: 'claude-code',
+      defaultModel: '',
+      theme: 'dark',
+    })
   })
 
   it('persists and merges partial updates', () => {
     settings.set({ defaultModel: 'opus' })
     expect(settings.get().defaultModel).toBe('opus')
     expect(settings.get().defaultAgentId).toBe('claude-code')
-    settings.set({ defaultAgentId: 'mock' })
-    expect(settings.get()).toEqual({ defaultAgentId: 'mock', defaultModel: 'opus' })
+    settings.set({ defaultAgentId: 'mock', theme: 'light' })
+    expect(settings.get()).toEqual({
+      defaultAgentId: 'mock',
+      defaultModel: 'opus',
+      theme: 'light',
+    })
   })
 
   it('does not collide with schema_version key', () => {

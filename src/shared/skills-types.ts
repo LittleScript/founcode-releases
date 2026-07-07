@@ -41,6 +41,27 @@ export const SKILLS: SkillInfo[] = [
     name: 'Architecture',
     description: 'Boundaries, domain-first modeling, dependencies inward, YAGNI',
   },
+  {
+    id: 'refactor',
+    name: 'Refactor',
+    description:
+      'Structure changes with zero behavior change — small green steps, delete relentlessly',
+  },
+  {
+    id: 'perf',
+    name: 'Performance',
+    description: 'Measure first, fix the biggest bar, re-measure, guard the win',
+  },
+  {
+    id: 'docs',
+    name: 'Documentation',
+    description: 'Task-first docs with runnable examples and failure paths — for the 2 AM reader',
+  },
+  {
+    id: 'review',
+    name: 'Code Review',
+    description: 'Correctness → tests → design → security → readability, with concrete fixes',
+  },
 ]
 
 export function skillById(id: string | null | undefined): SkillInfo | undefined {

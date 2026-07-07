@@ -6,6 +6,7 @@ type View =
   | { name: 'chat'; sessionId: string | null } // null = latest session
   | { name: 'chats' }
   | { name: 'projects' }
+  | { name: 'skills' }
   | { name: 'artifacts' }
   | { name: 'board' }
   | { name: 'task'; taskId: string }
@@ -37,6 +38,7 @@ interface AppState {
   goChat: (sessionId?: string | null) => void
   goChats: () => void
   goProjects: () => void
+  goSkills: () => void
   goArtifacts: () => void
   clearError: () => void
 }
@@ -108,6 +110,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   goChat: (sessionId = null) => set({ view: { name: 'chat', sessionId } }),
   goChats: () => set({ view: { name: 'chats' } }),
   goProjects: () => set({ view: { name: 'projects' } }),
+  goSkills: () => set({ view: { name: 'skills' } }),
   goArtifacts: () => set({ view: { name: 'artifacts' } }),
   clearError: () => set({ error: null }),
 }))

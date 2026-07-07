@@ -10,17 +10,50 @@ import { ChatPage } from './pages/ChatPage'
 import { ChatsPage } from './pages/ChatsPage'
 import { ProjectsPage } from './pages/ProjectsPage'
 import { Settings } from './pages/Settings'
+import { SkillsPage } from './pages/SkillsPage'
 import { TaskDetail } from './pages/TaskDetail'
 import { useAppStore } from './stores/appStore'
 import { useBlueprintStore } from './stores/blueprintStore'
 import { useLogStore } from './stores/logStore'
+
+// One consistent icon set (16px, stroke=currentColor, lucide-style) —
+// no more mixed emoji/glyph weights in the nav.
+function Icon({ d, filled = false }: { d: string; filled?: boolean }) {
+  return (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill={filled ? 'currentColor' : 'none'}
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="shrink-0"
+      aria-hidden="true"
+    >
+      <path d={d} />
+    </svg>
+  )
+}
+
+const ICONS = {
+  newChat: 'M12 5v14 M5 12h14',
+  chats: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z',
+  projects: 'M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z',
+  skills:
+    'M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z M18.5 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z',
+  artifacts: 'M21 8l-9-5-9 5 9 5 9-5z M3 8v8l9 5 9-5V8 M12 13v8',
+  settings:
+    'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z',
+}
 
 function Wordmark() {
   return (
     <div className="flex items-center gap-2.5 px-4 pt-5 pb-4">
       <img src={logoUrl} alt="" className="size-8 rounded-md" />
       <div className="leading-tight">
-        <img src={wordmarkUrl} alt="Founcode" className="h-[15px] w-auto" />
+        <img src={wordmarkUrl} alt="Founcode" className="wordmark-img h-[15px] w-auto" />
         <div className="mt-1 font-mono text-[9px] text-slate-600 uppercase tracking-[0.2em]">
           plan · exec · verify
         </div>
@@ -36,6 +69,7 @@ function Sidebar({ info }: { info: AppInfo | null }) {
   const goChat = useAppStore((s) => s.goChat)
   const goChats = useAppStore((s) => s.goChats)
   const goProjects = useAppStore((s) => s.goProjects)
+  const goSkills = useAppStore((s) => s.goSkills)
   const goArtifacts = useAppStore((s) => s.goArtifacts)
   const openSettings = useAppStore((s) => s.openSettings)
   const tasks = useAppStore((s) => s.tasks)
@@ -56,7 +90,7 @@ function Sidebar({ info }: { info: AppInfo | null }) {
   ).length
 
   const navItem = (active: boolean) =>
-    `w-full rounded-md px-3 py-2 text-left text-sm transition-colors duration-150 ${
+    `flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-[13.5px] transition-colors duration-150 ${
       active
         ? 'bg-surface-hover text-slate-100'
         : 'text-slate-400 hover:bg-surface-hover/60 hover:text-slate-200'
@@ -73,12 +107,14 @@ function Sidebar({ info }: { info: AppInfo | null }) {
             const session = await window.founcode.invoke('chat:createSession', {})
             goChat(session.id)
           }}
-          className="mb-1 w-full rounded-md border border-accent/30 px-3 py-2 text-left text-accent text-sm transition-colors hover:border-accent/50 hover:bg-accent/5"
+          className="mb-1.5 flex w-full items-center gap-2.5 rounded-md border border-accent/30 px-3 py-2 text-left text-[13.5px] text-accent transition-colors hover:border-accent/50 hover:bg-accent/5"
         >
-          <span className="pl-1.5">⊕ New chat</span>
+          <Icon d={ICONS.newChat} />
+          New chat
         </button>
         <button type="button" onClick={goChats} className={navItem(view.name === 'chats')}>
-          <span className="pl-1.5">💬 Chats</span>
+          <Icon d={ICONS.chats} />
+          Chats
         </button>
         <button
           type="button"
@@ -87,10 +123,16 @@ function Sidebar({ info }: { info: AppInfo | null }) {
             view.name === 'projects' || view.name === 'board' || view.name === 'task',
           )}
         >
-          <span className="pl-1.5">▦ Projects</span>
+          <Icon d={ICONS.projects} />
+          Projects
+        </button>
+        <button type="button" onClick={goSkills} className={navItem(view.name === 'skills')}>
+          <Icon d={ICONS.skills} />
+          Skills &amp; Tools
         </button>
         <button type="button" onClick={goArtifacts} className={navItem(view.name === 'artifacts')}>
-          <span className="pl-1.5">◈ Artifacts</span>
+          <Icon d={ICONS.artifacts} />
+          Artifacts
         </button>
       </nav>
 
@@ -126,9 +168,10 @@ function Sidebar({ info }: { info: AppInfo | null }) {
         <button
           type="button"
           onClick={openSettings}
-          className="w-full rounded-md px-3 py-1.5 text-left text-slate-400 text-sm transition-colors hover:bg-surface-hover hover:text-slate-200"
+          className="flex w-full items-center gap-2.5 rounded-md px-3 py-1.5 text-left text-[13.5px] text-slate-400 transition-colors hover:bg-surface-hover hover:text-slate-200"
         >
-          ⚙ Settings
+          <Icon d={ICONS.settings} />
+          Settings
         </button>
         <div className="px-3 pt-1 font-mono text-[10px] text-slate-600">
           v{info?.version ?? '·'} — schema v{info?.schemaVersion ?? '·'}
@@ -171,6 +214,10 @@ export default function App() {
   useEffect(() => {
     init()
     window.founcode.invoke('app:info', undefined).then(setInfo).catch(console.error)
+    // Theme applies via the data-theme attribute (tokens remap in CSS).
+    window.founcode.invoke('settings:get', undefined).then((s) => {
+      document.documentElement.dataset.theme = s.theme
+    })
     // Keep the board live: any state change in main refreshes the task list.
     const offState = window.founcode.on('task:stateChanged', () => {
       refreshTasks()
@@ -219,6 +266,8 @@ export default function App() {
         <ChatsPage />
       ) : view.name === 'projects' ? (
         <ProjectsPage />
+      ) : view.name === 'skills' ? (
+        <SkillsPage />
       ) : view.name === 'artifacts' ? (
         <ArtifactsPage />
       ) : view.name === 'task' ? (

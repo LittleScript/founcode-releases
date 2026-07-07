@@ -3,7 +3,11 @@
 import architecture from '../../../prompts/skills/architecture.md?raw'
 import debug from '../../../prompts/skills/debug.md?raw'
 import design from '../../../prompts/skills/design.md?raw'
+import docs from '../../../prompts/skills/docs.md?raw'
+import perf from '../../../prompts/skills/perf.md?raw'
+import refactor from '../../../prompts/skills/refactor.md?raw'
 import research from '../../../prompts/skills/research.md?raw'
+import review from '../../../prompts/skills/review.md?raw'
 import security from '../../../prompts/skills/security.md?raw'
 import tdd from '../../../prompts/skills/tdd.md?raw'
 
@@ -14,6 +18,10 @@ const PACKS: Record<string, string> = {
   tdd,
   security,
   architecture,
+  refactor,
+  perf,
+  docs,
+  review,
 }
 
 export function getSkillContent(id: string | null | undefined): string | null {

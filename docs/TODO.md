@@ -171,6 +171,17 @@ Visi: frontend Founcode = **chat dengan AI** (seperti ChatGPT) sebagai pintu mas
 
 - [x] **C1–C5 SELESAI — dirilis sebagai v1.1.0 (6 Jul)**: Chat home persisten (migration 007) + action chips (protokol `===ACTIONS===`: blueprint_from_idea/create_task/add_task_to_blueprint/pause_auto/resume_auto/start_next/open_project — bisa STEER blueprint yang sedang jalan) + 6 built-in skills (migration 008 `tasks.skill`, injeksi Plan+Execute, `/slash` di chat, picker di New Task, daftar di Settings) + WorkspaceStrip live (pipeline→chat) + hapus sesi + Agent Setup guide di Settings. Chat E2E Claude asli lolos 6.5s (assistant melihat workspace). 139 test. Release: github .../releases/tag/v1.1.0
 
+## v1.2.0 — SELESAI & DIRILIS (7 Jul)
+
+Rangkuman rilis (di atas v1.1.0 chat-first):
+- [x] **IA ala app Claude**: sidebar New chat / Chats / Projects / **Skills & Tools** / Artifacts + Recents + Settings, icon SVG konsisten (lucide-style, currentColor)
+- [x] **Artifacts browser**: semua plan/diff/verdict/log lintas project, filter jenis + search, klik → task (`ArtifactRepo.listAll`)
+- [x] **Skills & Tools tab** + **10 built-in skills** (+refactor/perf/docs/review), roadmap custom skills & MCP tools tercantum
+- [x] **Light theme**: token remap via `[data-theme]` (Tailwind v4 CSS vars), toggle di Settings, instant apply, wordmark auto-darken
+- [x] Composer chat ala Claude: container tunggal, [+] attach, agent+model inline (per-sesi), tombol kirim ↑; slash palette `/`; thinking indicator ✦ 5.2s (tempo Claude Code)
+- [x] Fix: busy per-sesi (composer disable saat membalas), meta "session started" tak bocor ke bubble, error chat tampilkan penyebab asli, re-detect agen ada spinner
+- [x] Drop file & attach ke chat (`@"path"` — agen baca sendiri, termasuk gambar)
+
 ## P1 — Fast Follow (setelah v1.0, JANGAN dikerjakan lebih awal)
 
 - [x] ~~Adapter OpenAI Codex CLI / Gemini CLI / OpenCode~~ → DITARIK ke F6.2 atas keputusan Koko (selesai 6 Jul; Gemini CLI mati → diganti Antigravity)

@@ -40,8 +40,10 @@ const AGENT_SETUP = [
 
 export function Settings() {
   const goBoard = useAppStore((s) => s.goBoard)
+  const goSkills = useAppStore((s) => s.goSkills)
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [agents, setAgents] = useState<AgentInfo[]>([])
+  const [detecting, setDetecting] = useState(false)
   const [saved, setSaved] = useState(false)
   const [license, setLicense] = useState<LicenseState | null>(null)
   const [keyInput, setKeyInput] = useState('')
@@ -79,8 +81,18 @@ export function Settings() {
   async function patch(next: Partial<AppSettings>) {
     const updated = await window.founcode.invoke('settings:set', next)
     setSettings(updated)
+    if (next.theme) document.documentElement.dataset.theme = next.theme
     setSaved(true)
     setTimeout(() => setSaved(false), 1500)
+  }
+
+  async function redetect() {
+    setDetecting(true)
+    try {
+      setAgents(await window.founcode.invoke('agent:listInstalled', undefined))
+    } finally {
+      setDetecting(false)
+    }
   }
 
   return (
@@ -108,12 +120,12 @@ export function Settings() {
                 <h2 className="font-medium text-slate-100 text-sm">Agents</h2>
                 <button
                   type="button"
-                  onClick={() =>
-                    window.founcode.invoke('agent:listInstalled', undefined).then(setAgents)
-                  }
-                  className="rounded border border-edge px-2 py-0.5 font-mono text-[10px] text-slate-400 transition-colors hover:border-edge-2 hover:text-slate-200"
+                  onClick={() => void redetect()}
+                  disabled={detecting}
+                  className="flex items-center gap-1.5 rounded border border-edge px-2 py-0.5 font-mono text-[10px] text-slate-400 transition-colors hover:border-edge-2 hover:text-slate-200 disabled:opacity-70"
                 >
-                  ↻ re-detect
+                  <span className={detecting ? 'inline-block animate-spin' : ''}>↻</span>
+                  {detecting ? 'detecting…' : 're-detect'}
                 </button>
               </div>
               <p className="mb-3 text-slate-500 text-xs">
@@ -156,24 +168,46 @@ export function Settings() {
               </div>
             </section>
 
-            {/* Built-in skills */}
+            {/* Theme */}
             <section>
-              <h2 className="mb-1 font-medium text-slate-100 text-sm">Built-in skills</h2>
+              <h2 className="mb-1 font-medium text-slate-100 text-sm">Theme</h2>
               <p className="mb-3 text-slate-500 text-xs">
-                Working methods the agent applies. Pick one per task, or use them in chat:{' '}
-                <code className="text-slate-400">/debug why does login loop?</code>
+                Applies instantly, saved for next launch.
               </p>
-              <div className="grid grid-cols-2 gap-2">
-                {SKILLS.map((s) => (
-                  <div key={s.id} className="rounded-lg border border-edge p-3">
-                    <div className="flex items-baseline gap-2">
-                      <span className="font-medium text-slate-200 text-sm">{s.name}</span>
-                      <code className="font-mono text-[10px] text-accent">/{s.id}</code>
-                    </div>
-                    <p className="mt-1 text-[11px] text-slate-500 leading-snug">{s.description}</p>
-                  </div>
+              <div className="grid max-w-sm grid-cols-2 gap-2">
+                {(
+                  [
+                    ['dark', 'Dark', 'Mission Control — graphite & phosphor'],
+                    ['light', 'Light', 'Paper white, same green accent'],
+                  ] as const
+                ).map(([value, label, hint]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => void patch({ theme: value })}
+                    className={`rounded-lg border p-3 text-left transition-colors ${
+                      settings.theme === value
+                        ? 'border-accent/50 bg-accent/5'
+                        : 'border-edge hover:border-edge-2'
+                    }`}
+                  >
+                    <div className="font-medium text-slate-200 text-sm">{label}</div>
+                    <div className="mt-0.5 text-[11px] text-slate-500">{hint}</div>
+                  </button>
                 ))}
               </div>
+            </section>
+
+            {/* Built-in skills — full browser lives in its own tab */}
+            <section>
+              <h2 className="mb-1 font-medium text-slate-100 text-sm">Skills</h2>
+              <p className="mb-2 text-slate-500 text-xs">
+                {SKILLS.length} built-in working methods — per task or via <code>/slash</code> in
+                chat.
+              </p>
+              <button type="button" onClick={goSkills} className="btn-ghost">
+                Open Skills &amp; Tools →
+              </button>
             </section>
 
             {/* Default agent */}
