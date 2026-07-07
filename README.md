@@ -19,10 +19,16 @@ every task is planned, executed in isolation, and independently verified before 
 AI coding agents are powerful but unsupervised — they edit your working tree directly, and you find out what happened after the fact. Founcode turns them into a disciplined pipeline:
 
 ```
-Idea ──▶ Blueprint ──▶ Plan ──▶ Execute ──▶ Verify ──▶ Merge
-         (PRD + tasks)  (read-only,  (isolated git  (independent   (you approve)
-                         you approve) worktree)      agent + tests)
+Idea → Blueprint → Plan → Execute → Verify → Merge
 ```
+
+| Stage | What happens |
+|---|---|
+| **Blueprint** | Your idea becomes a PRD and an ordered task graph |
+| **Plan** | Read-only analysis — nothing is written until you approve |
+| **Execute** | Isolated git worktree — your branch is never touched |
+| **Verify** | An independent agent checks the work and runs your tests |
+| **Merge** | One click, only after you review |
 
 - **Blueprint** — describe an idea in plain words; Founcode interviews you, drafts a structure map and a full PRD, then decomposes it into an ordered task graph. Works for brand-new apps *and* existing codebases (extend toward a goal, or reverse-engineer a PRD from the code).
 - **Plan** — the agent analyzes your repo read-only and drafts a reviewable plan. Nothing is written until you approve.
