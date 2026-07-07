@@ -38,9 +38,19 @@ function LiveLine({ taskId }: { taskId: string }) {
   const lines = useLogStore((s) => s.logs[taskId] ?? NO_LINES)
   const last = lines.at(-1)
   if (!last) return null
+  // Always a real terminal: solid dark panel + bright text, readable in
+  // BOTH themes (QA: grey-on-grey in light mode).
+  const tone =
+    last.kind === 'error'
+      ? 'text-[#f87171]'
+      : last.kind === 'done'
+        ? 'text-[#94a3b8]'
+        : 'text-[#34e8a9]'
   return (
-    <div className="mt-2 truncate rounded-md border border-edge bg-black/40 px-2 py-1 font-mono text-[10px] text-accent/90">
-      <span className="mr-1 text-slate-600">❯</span>
+    <div
+      className={`mt-2 truncate rounded-md border border-[#1e2734] bg-[#0a0d12] px-2 py-1 font-mono text-[10px] ${tone}`}
+    >
+      <span className="mr-1 text-[#566274]">❯</span>
       {last.content}
     </div>
   )

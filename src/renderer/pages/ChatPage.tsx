@@ -504,7 +504,7 @@ export function ChatPage({ sessionId }: { sessionId: string | null }) {
                       agentId={active.agentId}
                       value={active.model ?? ''}
                       onChange={(v) => void patchSession({ model: v })}
-                      compact
+                      variant="ghost"
                     />
                   </>
                 )}

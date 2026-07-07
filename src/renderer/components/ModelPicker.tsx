@@ -11,12 +11,15 @@ export function ModelPicker({
   agentId,
   value,
   onChange,
-  compact = false,
+  variant = 'field',
 }: {
   agentId: string
   value: string
   onChange: (v: string) => void
-  compact?: boolean
+  // field: full-width input look (dialogs/settings); ghost: borderless
+  // text button (chat composer); chip: small bordered mono (task page,
+  // matches the agent select next to it).
+  variant?: 'field' | 'ghost' | 'chip'
 }) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -78,18 +81,16 @@ export function ModelPicker({
     setQuery('')
   }
 
+  const triggerClass =
+    variant === 'ghost'
+      ? 'flex max-w-40 items-center truncate rounded-lg px-2 py-1.5 text-[12px] text-slate-400 transition-colors hover:bg-surface-hover hover:text-slate-200'
+      : variant === 'chip'
+        ? 'flex max-w-48 items-center truncate rounded-md border border-edge bg-surface px-2 py-0.5 font-mono text-[10px] text-slate-400 transition-colors hover:border-edge-2'
+        : 'input-field flex items-center justify-between text-left'
+
   return (
-    <div ref={ref} className={compact ? '' : 'w-full'}>
-      <button
-        type="button"
-        onClick={toggle}
-        title="Model"
-        className={
-          compact
-            ? 'max-w-40 truncate rounded-lg px-2 py-1.5 text-[12px] text-slate-400 transition-colors hover:bg-surface-hover hover:text-slate-200'
-            : 'input-field flex items-center justify-between text-left'
-        }
-      >
+    <div ref={ref} className={variant === 'field' ? 'w-full' : ''}>
+      <button type="button" onClick={toggle} title="Model" className={triggerClass}>
         <span className="truncate">{display}</span>
         <span className="ml-1 shrink-0 text-slate-600 text-xs">⌄</span>
       </button>

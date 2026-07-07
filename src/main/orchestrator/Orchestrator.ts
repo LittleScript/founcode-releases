@@ -495,6 +495,13 @@ export class Orchestrator {
     let exitCode = -1
     let resultText: string | undefined
 
+    // Run separator: logs accumulate across attempts and agent
+    // switches — every run announces who is doing what (QA: an old
+    // Claude line looked like the wrong agent was running).
+    const header = `━━ ${opts.mode} run · ${adapter.id}${opts.model ? ` · ${opts.model}` : ''} ━━`
+    this.deps.broadcastAgentEvent({ taskId, event: { type: 'text', content: header } })
+    logLines.push(header)
+
     for await (const event of adapter.run(opts)) {
       this.deps.broadcastAgentEvent({ taskId, event })
       if (event.type === 'text') logLines.push(event.content)

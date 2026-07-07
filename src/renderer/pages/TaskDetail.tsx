@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import type { AgentInfo, Artifact, Task } from '../../shared/types'
 import { DiffViewer } from '../components/DiffViewer'
 import { LogViewer } from '../components/LogViewer'
-import { ModelField } from '../components/ModelField'
+import { ModelPicker } from '../components/ModelPicker'
 import { PipelineRail } from '../components/PipelineRail'
 import { PlanReviewer } from '../components/PlanReviewer'
 import { StateBadge } from '../components/StateBadge'
@@ -42,7 +42,7 @@ function AgentModelRow({ task, onUpdated }: { task: Task; onUpdated: () => void 
         value={task.agentId}
         onChange={(e) => void patch({ agentId: e.target.value, model: '' })}
         title="Agent for this task"
-        className="cursor-pointer rounded-md border border-edge bg-surface px-1.5 py-0.5 font-mono text-[10px] text-slate-400 outline-none hover:border-edge-2"
+        className="cursor-pointer rounded-md border border-edge bg-surface px-2 py-0.5 font-mono text-[10px] text-slate-400 outline-none transition-colors hover:border-edge-2"
       >
         {agents.map((a) => (
           <option key={a.id} value={a.id} disabled={!a.installed}>
@@ -50,13 +50,12 @@ function AgentModelRow({ task, onUpdated }: { task: Task; onUpdated: () => void 
           </option>
         ))}
       </select>
-      <span className="w-44 [&_input]:!py-0.5 [&_input]:!text-[10px] [&_input]:font-mono [&_p]:hidden [&_select]:!py-0.5 [&_select]:!text-[10px]">
-        <ModelField
-          agentId={task.agentId}
-          value={task.model ?? ''}
-          onChange={(v) => void patch({ model: v })}
-        />
-      </span>
+      <ModelPicker
+        agentId={task.agentId}
+        value={task.model ?? ''}
+        onChange={(v) => void patch({ model: v })}
+        variant="chip"
+      />
     </span>
   )
 }
