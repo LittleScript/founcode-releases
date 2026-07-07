@@ -81,13 +81,27 @@ const THINKING_WORDS = [
   'Assembling',
   'Founcoding',
 ]
-const WORD_INTERVAL_MS = 5200
-
+// Random word, random unhurried cadence (10–20s) — like a person who
+// is actually thinking, not a slot machine.
 function ThinkingIndicator({ streamLine }: { streamLine?: string }) {
   const [word, setWord] = useState(() => Math.floor(Math.random() * THINKING_WORDS.length))
   useEffect(() => {
-    const t = setInterval(() => setWord((w) => (w + 1) % THINKING_WORDS.length), WORD_INTERVAL_MS)
-    return () => clearInterval(t)
+    let timer: ReturnType<typeof setTimeout>
+    const next = () => {
+      timer = setTimeout(
+        () => {
+          setWord((prev) => {
+            let pick = Math.floor(Math.random() * THINKING_WORDS.length)
+            if (pick === prev) pick = (pick + 1) % THINKING_WORDS.length
+            return pick
+          })
+          next()
+        },
+        10_000 + Math.random() * 10_000,
+      )
+    }
+    next()
+    return () => clearTimeout(timer)
   }, [])
   return (
     <div className="flex justify-start">
@@ -533,15 +547,30 @@ export function ChatPage({ sessionId }: { sessionId: string | null }) {
                   </>
                 )}
 
-                <button
-                  type="button"
-                  onClick={() => void send()}
-                  disabled={!draft.trim() || pending}
-                  title="Send (Enter)"
-                  className="ml-1 flex size-8 items-center justify-center rounded-full bg-accent font-semibold text-[#06281c] transition-all hover:shadow-[0_0_16px_rgba(52,232,169,0.4)] disabled:bg-surface-hover disabled:text-slate-600"
-                >
-                  ↑
-                </button>
+                {pending ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (activeId)
+                        void window.founcode.invoke('chat:stop', { sessionId: activeId })
+                      setJustSent(false)
+                    }}
+                    title="Stop the reply"
+                    className="ml-1 flex size-8 items-center justify-center rounded-full border border-red-500/50 text-red-400 transition-colors hover:bg-red-950/30"
+                  >
+                    <span className="block size-2.5 rounded-[2px] bg-current" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => void send()}
+                    disabled={!draft.trim()}
+                    title="Send (Enter)"
+                    className="ml-1 flex size-8 items-center justify-center rounded-full bg-accent font-semibold text-[#06281c] transition-all hover:shadow-[0_0_16px_rgba(52,232,169,0.4)] disabled:bg-surface-hover disabled:text-slate-600"
+                  >
+                    ↑
+                  </button>
+                )}
               </div>
             </div>
           </div>

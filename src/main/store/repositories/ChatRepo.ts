@@ -8,6 +8,7 @@ interface SessionRow {
   title: string
   agent_id: string
   model: string | null
+  pinned: number
   created_at: number
   updated_at: number
 }
@@ -28,6 +29,7 @@ function toSession(row: SessionRow): ChatSession {
     title: row.title,
     agentId: row.agent_id,
     model: row.model,
+    pinned: row.pinned === 1,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }
@@ -83,7 +85,7 @@ export class ChatRepo {
 
   listSessions(): ChatSession[] {
     const rows = this.db
-      .prepare('SELECT * FROM chat_sessions ORDER BY updated_at DESC')
+      .prepare('SELECT * FROM chat_sessions ORDER BY pinned DESC, updated_at DESC')
       .all() as unknown as SessionRow[]
     return rows.map(toSession)
   }
@@ -95,8 +97,17 @@ export class ChatRepo {
       .run(title.slice(0, 60), Date.now(), id)
   }
 
-  // Per-chat agent/model switching (like any AI chat app).
-  updateSession(id: string, patch: { agentId?: string; model?: string | null }): void {
+  // Per-chat management: agent/model switching, rename, pin, project link.
+  updateSession(
+    id: string,
+    patch: {
+      agentId?: string
+      model?: string | null
+      title?: string
+      projectId?: string | null
+      pinned?: boolean
+    },
+  ): void {
     if (patch.agentId !== undefined) {
       this.db.prepare('UPDATE chat_sessions SET agent_id = ? WHERE id = ?').run(patch.agentId, id)
     }
@@ -104,6 +115,21 @@ export class ChatRepo {
       this.db
         .prepare('UPDATE chat_sessions SET model = ? WHERE id = ?')
         .run(patch.model === '' ? null : patch.model, id)
+    }
+    if (patch.title !== undefined) {
+      this.db
+        .prepare('UPDATE chat_sessions SET title = ? WHERE id = ?')
+        .run(patch.title.slice(0, 60), id)
+    }
+    if (patch.projectId !== undefined) {
+      this.db
+        .prepare('UPDATE chat_sessions SET project_id = ? WHERE id = ?')
+        .run(patch.projectId, id)
+    }
+    if (patch.pinned !== undefined) {
+      this.db
+        .prepare('UPDATE chat_sessions SET pinned = ? WHERE id = ?')
+        .run(patch.pinned ? 1 : 0, id)
     }
     this.touch(id)
   }

@@ -164,4 +164,9 @@ export const MIGRATIONS: Migration[] = [
     // into the plan/execute prompts.
     sql: 'ALTER TABLE tasks ADD COLUMN skill TEXT;',
   },
+  {
+    version: 9,
+    // Chat management (Claude-app parity): pinned sessions sort first.
+    sql: 'ALTER TABLE chat_sessions ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0;',
+  },
 ]

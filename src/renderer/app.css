@@ -80,9 +80,33 @@ body {
     radial-gradient(ellipse 60% 40% at 90% 110%, rgb(76 184 255 / 0.03), transparent);
 }
 
-/* The wordmark is a white+gradient PNG — darken it on light surfaces. */
-[data-theme="light"] .wordmark-img {
-  filter: brightness(0.25) saturate(1.6);
+/* Theme-specific wordmark variants (white PNG for dark, recolored dark
+   PNG for light — a brightness filter washed the gradient out). */
+[data-theme="light"] .wordmark-on-dark {
+  display: none;
+}
+:root:not([data-theme="light"]) .wordmark-on-light {
+  display: none;
+}
+
+/* Chat replies render through prose-invert (built for dark surfaces) —
+   remap its variables so text stays readable on light. */
+[data-theme="light"] .prose-invert {
+  --tw-prose-invert-body: #1e293b;
+  --tw-prose-invert-headings: #0f172a;
+  --tw-prose-invert-lead: #334155;
+  --tw-prose-invert-links: #0b8a63;
+  --tw-prose-invert-bold: #0f172a;
+  --tw-prose-invert-counters: #475569;
+  --tw-prose-invert-bullets: #94a3b8;
+  --tw-prose-invert-hr: #d7dfe9;
+  --tw-prose-invert-quotes: #334155;
+  --tw-prose-invert-quote-borders: #d7dfe9;
+  --tw-prose-invert-code: #0f172a;
+  --tw-prose-invert-pre-code: #e2e8f0;
+  --tw-prose-invert-pre-bg: #1e293b;
+  --tw-prose-invert-th-borders: #b7c4d4;
+  --tw-prose-invert-td-borders: #d7dfe9;
 }
 
 [data-theme="light"] body {
@@ -211,23 +235,19 @@ body {
   animation: think-spark 1.6s ease-in-out infinite;
 }
 
-@keyframes think-word {
-  0% {
+@keyframes think-word-in {
+  from {
     opacity: 0;
     transform: translateY(4px);
   }
-  6%,
-  92% {
+  to {
     opacity: 1;
     transform: none;
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-4px);
   }
 }
 .think-word {
   display: inline-block;
-  /* Matches WORD_INTERVAL_MS in ChatPage — unhurried, Claude-Code pace. */
-  animation: think-word 5.2s ease-in-out infinite;
+  /* One-shot fade per word — the word itself changes on a random
+     10–20s cadence (see ChatPage), Claude-Code pace. */
+  animation: think-word-in 0.5s ease-out both;
 }

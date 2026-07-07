@@ -6,6 +6,7 @@ export interface ChatSession {
   title: string
   agentId: string
   model: string | null
+  pinned: boolean
   createdAt: number
   updatedAt: number
   // Transient (computed by main): a reply is currently streaming.

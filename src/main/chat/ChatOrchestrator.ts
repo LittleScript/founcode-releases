@@ -66,7 +66,21 @@ export class ChatOrchestrator {
     this.deps.chat.deleteSession(sessionId)
   }
 
-  updateSession(sessionId: string, patch: { agentId?: string; model?: string }): ChatSession {
+  // User pressed stop — abort the in-flight reply for this session.
+  stop(sessionId: string): void {
+    this.active.get(sessionId)?.abort()
+  }
+
+  updateSession(
+    sessionId: string,
+    patch: {
+      agentId?: string
+      model?: string
+      title?: string
+      projectId?: string | null
+      pinned?: boolean
+    },
+  ): ChatSession {
     this.deps.chat.updateSession(sessionId, patch)
     const session = this.deps.chat.getSession(sessionId)
     if (!session) throw new Error(`Chat session not found: ${sessionId}`)
@@ -142,6 +156,10 @@ export class ChatOrchestrator {
           exitCode = event.exitCode
           resultText = event.resultText
         }
+      }
+      if (controller.signal.aborted) {
+        this.deps.chat.addMessage(sessionId, 'assistant', '⏹ Stopped.')
+        return
       }
       const raw = (resultText ?? parts.join('\n')).trim()
       if (exitCode !== 0 || !raw) {

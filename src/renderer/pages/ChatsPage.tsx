@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { ChatSession } from '../../shared/chat-types'
+import { SessionMenu } from '../components/SessionMenu'
 import { useAppStore } from '../stores/appStore'
 
 // All chat sessions — Claude-app style "Chats" tab.
@@ -47,6 +48,7 @@ export function ChatsPage() {
                 className="w-full rounded-lg border border-edge bg-surface px-4 py-3 text-left transition-colors hover:border-edge-2"
               >
                 <div className="flex items-center gap-2">
+                  {s.pinned && <span className="text-[11px] text-slate-600">📌</span>}
                   {s.busy && <span className="live-dot size-1.5 rounded-full bg-accent" />}
                   <span className="truncate font-medium text-[13.5px] text-slate-200">
                     {s.title}
@@ -57,17 +59,15 @@ export function ChatsPage() {
                   {s.model ? ` · ${s.model}` : ''} · {new Date(s.updatedAt).toLocaleString()}
                 </div>
               </button>
-              <button
-                type="button"
-                aria-label="Delete chat"
-                onClick={async () => {
-                  await window.founcode.invoke('chat:deleteSession', { sessionId: s.id })
-                  setSessions(await window.founcode.invoke('chat:listSessions', undefined))
-                }}
-                className="absolute top-2 right-2 hidden rounded px-1.5 py-0.5 text-slate-600 text-xs hover:bg-red-950/40 hover:text-red-300 group-hover:block"
-              >
-                ✕
-              </button>
+              <SessionMenu
+                session={s}
+                onChanged={() =>
+                  void window.founcode.invoke('chat:listSessions', undefined).then(setSessions)
+                }
+                onDeleted={() =>
+                  void window.founcode.invoke('chat:listSessions', undefined).then(setSessions)
+                }
+              />
             </div>
           ))}
         </div>

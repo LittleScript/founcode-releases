@@ -36,6 +36,16 @@ const AGENT_SETUP = [
     login: 'av  (Google account login)',
     auth: 'Google account',
   },
+  {
+    // DeepSeek is a MODEL provider, not a CLI — OpenCode is its
+    // connector. The key lives in OpenCode's own config.
+    id: 'deepseek',
+    name: 'DeepSeek (via OpenCode)',
+    install: 'npm install -g opencode-ai  (skip if OpenCode is installed)',
+    login: 'opencode auth login → pilih DeepSeek → tempel API key dari platform.deepseek.com',
+    auth: 'DeepSeek API key',
+    detectAs: 'opencode',
+  },
 ]
 
 export function Settings() {
@@ -134,7 +144,9 @@ export function Settings() {
               </p>
               <div className="grid gap-2">
                 {AGENT_SETUP.map((guide) => {
-                  const detected = agents.find((a) => a.id === guide.id)
+                  const detected = agents.find(
+                    (a) => a.id === ((guide as { detectAs?: string }).detectAs ?? guide.id),
+                  )
                   return (
                     <div key={guide.id} className="rounded-lg border border-edge p-3">
                       <div className="flex items-center gap-2">

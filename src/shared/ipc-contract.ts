@@ -126,9 +126,18 @@ export interface IpcInvokeMap {
   }
   'chat:deleteSession': { args: { sessionId: string }; result: undefined }
   'chat:updateSession': {
-    args: { sessionId: string; agentId?: string; model?: string }
+    args: {
+      sessionId: string
+      agentId?: string
+      model?: string
+      title?: string
+      projectId?: string | null
+      pinned?: boolean
+    }
     result: ChatSession
   }
+  'chat:stop': { args: { sessionId: string }; result: undefined }
+  'app:openExternal': { args: { url: string }; result: undefined }
 }
 
 export type IpcInvokeChannel = keyof IpcInvokeMap
@@ -184,6 +193,8 @@ export const IPC_INVOKE_CHANNELS: readonly IpcInvokeChannel[] = [
   'chat:runAction',
   'chat:deleteSession',
   'chat:updateSession',
+  'chat:stop',
+  'app:openExternal',
 ]
 
 // ---- events (main -> renderer stream) ----

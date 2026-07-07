@@ -2,7 +2,7 @@
 
 import { existsSync } from 'node:fs'
 import { basename, join } from 'node:path'
-import { app, BrowserWindow, dialog, ipcMain, safeStorage } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, safeStorage, shell } from 'electron'
 import type { IpcEventMap, IpcInvokeMap } from '../../shared/ipc-contract'
 import { AgentRegistry } from '../agents/AgentRegistry'
 import { MockAgentAdapter } from '../agents/mock/MockAgentAdapter'
@@ -388,7 +388,17 @@ export function registerIpcHandlers(db: Database, dbPath: string, services: Main
     return undefined
   })
 
-  handle('chat:updateSession', ({ sessionId, agentId, model }) =>
-    chat.updateSession(sessionId, { agentId, model }),
-  )
+  handle('chat:updateSession', ({ sessionId, ...patch }) => chat.updateSession(sessionId, patch))
+
+  handle('chat:stop', ({ sessionId }) => {
+    chat.stop(sessionId)
+    return undefined
+  })
+
+  handle('app:openExternal', ({ url }) => {
+    // External links only — never local paths.
+    if (!/^https?:\/\//.test(url)) throw new Error('Only http(s) URLs can be opened')
+    void shell.openExternal(url)
+    return undefined
+  })
 }
