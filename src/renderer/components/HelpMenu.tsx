@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 
 // Claude-app-style help popup: external links + keyboard shortcuts.
+const REPO = 'https://github.com/LittleScript/founcode-releases'
 const LINKS: { label: string; url: string }[] = [
-  {
-    label: 'Releases & changelog',
-    url: 'https://github.com/LittleScript/founcode-releases/releases',
-  },
-  { label: 'Report an issue', url: 'https://github.com/LittleScript/founcode-releases/issues' },
-  { label: 'About Founcode', url: 'https://github.com/LittleScript/founcode-releases#readme' },
+  { label: 'Releases & changelog', url: `${REPO}/releases` },
+  { label: 'Report an issue', url: `${REPO}/issues` },
+  { label: 'About Founcode', url: `${REPO}#readme` },
+  { label: 'Terms of service', url: `${REPO}/blob/main/TERMS.md` },
+  { label: 'Privacy policy', url: `${REPO}/blob/main/PRIVACY.md` },
+  { label: 'Usage policy', url: `${REPO}/blob/main/USAGE-POLICY.md` },
 ]
 
 const SHORTCUTS: [string, string][] = [

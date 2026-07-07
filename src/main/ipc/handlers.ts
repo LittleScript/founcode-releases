@@ -386,7 +386,14 @@ export function registerIpcHandlers(db: Database, dbPath: string, services: Main
   // ---- Chat-first home ----
   const chat = services.chatOrchestrator
 
-  handle('chat:createSession', ({ projectId }) => chat.createSession(projectId))
+  handle('chat:createSession', ({ projectId }) => {
+    const session = chat.createSession(projectId)
+    // Every session mutation broadcasts so recents / Chats page / the
+    // composer bar stay in sync (QA: new chat missing from recents,
+    // deletes lingering in other views until restart).
+    broadcast('chat:updated', { sessionId: session.id })
+    return session
+  })
 
   handle('chat:listSessions', () => chat.listSessions())
 
@@ -402,10 +409,15 @@ export function registerIpcHandlers(db: Database, dbPath: string, services: Main
 
   handle('chat:deleteSession', ({ sessionId }) => {
     chat.deleteSession(sessionId)
+    broadcast('chat:updated', { sessionId })
     return undefined
   })
 
-  handle('chat:updateSession', ({ sessionId, ...patch }) => chat.updateSession(sessionId, patch))
+  handle('chat:updateSession', ({ sessionId, ...patch }) => {
+    const session = chat.updateSession(sessionId, patch)
+    broadcast('chat:updated', { sessionId })
+    return session
+  })
 
   handle('chat:stop', ({ sessionId }) => {
     chat.stop(sessionId)

@@ -5,46 +5,58 @@ import { BlueprintBanner } from '../components/blueprint/BlueprintBanner'
 import { NewBlueprintDialog } from '../components/blueprint/NewBlueprintDialog'
 import { NewTaskDialog } from '../components/NewTaskDialog'
 import { PipelineRail } from '../components/PipelineRail'
-import { STATE_LABELS } from '../components/StateBadge'
+import { StateBadge } from '../components/StateBadge'
 import { useAppStore } from '../stores/appStore'
+import { NO_LINES, useLogStore } from '../stores/logStore'
 
-// DISCARDED sits last, muted — stopped work stays visible and revivable.
-const BOARD_STATES: TaskState[] = [
-  'BACKLOG',
-  'PLANNING',
-  'AWAITING_APPROVAL',
-  'EXECUTING',
-  'VERIFYING',
-  'REVIEW',
-  'DONE',
-  'FAILED',
-  'DISCARDED',
+// Four groups instead of nine state columns — everything fits without
+// horizontal scrolling (QA), and the per-card rail + badge still show
+// the exact stage.
+const GROUPS: { key: string; title: string; accent: string; states: TaskState[] }[] = [
+  { key: 'backlog', title: 'Backlog', accent: 'bg-slate-600', states: ['BACKLOG'] },
+  {
+    key: 'working',
+    title: 'Working',
+    accent: 'bg-phase-exec',
+    states: ['PLANNING', 'EXECUTING', 'VERIFYING'],
+  },
+  {
+    key: 'needs-you',
+    title: 'Needs you',
+    accent: 'bg-amber-400',
+    states: ['AWAITING_APPROVAL', 'REVIEW', 'FAILED'],
+  },
+  { key: 'finished', title: 'Finished', accent: 'bg-accent', states: ['DONE', 'DISCARDED'] },
 ]
 
-const COLUMN_ACCENT: Record<TaskState, string> = {
-  BACKLOG: 'bg-slate-600',
-  PLANNING: 'bg-phase-plan',
-  AWAITING_APPROVAL: 'bg-amber-400',
-  EXECUTING: 'bg-phase-exec',
-  VERIFYING: 'bg-phase-verify',
-  REVIEW: 'bg-phase-review',
-  DONE: 'bg-accent',
-  DISCARDED: 'bg-slate-700',
-  FAILED: 'bg-phase-fail',
-}
-
 const ATTENTION_STATES: TaskState[] = ['AWAITING_APPROVAL', 'REVIEW', 'FAILED']
+const RUNNING_STATES: TaskState[] = ['PLANNING', 'EXECUTING', 'VERIFYING']
+
+// Terminal-style live line: while an agent runs, the card shows what it
+// is doing right now (QA: "user harus tau apa yang ai lakukan").
+function LiveLine({ taskId }: { taskId: string }) {
+  const lines = useLogStore((s) => s.logs[taskId] ?? NO_LINES)
+  const last = lines.at(-1)
+  if (!last) return null
+  return (
+    <div className="mt-2 truncate rounded-md border border-edge bg-black/40 px-2 py-1 font-mono text-[10px] text-accent/90">
+      <span className="mr-1 text-slate-600">❯</span>
+      {last.content}
+    </div>
+  )
+}
 
 function TaskCard({ task }: { task: Task }) {
   const openTask = useAppStore((s) => s.openTask)
   const needsYou = ATTENTION_STATES.includes(task.state)
+  const running = RUNNING_STATES.includes(task.state)
   return (
     <button
       type="button"
       onClick={() => openTask(task.id)}
       className={`group w-full rounded-lg border bg-surface p-3 text-left transition-all duration-150 hover:translate-y-[-1px] hover:border-edge-2 hover:shadow-black/30 hover:shadow-lg ${
         needsYou ? 'border-amber-500/25' : 'border-edge'
-      }`}
+      } ${task.state === 'DISCARDED' ? 'opacity-60' : ''}`}
     >
       <div className="mb-1 flex items-start justify-between gap-2">
         <span className="flex items-center gap-1.5 font-medium text-[13px] text-slate-100 leading-snug">
@@ -55,11 +67,7 @@ function TaskCard({ task }: { task: Task }) {
           )}
           {task.title}
         </span>
-        {needsYou && (
-          <span className="shrink-0 rounded-sm bg-amber-500/15 px-1.5 py-0.5 font-mono text-[9px] text-amber-300 uppercase tracking-wider">
-            you
-          </span>
-        )}
+        <StateBadge state={task.state} />
       </div>
       <p className="mb-3 line-clamp-2 text-slate-500 text-xs leading-relaxed">{task.intent}</p>
       <div className="flex items-center gap-3">
@@ -68,6 +76,7 @@ function TaskCard({ task }: { task: Task }) {
           <PipelineRail state={task.state} />
         </div>
       </div>
+      {running && <LiveLine taskId={task.id} />}
     </button>
   )
 }
@@ -125,19 +134,19 @@ export function Board() {
         />
       ))}
 
-      <div className="flex flex-1 gap-3 overflow-x-auto p-4">
-        {BOARD_STATES.map((state, i) => {
-          const columnTasks = tasks.filter((t) => t.state === state)
+      <div className="grid flex-1 grid-cols-4 gap-3 overflow-y-auto p-4">
+        {GROUPS.map((group, i) => {
+          const columnTasks = tasks.filter((t) => group.states.includes(t.state))
           return (
             <section
-              key={state}
-              className="rise-in flex w-60 shrink-0 flex-col"
+              key={group.key}
+              className="rise-in flex min-w-0 flex-col"
               style={{ animationDelay: `${i * 35}ms` }}
             >
               <div className="mb-2 flex items-center gap-2 px-1">
-                <span className={`size-1.5 rounded-full ${COLUMN_ACCENT[state]}`} />
+                <span className={`size-1.5 rounded-full ${group.accent}`} />
                 <h2 className="font-medium font-mono text-[11px] text-slate-400 uppercase tracking-widest">
-                  {STATE_LABELS[state]}
+                  {group.title}
                 </h2>
                 {columnTasks.length > 0 && (
                   <span className="ml-auto font-mono text-[10px] text-slate-600">

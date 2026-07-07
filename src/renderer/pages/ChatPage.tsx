@@ -3,10 +3,10 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { ChatAction, ChatMessage, ChatSession } from '../../shared/chat-types'
 import { MAIN_SIDE_ACTIONS } from '../../shared/chat-types'
-import { agentModelSpec, MODEL_OPTIONS } from '../../shared/settings-types'
 import { SKILLS } from '../../shared/skills-types'
 import type { AgentInfo, Task, TaskState } from '../../shared/types'
 import { NewBlueprintDialog } from '../components/blueprint/NewBlueprintDialog'
+import { ModelPicker } from '../components/ModelPicker'
 import { useAppStore } from '../stores/appStore'
 import { NO_LINES, useLogStore } from '../stores/logStore'
 
@@ -218,15 +218,6 @@ function ActionChips({
   )
 }
 
-function modelDisplay(agentId: string, model: string | null): string {
-  if (!model) return 'Default'
-  const spec = agentModelSpec(agentId)
-  const known = [...(spec.options ?? []), ...(spec.suggestions ?? []), ...MODEL_OPTIONS].find(
-    (m) => m.value === model,
-  )
-  return known?.label ?? model
-}
-
 // A fresh invitation every time you land on the home screen —
 // welcoming, not interrogating (Koko's list).
 const GREETINGS = [
@@ -250,7 +241,6 @@ export function ChatPage({ sessionId }: { sessionId: string | null }) {
   const [draft, setDraft] = useState('')
   const [slashIndex, setSlashIndex] = useState(0)
   const [agents, setAgents] = useState<AgentInfo[]>([])
-  const [modelOpen, setModelOpen] = useState(false)
   // Instant optimistic flag; authoritative busy comes per-session from main.
   const [justSent, setJustSent] = useState(false)
   const [ideaDialog, setIdeaDialog] = useState<{ idea: string; title?: string } | null>(null)
@@ -361,9 +351,6 @@ export function ChatPage({ sessionId }: { sessionId: string | null }) {
     setDraft(`/${id} `)
     setSlashIndex(0)
   }
-
-  const spec = active ? agentModelSpec(active.agentId) : null
-  const modelChoices = spec ? (spec.options ?? spec.suggestions ?? []) : []
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
@@ -513,52 +500,12 @@ export function ChatPage({ sessionId }: { sessionId: string | null }) {
                       ))}
                     </select>
 
-                    <div className="relative">
-                      <button
-                        type="button"
-                        onClick={() => setModelOpen((o) => !o)}
-                        title="Model for this chat"
-                        className="rounded-lg px-2 py-1.5 text-[12px] text-slate-400 transition-colors hover:bg-surface-hover hover:text-slate-200"
-                      >
-                        {modelDisplay(active.agentId, active.model)}{' '}
-                        <span className="text-slate-600">⌄</span>
-                      </button>
-                      {modelOpen && (
-                        <div className="rise-in absolute right-0 bottom-full mb-2 max-h-72 w-72 overflow-y-auto rounded-lg border border-edge bg-surface-raised py-1 shadow-black/50 shadow-xl">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              void patchSession({ model: '' })
-                              setModelOpen(false)
-                            }}
-                            className="flex w-full flex-col px-3 py-1.5 text-left hover:bg-surface-hover"
-                          >
-                            <span className="text-[12px] text-slate-200">Default</span>
-                            <span className="text-[10px] text-slate-500">
-                              Agent CLI's configured model
-                            </span>
-                          </button>
-                          {modelChoices
-                            .filter((m) => m.value !== '')
-                            .map((m) => (
-                              <button
-                                key={m.value}
-                                type="button"
-                                onClick={() => {
-                                  void patchSession({ model: m.value })
-                                  setModelOpen(false)
-                                }}
-                                className={`flex w-full flex-col px-3 py-1.5 text-left hover:bg-surface-hover ${
-                                  active.model === m.value ? 'bg-surface-hover' : ''
-                                }`}
-                              >
-                                <span className="text-[12px] text-slate-200">{m.label}</span>
-                                <span className="text-[10px] text-slate-500">{m.hint}</span>
-                              </button>
-                            ))}
-                        </div>
-                      )}
-                    </div>
+                    <ModelPicker
+                      agentId={active.agentId}
+                      value={active.model ?? ''}
+                      onChange={(v) => void patchSession({ model: v })}
+                      compact
+                    />
                   </>
                 )}
 
