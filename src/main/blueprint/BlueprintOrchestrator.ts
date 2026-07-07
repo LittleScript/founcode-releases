@@ -56,6 +56,10 @@ export class BlueprintOrchestrator {
 
   constructor(private deps: BlueprintDeps) {}
 
+  abortAll(): void {
+    for (const controller of this.active.values()) controller.abort()
+  }
+
   getQuestions(blueprintId: string): BlueprintQuestion[] {
     return this.questionsCache.get(blueprintId) ?? []
   }

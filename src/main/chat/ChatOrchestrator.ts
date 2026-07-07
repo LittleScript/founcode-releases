@@ -71,6 +71,10 @@ export class ChatOrchestrator {
     this.active.get(sessionId)?.abort()
   }
 
+  abortAll(): void {
+    for (const controller of this.active.values()) controller.abort()
+  }
+
   updateSession(
     sessionId: string,
     patch: {

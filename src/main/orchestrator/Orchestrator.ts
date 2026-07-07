@@ -165,6 +165,14 @@ export class Orchestrator {
     }
   }
 
+  // Retry also scrubs any stale worktree so `git worktree add` can't
+  // collide with a crashed run's leftovers.
+  retryTask(taskId: string): Task {
+    const updated = this.applyAction(taskId, 'retry')
+    this.cleanupWorktree(taskId)
+    return updated
+  }
+
   cancel(taskId: string): Task {
     const updated = this.applyAction(taskId, 'cancel')
     // Abort AFTER the transition so the runner sees a consistent state.
@@ -185,6 +193,13 @@ export class Orchestrator {
     for (const task of this.deps.tasks.list()) {
       const action = failActions[task.state]
       if (!action) continue
+      // Best-effort worktree cleanup so retry starts on a clean slate
+      // (a crashed run's leftovers blocked `git worktree add` — QA).
+      try {
+        this.cleanupWorktree(task.id)
+      } catch {
+        // Locked by a stray process — remove() will explain on retry.
+      }
       this.deps.tasks.recordEvent(task.id, 'crash_recovery', { orphanedState: task.state })
       this.applyActionSafe(task.id, action)
     }
@@ -288,7 +303,7 @@ export class Orchestrator {
       }
     } catch (error) {
       if (!controller.signal.aborted) {
-        this.deps.tasks.recordEvent(taskId, 'agent_error', { message: (error as Error).message })
+        this.note(taskId, (error as Error).message)
         this.applyActionSafe(taskId, 'execution_failed')
       }
     } finally {
@@ -339,7 +354,7 @@ export class Orchestrator {
         if (controller.signal.aborted) return
 
         if (result.exitCode !== 0 || !result.resultText) {
-          this.deps.tasks.recordEvent(taskId, 'agent_error', { exitCode: result.exitCode })
+          this.note(taskId, `agent exited with code ${result.exitCode} — see the log above`)
           this.applyActionSafe(taskId, 'verify_failed_final')
           return
         }
@@ -370,7 +385,7 @@ export class Orchestrator {
       this.applyActionSafe(taskId, 'verify_passed')
     } catch (error) {
       if (!controller.signal.aborted) {
-        this.deps.tasks.recordEvent(taskId, 'agent_error', { message: (error as Error).message })
+        this.note(taskId, (error as Error).message)
         this.applyActionSafe(taskId, 'verify_failed_final')
       }
     } finally {
@@ -443,7 +458,7 @@ export class Orchestrator {
         if (controller.signal.aborted) return // cancel already handled state
 
         if (result.exitCode !== 0 || !result.resultText) {
-          this.deps.tasks.recordEvent(taskId, 'agent_error', { exitCode: result.exitCode })
+          this.note(taskId, `agent exited with code ${result.exitCode} — see the log above`)
           this.applyActionSafe(taskId, 'plan_failed')
           return
         }
@@ -471,13 +486,17 @@ export class Orchestrator {
       if (lastResult) {
         this.deps.artifacts.add(taskId, 'plan', lastResult)
         this.deps.tasks.recordEvent(taskId, 'plan_format_invalid', { errors: formatErrors })
+        this.note(
+          taskId,
+          `Plan format warnings (review it manually before approving): ${formatErrors?.join('; ')}`,
+        )
         this.applyActionSafe(taskId, 'plan_ready')
       } else {
         this.applyActionSafe(taskId, 'plan_failed')
       }
     } catch (error) {
       if (!controller.signal.aborted) {
-        this.deps.tasks.recordEvent(taskId, 'agent_error', { message: (error as Error).message })
+        this.note(taskId, (error as Error).message)
         this.applyActionSafe(taskId, 'plan_failed')
       }
     } finally {
@@ -514,6 +533,19 @@ export class Orchestrator {
       }
     }
     return { exitCode, resultText, log: logLines.join('\n') }
+  }
+
+  // Failures must be VISIBLE: record the event AND stream it into the
+  // live log (QA: worktree errors were silently swallowed into events).
+  private note(taskId: string, message: string): void {
+    this.deps.tasks.recordEvent(taskId, 'agent_error', { message })
+    this.deps.broadcastAgentEvent({ taskId, event: { type: 'error', message } })
+  }
+
+  // App quit: abort every in-flight run so no orphaned agent process
+  // keeps writing into (and locking) a worktree.
+  abortAll(): void {
+    for (const controller of this.active.values()) controller.abort()
   }
 
   // State may have moved (e.g. user cancelled) while the runner was

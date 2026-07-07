@@ -106,16 +106,29 @@ export class WorktreeManager {
   }
 
   // Removes worktree + branch. Safe to call when nothing exists.
+  // Windows: files can be transiently locked (e.g. by an agent process
+  // from a crashed run) — retry the delete before giving up.
   remove(projectPath: string, taskId: string): void {
     const worktreePath = this.pathFor(taskId)
     if (existsSync(worktreePath)) {
       if (!gitOk(projectPath, ['worktree', 'remove', '--force', worktreePath])) {
-        rmSync(worktreePath, { recursive: true, force: true })
+        try {
+          rmSync(worktreePath, { recursive: true, force: true, maxRetries: 6, retryDelay: 250 })
+        } catch {
+          // Leave the clearer error to create() below.
+        }
       }
     }
     gitOk(projectPath, ['worktree', 'prune'])
     if (gitOk(projectPath, ['show-ref', '--verify', `refs/heads/${this.branchFor(taskId)}`])) {
       gitOk(projectPath, ['branch', '-D', this.branchFor(taskId)])
+    }
+    if (existsSync(worktreePath)) {
+      throw new Error(
+        `The task's worktree folder is locked and could not be removed (${worktreePath}). ` +
+          'A crashed agent process may still be holding it — close any stray agent processes ' +
+          '(e.g. in Task Manager) and retry the task.',
+      )
     }
   }
 }

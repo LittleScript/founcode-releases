@@ -68,6 +68,14 @@ app.whenReady().then(() => {
   registerIpcHandlers(db, dbPath, services)
   createWindow()
 
+  // Quit must never leave orphaned agent CLIs behind — they keep
+  // running, lock worktree folders, and block the next retry (QA).
+  app.on('before-quit', () => {
+    services.orchestrator.abortAll()
+    services.blueprintOrchestrator.abortAll()
+    services.chatOrchestrator.abortAll()
+  })
+
   // License re-validation: at startup and every 6 hours (internally it
   // only contacts the vendor when the last check is older than a day).
   void services.license.revalidate()

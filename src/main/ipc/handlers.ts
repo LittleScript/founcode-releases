@@ -284,7 +284,7 @@ export function registerIpcHandlers(db: Database, dbPath: string, services: Main
 
   handle('task:cancel', ({ taskId }) => services.orchestrator.cancel(taskId))
 
-  handle('task:retry', ({ taskId }) => services.orchestrator.applyAction(taskId, 'retry'))
+  handle('task:retry', ({ taskId }) => services.orchestrator.retryTask(taskId))
 
   handle('task:merge', ({ taskId }) => services.orchestrator.merge(taskId))
 
