@@ -254,6 +254,18 @@ export function registerIpcHandlers(db: Database, dbPath: string, services: Main
 
   handle('task:list', ({ projectId }) => tasks.list(projectId))
 
+  handle('task:update', ({ taskId, ...patch }) => {
+    const task = tasks.get(taskId)
+    if (!task) throw new Error(`Task not found: ${taskId}`)
+    if (['PLANNING', 'EXECUTING', 'VERIFYING'].includes(task.state)) {
+      throw new Error('Stop the task before changing its agent or model.')
+    }
+    tasks.updateSettings(taskId, patch)
+    const updated = tasks.get(taskId)
+    if (!updated) throw new Error('Task vanished')
+    return updated
+  })
+
   handle('task:get', ({ taskId }) => tasks.get(taskId) ?? null)
 
   handle('task:startPlanning', ({ taskId }) => {

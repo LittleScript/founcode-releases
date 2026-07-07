@@ -192,6 +192,7 @@ Rangkuman rilis (di atas v1.1.0 chat-first):
 - [ ] **Artifacts browser tab** (inspirasi HermesAgent): view global semua artefak (plan/diff/verdict/log per task, sudah ada di ArtifactRepo) — searchable, filter per jenis & project, klik → task
 - [ ] **Skills & Tools tab** (inspirasi HermesAgent): browser skill dengan kategori (saat ini: slash palette + daftar di Settings); nanti + custom skill user (buat/edit skill sendiri, disimpan lokal)
 - [ ] Attachment picker "+" di composer chat (Files/Folder/Paste image/URL) melengkapi drag-drop yang sudah ada
+- [ ] **Multi-language / i18n** (permintaan Koko 7 Jul): UI English dulu (sudah disapu konsisten); nanti string layer (en/id minimal)
 - [ ] Preset env per-agen di Settings (integrasi 9Router tanpa env global)
 - [ ] Validasi nyata adapter Codex & Antigravity saat CLI terinstal (integration test gated sudah siap polanya)
 - [ ] Riwayat & pencarian task

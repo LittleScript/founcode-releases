@@ -93,29 +93,35 @@ function Sidebar({ info }: { info: AppInfo | null }) {
     return window.founcode.on('chat:updated', () => void reloadRecents())
   }, [reloadRecents])
 
-  // Collapse + drag-resize, persisted (Claude-app parity).
+  // Collapse + drag-resize, persisted (Claude-app parity). Width follows
+  // the pointer continuously down to 160px; below 100px it snaps to the
+  // icon rail — the 100–160 hysteresis zone prevents flip-flopping, and
+  // a width transition (only when NOT dragging) smooths the snap.
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('fc.sb.collapsed') === '1')
   const [width, setWidth] = useState(() => Number(localStorage.getItem('fc.sb.width')) || 240)
+  const [isDragging, setIsDragging] = useState(false)
   const dragging = useRef(false)
 
   useEffect(() => {
     const move = (e: PointerEvent) => {
       if (!dragging.current) return
-      // Drag all the way in -> snaps to the collapsed icon rail; drag
-      // back out -> expands. No separate toggle button needed.
-      if (e.clientX < 130) {
+      if (e.clientX < 100) {
         setCollapsed(true)
         localStorage.setItem('fc.sb.collapsed', '1')
         return
       }
-      const w = Math.min(360, Math.max(200, e.clientX))
-      setCollapsed(false)
-      localStorage.setItem('fc.sb.collapsed', '0')
-      setWidth(w)
-      localStorage.setItem('fc.sb.width', String(w))
+      if (e.clientX >= 160) {
+        const w = Math.min(360, e.clientX)
+        setCollapsed(false)
+        localStorage.setItem('fc.sb.collapsed', '0')
+        setWidth(w)
+        localStorage.setItem('fc.sb.width', String(w))
+      }
+      // 100–160: keep the current mode (hysteresis).
     }
     const up = () => {
       dragging.current = false
+      setIsDragging(false)
       document.body.style.cursor = ''
     }
     window.addEventListener('pointermove', move)
@@ -141,8 +147,10 @@ function Sidebar({ info }: { info: AppInfo | null }) {
 
   return (
     <aside
-      style={{ width: collapsed ? 56 : width }}
-      className="relative flex shrink-0 flex-col border-r border-edge bg-surface-raised/60"
+      style={{ width: collapsed ? 56 : Math.max(160, width) }}
+      className={`relative flex shrink-0 flex-col border-r border-edge bg-surface-raised/60 ${
+        isDragging ? '' : 'transition-[width] duration-200 ease-out'
+      }`}
     >
       <Wordmark collapsed={collapsed} />
 
@@ -268,6 +276,7 @@ function Sidebar({ info }: { info: AppInfo | null }) {
       <div
         onPointerDown={() => {
           dragging.current = true
+          setIsDragging(true)
           document.body.style.cursor = 'col-resize'
         }}
         className="absolute top-0 right-0 h-full w-1.5 cursor-col-resize transition-colors hover:bg-accent/30"

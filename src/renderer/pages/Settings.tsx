@@ -42,7 +42,7 @@ const AGENT_SETUP = [
     id: 'deepseek',
     name: 'DeepSeek (via OpenCode)',
     install: 'npm install -g opencode-ai  (skip if OpenCode is installed)',
-    login: 'opencode auth login → pilih DeepSeek → tempel API key dari platform.deepseek.com',
+    login: 'opencode auth login → pick DeepSeek → paste the API key from platform.deepseek.com',
     auth: 'DeepSeek API key',
     detectAs: 'opencode',
   },

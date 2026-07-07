@@ -5,8 +5,8 @@ import { useAppStore } from '../../stores/appStore'
 import { ModelField } from '../ModelField'
 
 const EXAMPLES = [
-  'Aplikasi tracking pengeluaran harian, input lewat WhatsApp, ada dashboard ringkasan bulanan.',
-  'Aplikasi booking lapangan padel: customer pilih lapangan & bayar, admin cek slot & konfirmasi.',
+  'A daily expense tracker with WhatsApp input and a monthly summary dashboard.',
+  'A padel court booking app: customers pick a court & pay, admins confirm slots.',
 ]
 
 export function NewBlueprintDialog({

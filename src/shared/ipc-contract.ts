@@ -55,6 +55,10 @@ export interface IpcInvokeMap {
   'license:activate': { args: { key: string }; result: LicenseState }
   'license:deactivate': { args: undefined; result: LicenseState }
   'task:list': { args: { projectId?: string }; result: Task[] }
+  'task:update': {
+    args: { taskId: string; agentId?: string; model?: string; skill?: string }
+    result: Task
+  }
   'task:get': { args: { taskId: string }; result: Task | null }
   'task:startPlanning': { args: { taskId: string }; result: undefined }
   'task:requestReplan': { args: { taskId: string; feedback: string }; result: undefined }
@@ -159,6 +163,7 @@ export const IPC_INVOKE_CHANNELS: readonly IpcInvokeChannel[] = [
   'license:activate',
   'license:deactivate',
   'task:list',
+  'task:update',
   'task:get',
   'task:startPlanning',
   'task:requestReplan',

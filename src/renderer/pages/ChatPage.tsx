@@ -227,6 +227,22 @@ function modelDisplay(agentId: string, model: string | null): string {
   return known?.label ?? model
 }
 
+// A fresh invitation every time you land on the home screen —
+// welcoming, not interrogating (Koko's list).
+const GREETINGS = [
+  'Where should we begin?',
+  "What's on your mind?",
+  "Let's build something.",
+  'Start with a thought.',
+  'What needs building today?',
+  'What are we building today?',
+  'Where do we want to start?',
+  "Let's create something.",
+  'Start anywhere.',
+  'Create your Blueprint.',
+  'Start with an idea.',
+]
+
 export function ChatPage({ sessionId }: { sessionId: string | null }) {
   const goChat = useAppStore((s) => s.goChat)
   const [sessions, setSessions] = useState<ChatSession[]>([])
@@ -238,6 +254,7 @@ export function ChatPage({ sessionId }: { sessionId: string | null }) {
   // Instant optimistic flag; authoritative busy comes per-session from main.
   const [justSent, setJustSent] = useState(false)
   const [ideaDialog, setIdeaDialog] = useState<{ idea: string; title?: string } | null>(null)
+  const [greeting] = useState(() => GREETINGS[Math.floor(Math.random() * GREETINGS.length)])
   const bottomRef = useRef<HTMLDivElement>(null)
 
   // null = "the latest session" (app open / New chat before first message).
@@ -356,9 +373,7 @@ export function ChatPage({ sessionId }: { sessionId: string | null }) {
         <div className="mx-auto max-w-3xl space-y-4 px-6 py-6">
           {messages.length === 0 && !pending && (
             <div className="rise-in mt-16 text-center">
-              <p className="font-semibold text-slate-200 text-xl tracking-tight">
-                What do you want to build?
-              </p>
+              <p className="font-semibold text-slate-200 text-xl tracking-tight">{greeting}</p>
               <p className="mx-auto mt-2 max-w-md text-slate-500 text-sm leading-relaxed">
                 Think out loud — discuss an idea, ask about your projects, or steer a build that's
                 already running. When you're ready, one click turns the discussion into a verified

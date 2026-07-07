@@ -89,7 +89,7 @@ export function SessionMenu({
                 Rename
               </button>
               <button type="button" className={item} onClick={() => setMode('project')}>
-                Add to project →
+                Link to project →
               </button>
               <button
                 type="button"

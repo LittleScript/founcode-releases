@@ -1,12 +1,65 @@
 import { useEffect, useState } from 'react'
-import type { Artifact, Task } from '../../shared/types'
+import type { AgentInfo, Artifact, Task } from '../../shared/types'
 import { DiffViewer } from '../components/DiffViewer'
 import { LogViewer } from '../components/LogViewer'
+import { ModelField } from '../components/ModelField'
 import { PipelineRail } from '../components/PipelineRail'
 import { PlanReviewer } from '../components/PlanReviewer'
 import { StateBadge } from '../components/StateBadge'
 import { VerifyReport } from '../components/VerifyReport'
 import { useAppStore } from '../stores/appStore'
+
+// Agent & model stay editable while the task is at rest — they lock
+// only while an agent is actually running.
+function AgentModelRow({ task, onUpdated }: { task: Task; onUpdated: () => void }) {
+  const [agents, setAgents] = useState<AgentInfo[]>([])
+  const locked = (ACTIVE_STATES as readonly string[]).includes(task.state) || task.state === 'DONE'
+
+  useEffect(() => {
+    window.founcode.invoke('agent:listInstalled', undefined).then(setAgents)
+  }, [])
+
+  async function patch(p: { agentId?: string; model?: string }) {
+    try {
+      await window.founcode.invoke('task:update', { taskId: task.id, ...p })
+      onUpdated()
+    } catch (error) {
+      useAppStore.setState({ error: (error as Error).message })
+    }
+  }
+
+  if (locked) {
+    return (
+      <span className="rounded-sm border border-edge px-1.5 py-0.5 font-mono text-[10px] text-slate-500">
+        {task.agentId}
+        {task.model ? ` · ${task.model}` : ''}
+      </span>
+    )
+  }
+  return (
+    <span className="flex items-center gap-1.5">
+      <select
+        value={task.agentId}
+        onChange={(e) => void patch({ agentId: e.target.value, model: '' })}
+        title="Agent for this task"
+        className="cursor-pointer rounded-md border border-edge bg-surface px-1.5 py-0.5 font-mono text-[10px] text-slate-400 outline-none hover:border-edge-2"
+      >
+        {agents.map((a) => (
+          <option key={a.id} value={a.id} disabled={!a.installed}>
+            {a.displayName}
+          </option>
+        ))}
+      </select>
+      <span className="w-44 [&_input]:!py-0.5 [&_input]:!text-[10px] [&_input]:font-mono [&_p]:hidden [&_select]:!py-0.5 [&_select]:!text-[10px]">
+        <ModelField
+          agentId={task.agentId}
+          value={task.model ?? ''}
+          onChange={(v) => void patch({ model: v })}
+        />
+      </span>
+    </span>
+  )
+}
 
 const ACTIVE_STATES = ['PLANNING', 'EXECUTING', 'VERIFYING'] as const
 
@@ -55,17 +108,15 @@ export function TaskDetail({ taskId }: { taskId: string }) {
         <button
           type="button"
           onClick={goBoard}
-          className="mb-2 font-mono text-[11px] text-slate-600 transition-colors hover:text-slate-300"
+          className="mb-2 rounded-md border border-edge px-2.5 py-1 text-[12px] text-slate-300 transition-colors hover:border-edge-2 hover:bg-surface-hover"
         >
-          ← board
+          ← Back to board
         </button>
 
         <div className="flex items-center gap-3">
           <h1 className="font-semibold text-[17px] text-slate-100 tracking-tight">{task.title}</h1>
           <StateBadge state={task.state} />
-          <span className="rounded-sm border border-edge px-1.5 py-0.5 font-mono text-[10px] text-slate-500">
-            {task.agentId}
-          </span>
+          <AgentModelRow task={task} onUpdated={() => useAppStore.getState().refreshTasks()} />
           {(ACTIVE_STATES as readonly string[]).includes(task.state) && (
             <button
               type="button"

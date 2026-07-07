@@ -45,21 +45,21 @@ export const AGENT_MODELS: Record<string, AgentModelSpec> = {
 
   opencode: {
     kind: 'free',
-    placeholder: 'provider/model — pilih dari daftar atau ketik sendiri',
-    hint: 'Daftar lengkap & login provider: jalankan `opencode models` / `opencode auth login`',
+    placeholder: 'provider/model — pick from the list or type any',
+    hint: 'Full catalog & provider login: run `opencode models` / `opencode auth login`',
     suggestions: [
       // Names confirmed by opencode's own "did you mean" hints.
-      { value: 'deepseek/deepseek-v4-pro', label: 'DeepSeek V4 Pro', hint: 'Coding kuat, murah' },
+      { value: 'deepseek/deepseek-v4-pro', label: 'DeepSeek V4 Pro', hint: 'Strong coding, cheap' },
       {
         value: 'deepseek/deepseek-v4-flash',
         label: 'DeepSeek V4 Flash',
-        hint: 'Lebih cepat & lebih murah lagi',
+        hint: 'Faster & even cheaper',
       },
       { value: 'deepseek/deepseek-chat', label: 'DeepSeek Chat', hint: 'General chat' },
-      { value: 'zhipu/glm-5.1', label: 'GLM 5.1 (Zhipu)', hint: 'Flagship Zhipu terbaru' },
-      { value: 'zhipu/glm-5', label: 'GLM 5 (Zhipu)', hint: 'Stabil, murah' },
-      { value: 'qwen/qwen3-coder', label: 'Qwen3 Coder', hint: 'Dioptimalkan untuk kode' },
-      { value: 'moonshotai/kimi-k2.6', label: 'Kimi K2.6', hint: 'Agentic, context panjang' },
+      { value: 'zhipu/glm-5.1', label: 'GLM 5.1 (Zhipu)', hint: 'Latest Zhipu flagship' },
+      { value: 'zhipu/glm-5', label: 'GLM 5 (Zhipu)', hint: 'Stable, cheap' },
+      { value: 'qwen/qwen3-coder', label: 'Qwen3 Coder', hint: 'Optimized for code' },
+      { value: 'moonshotai/kimi-k2.6', label: 'Kimi K2.6', hint: 'Agentic, long context' },
       {
         value: 'mistral/devstral-2',
         label: 'Devstral 2 (Mistral)',
@@ -68,36 +68,36 @@ export const AGENT_MODELS: Record<string, AgentModelSpec> = {
       {
         value: 'anthropic/claude-sonnet-4-6',
         label: 'Claude Sonnet 4.6',
-        hint: 'Via API key Anthropic',
+        hint: 'Via Anthropic API key',
       },
-      { value: 'openai/gpt-5', label: 'GPT-5', hint: 'Via API key OpenAI' },
+      { value: 'openai/gpt-5', label: 'GPT-5', hint: 'Via OpenAI API key' },
       {
         value: 'ollama/qwen3-coder',
         label: 'Qwen3 Coder (Ollama)',
-        hint: 'LOKAL — gratis, offline',
+        hint: 'LOCAL — free, offline',
       },
     ],
   },
 
   codex: {
     kind: 'free',
-    placeholder: 'pilih dari daftar atau ketik sendiri',
-    hint: 'Cek model aktif akunmu: `codex --help` / dokumentasi OpenAI',
+    placeholder: 'pick from the list or type any',
+    hint: 'Check the models on your account: `codex --help` / OpenAI docs',
     suggestions: [
-      { value: 'gpt-5-codex', label: 'GPT-5 Codex', hint: 'Default — dioptimalkan agentic coding' },
+      { value: 'gpt-5-codex', label: 'GPT-5 Codex', hint: 'Default — tuned for agentic coding' },
       { value: 'gpt-5', label: 'GPT-5', hint: 'General purpose' },
-      { value: 'gpt-5-mini', label: 'GPT-5 Mini', hint: 'Cepat & murah' },
+      { value: 'gpt-5-mini', label: 'GPT-5 Mini', hint: 'Fast & cheap' },
     ],
   },
 
   antigravity: {
     kind: 'free',
-    placeholder: 'pilih dari daftar atau ketik sendiri',
-    hint: 'Antigravity CLI (`av`) — penerus Gemini CLI',
+    placeholder: 'pick from the list or type any',
+    hint: 'Antigravity CLI (`av`) — the successor to Gemini CLI',
     suggestions: [
-      { value: 'gemini-3-pro', label: 'Gemini 3 Pro', hint: 'Default Antigravity — paling mampu' },
-      { value: 'gemini-3-flash', label: 'Gemini 3 Flash', hint: 'Cepat & murah' },
-      { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro', hint: 'Legacy — masih didukung' },
+      { value: 'gemini-3-pro', label: 'Gemini 3 Pro', hint: 'Antigravity default — most capable' },
+      { value: 'gemini-3-flash', label: 'Gemini 3 Flash', hint: 'Fast & cheap' },
+      { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro', hint: 'Legacy — still supported' },
     ],
   },
 
@@ -105,7 +105,7 @@ export const AGENT_MODELS: Record<string, AgentModelSpec> = {
 }
 
 export function agentModelSpec(agentId: string): AgentModelSpec {
-  return AGENT_MODELS[agentId] ?? { kind: 'free', placeholder: 'model (kosong = default)' }
+  return AGENT_MODELS[agentId] ?? { kind: 'free', placeholder: 'model (empty = default)' }
 }
 
 export function modelLabel(value: string | null | undefined): string {

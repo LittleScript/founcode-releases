@@ -27,8 +27,9 @@ test('boots to the chat home (the new front door)', async () => {
   const window = await app.firstWindow()
   await window.waitForLoadState('domcontentloaded')
 
-  // Fresh install -> chat-first home with the empty-state pitch.
-  await expect(window.getByText('What do you want to build?')).toBeVisible()
+  // Fresh install -> chat-first home with the empty-state pitch
+  // (the greeting headline is randomized, so assert the stable parts).
+  await expect(window.getByText(/Think out loud/)).toBeVisible()
   await expect(window.getByRole('button', { name: /Start from an idea/ })).toBeVisible()
   await expect(window.getByRole('button', { name: /New chat/ })).toBeVisible()
   await expect(window.getByPlaceholder(/How can I help you today/)).toBeVisible()

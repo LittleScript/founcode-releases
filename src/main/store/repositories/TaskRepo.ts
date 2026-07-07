@@ -135,6 +135,29 @@ export class TaskRepo {
     return row ? toTask(row) : undefined
   }
 
+  // Editable task settings (agent/model/skill) — guarded by the handler
+  // so they can't change mid-run.
+  updateSettings(
+    id: string,
+    patch: { agentId?: string; model?: string | null; skill?: string | null },
+  ): void {
+    if (patch.agentId !== undefined) {
+      this.db
+        .prepare('UPDATE tasks SET agent_id = ?, updated_at = ? WHERE id = ?')
+        .run(patch.agentId, Date.now(), id)
+    }
+    if (patch.model !== undefined) {
+      this.db
+        .prepare('UPDATE tasks SET model = ?, updated_at = ? WHERE id = ?')
+        .run(patch.model === '' ? null : patch.model, Date.now(), id)
+    }
+    if (patch.skill !== undefined) {
+      this.db
+        .prepare('UPDATE tasks SET skill = ?, updated_at = ? WHERE id = ?')
+        .run(patch.skill === '' ? null : patch.skill, Date.now(), id)
+    }
+  }
+
   setState(id: string, state: TaskState): void {
     this.db
       .prepare('UPDATE tasks SET state = ?, updated_at = ? WHERE id = ?')
