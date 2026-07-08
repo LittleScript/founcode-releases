@@ -8,14 +8,20 @@
 // documented — write/verify modes rely on prompt discipline inside the
 // isolated worktree.
 
-import type { AgentRunOptions } from '../AgentAdapter'
+import type {
+  AgentRunOptions,
+  InteractiveAgent,
+  InteractiveLaunch,
+  InteractiveLaunchOptions,
+} from '../AgentAdapter'
 import { type ResolvedCli, resolveCli } from '../cliResolver'
 import { type CliInvocation, TextCliAdapter } from '../TextCliAdapter'
 
-export class AntigravityAdapter extends TextCliAdapter {
+export class AntigravityAdapter extends TextCliAdapter implements InteractiveAgent {
   readonly id = 'antigravity'
   readonly displayName = 'Antigravity (Google)'
   protected readonly cliName = 'av'
+  readonly supportsInteractive = true
 
   private dualResolved: ResolvedCli | null | undefined
 
@@ -32,5 +38,16 @@ export class AntigravityAdapter extends TextCliAdapter {
     // Installed via Google's installer (real exe, not an npm shim), so a
     // positional prompt is argv-safe.
     return { args, promptVia: 'arg' }
+  }
+
+  // Interactive: bare `av` opens its agent session. Permission → approval.
+  launchInteractive(opts: InteractiveLaunchOptions): InteractiveLaunch | null {
+    const args: string[] = []
+    if (opts.model) args.push('--model', opts.model)
+    args.push(
+      '--approval-mode',
+      opts.permission === 'safe' ? 'default' : opts.permission === 'full' ? 'yolo' : 'auto',
+    )
+    return this.buildInteractiveLaunch(args)
   }
 }

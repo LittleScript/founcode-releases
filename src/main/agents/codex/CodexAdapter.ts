@@ -5,13 +5,19 @@
 // Sandbox maps our modes: read -> read-only, write/verify ->
 // workspace-write (the worktree is isolated; verify needs to run tests).
 
-import type { AgentRunOptions } from '../AgentAdapter'
+import type {
+  AgentRunOptions,
+  InteractiveAgent,
+  InteractiveLaunch,
+  InteractiveLaunchOptions,
+} from '../AgentAdapter'
 import { type CliInvocation, TextCliAdapter } from '../TextCliAdapter'
 
-export class CodexAdapter extends TextCliAdapter {
+export class CodexAdapter extends TextCliAdapter implements InteractiveAgent {
   readonly id = 'codex'
   readonly displayName = 'Codex (OpenAI)'
   protected readonly cliName = 'codex'
+  readonly supportsInteractive = true
 
   invocation(opts: AgentRunOptions): CliInvocation {
     const args = [
@@ -23,5 +29,20 @@ export class CodexAdapter extends TextCliAdapter {
     if (opts.model) args.push('--model', opts.model)
     args.push('-') // read the prompt from stdin
     return { args, promptVia: 'stdin' }
+  }
+
+  // Interactive: `codex` (no `exec`) opens its TUI. Permission → sandbox.
+  launchInteractive(opts: InteractiveLaunchOptions): InteractiveLaunch | null {
+    const args: string[] = []
+    if (opts.model) args.push('--model', opts.model)
+    args.push(
+      '--sandbox',
+      opts.permission === 'safe'
+        ? 'read-only'
+        : opts.permission === 'full'
+          ? 'danger-full-access'
+          : 'workspace-write',
+    )
+    return this.buildInteractiveLaunch(args)
   }
 }

@@ -7,7 +7,12 @@
 import { type ChildProcess, spawn } from 'node:child_process'
 import { createInterface } from 'node:readline'
 import type { AgentEvent } from '../../shared/types'
-import type { AgentAdapter, AgentDetection, AgentRunOptions } from './AgentAdapter'
+import type {
+  AgentAdapter,
+  AgentDetection,
+  AgentRunOptions,
+  InteractiveLaunch,
+} from './AgentAdapter'
 import { detectVersion, killTree, type ResolvedCli, resolveCli } from './cliResolver'
 
 // CLIs color their output; ANSI escapes leaked into chat bubbles as
@@ -46,6 +51,16 @@ export abstract class TextCliAdapter implements AgentAdapter {
     if (!cli) return { installed: false }
     const version = detectVersion(cli, this.versionFlag)
     return version ? { installed: true, version } : { installed: false }
+  }
+
+  // Builds an interactive launch from the resolved CLI + subclass args.
+  // The prompt-injection concern of batch mode doesn't apply here: an
+  // interactive session takes keystrokes over the PTY, not a prompt on
+  // argv, so the cmd.exe shim path is safe.
+  protected buildInteractiveLaunch(interactiveArgs: string[]): InteractiveLaunch | null {
+    const cli = this.resolve()
+    if (!cli) return null
+    return { file: cli.file, args: [...cli.prefixArgs, ...interactiveArgs] }
   }
 
   async *run(opts: AgentRunOptions): AsyncIterable<AgentEvent> {

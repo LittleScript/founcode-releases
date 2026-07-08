@@ -10,13 +10,19 @@
 // the real opencode.exe inside node_modules, so no cmd.exe re-parsing).
 
 import { spawnSync } from 'node:child_process'
-import type { AgentRunOptions } from '../AgentAdapter'
+import type {
+  AgentRunOptions,
+  InteractiveAgent,
+  InteractiveLaunch,
+  InteractiveLaunchOptions,
+} from '../AgentAdapter'
 import { type CliInvocation, stripAnsi, TextCliAdapter } from '../TextCliAdapter'
 
-export class OpenCodeAdapter extends TextCliAdapter {
+export class OpenCodeAdapter extends TextCliAdapter implements InteractiveAgent {
   readonly id = 'opencode'
   readonly displayName = 'OpenCode'
   protected readonly cliName = 'opencode'
+  readonly supportsInteractive = true
 
   // The REAL model catalog straight from the CLI (`opencode models`) —
   // curated suggestions went stale within a day (QA: "Model not found").
@@ -42,5 +48,14 @@ export class OpenCodeAdapter extends TextCliAdapter {
     // Verify runs in the isolated worktree with prompt discipline.
     args.push('--agent', opts.mode === 'read' ? 'plan' : 'build')
     return { args, promptVia: 'arg' }
+  }
+
+  // Interactive: bare `opencode` opens its TUI in the cwd. Permission →
+  // the plan (read-only) vs build (acts) agent.
+  launchInteractive(opts: InteractiveLaunchOptions): InteractiveLaunch | null {
+    const args: string[] = []
+    if (opts.model) args.push('--model', opts.model)
+    args.push('--agent', opts.permission === 'safe' ? 'plan' : 'build')
+    return this.buildInteractiveLaunch(args)
   }
 }

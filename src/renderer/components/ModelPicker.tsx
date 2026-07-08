@@ -24,7 +24,8 @@ export function ModelPicker({
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [live, setLive] = useState<string[]>([])
-  const [pos, setPos] = useState<{ top?: number; bottom?: number; left: number }>({ left: 0 })
+  // Which way the anchored popup opens (flip up when near the bottom).
+  const [openUp, setOpenUp] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
   const spec = agentModelSpec(agentId)
@@ -71,12 +72,10 @@ export function ModelPicker({
   }
 
   function toggle(e: React.MouseEvent) {
+    // Anchored to the trigger (absolute); just decide up vs down by the
+    // space below it. No manual viewport math -> never flies to a corner.
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-    const openUp = rect.top > window.innerHeight / 2
-    setPos({
-      left: Math.min(rect.left, window.innerWidth - 300),
-      ...(openUp ? { bottom: window.innerHeight - rect.top + 4 } : { top: rect.bottom + 4 }),
-    })
+    setOpenUp(window.innerHeight - rect.bottom < 340)
     setOpen((o) => !o)
     setQuery('')
   }
@@ -89,7 +88,7 @@ export function ModelPicker({
         : 'input-field flex items-center justify-between text-left'
 
   return (
-    <div ref={ref} className={variant === 'field' ? 'w-full' : ''}>
+    <div ref={ref} className={`relative ${variant === 'field' ? 'w-full' : ''}`}>
       <button type="button" onClick={toggle} title="Model" className={triggerClass}>
         <span className="truncate">{display}</span>
         <span className="ml-1 shrink-0 text-slate-600 text-xs">⌄</span>
@@ -97,8 +96,9 @@ export function ModelPicker({
 
       {open && (
         <div
-          style={pos}
-          className="rise-in fixed z-50 flex max-h-80 w-72 flex-col overflow-hidden rounded-lg border border-edge bg-surface-raised shadow-black/50 shadow-xl"
+          className={`rise-in absolute right-0 z-50 flex max-h-80 w-72 flex-col overflow-hidden rounded-lg border border-edge bg-surface-raised shadow-black/50 shadow-xl ${
+            openUp ? 'bottom-full mb-1' : 'top-full mt-1'
+          }`}
         >
           <div className="border-edge border-b p-2">
             <input
