@@ -20,6 +20,7 @@ import { ChatRepo } from '../store/repositories/ChatRepo'
 import { ProjectRepo } from '../store/repositories/ProjectRepo'
 import { SettingsRepo } from '../store/repositories/SettingsRepo'
 import { TaskRepo } from '../store/repositories/TaskRepo'
+import { TerminalService } from '../terminal/TerminalService'
 
 function handle<C extends keyof IpcInvokeMap>(
   channel: C,
@@ -46,6 +47,7 @@ export interface MainServices {
   orchestrator: Orchestrator
   blueprintOrchestrator: BlueprintOrchestrator
   chatOrchestrator: ChatOrchestrator
+  terminal: TerminalService
   license: LicenseService
 }
 
@@ -126,6 +128,12 @@ export function createServices(
     pingUpdated: (sessionId) => broadcast('chat:updated', { sessionId }),
     startNextTask: (blueprintId) => blueprintOrchestrator.startNextTask(blueprintId),
   })
+  const terminal = new TerminalService({
+    registry,
+    projects,
+    broadcastData: (p) => broadcast('terminal:data', p),
+    broadcastExit: (p) => broadcast('terminal:exit', p),
+  })
   return {
     projects,
     tasks,
@@ -136,6 +144,7 @@ export function createServices(
     orchestrator,
     blueprintOrchestrator,
     chatOrchestrator,
+    terminal,
     license,
   }
 }
@@ -423,6 +432,22 @@ export function registerIpcHandlers(db: Database, dbPath: string, services: Main
     chat.stop(sessionId)
     return undefined
   })
+
+  // ---- Agent Terminal ----
+  handle('terminal:start', (input) => services.terminal.start(input))
+  handle('terminal:input', ({ sessionId, data }) => {
+    services.terminal.write(sessionId, data)
+    return undefined
+  })
+  handle('terminal:resize', ({ sessionId, cols, rows }) => {
+    services.terminal.resize(sessionId, cols, rows)
+    return undefined
+  })
+  handle('terminal:kill', ({ sessionId }) => {
+    services.terminal.kill(sessionId)
+    return undefined
+  })
+  handle('terminal:list', () => services.terminal.list())
 
   handle('app:openExternal', ({ url }) => {
     // External links only — never local paths.

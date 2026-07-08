@@ -15,6 +15,7 @@ import { ProjectsPage } from './pages/ProjectsPage'
 import { Settings } from './pages/Settings'
 import { SkillsPage } from './pages/SkillsPage'
 import { TaskDetail } from './pages/TaskDetail'
+import { TerminalView } from './pages/TerminalView'
 import { useAppStore } from './stores/appStore'
 import { useBlueprintStore } from './stores/blueprintStore'
 import { useLogStore } from './stores/logStore'
@@ -356,6 +357,17 @@ export default function App() {
     return (
       <div className="flex h-screen">
         <BlueprintStudio blueprintId={view.blueprintId} />
+        <ErrorToast />
+      </div>
+    )
+  }
+
+  // The terminal takes the full pane (keeps the sidebar for navigation).
+  if (view.name === 'terminal') {
+    return (
+      <div className="flex h-screen">
+        <Sidebar info={info} />
+        <TerminalView session={view.session} />
         <ErrorToast />
       </div>
     )

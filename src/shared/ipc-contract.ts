@@ -16,6 +16,7 @@ import type {
 import type { ChatAction, ChatMessage, ChatSession } from './chat-types'
 import type { LicenseState } from './license-types'
 import type { AppSettings } from './settings-types'
+import type { StartTerminalInput, TerminalSession } from './terminal-types'
 import type {
   AgentEvent,
   AgentInfo,
@@ -144,6 +145,12 @@ export interface IpcInvokeMap {
   }
   'chat:stop': { args: { sessionId: string }; result: undefined }
   'app:openExternal': { args: { url: string }; result: undefined }
+  // Agent Terminal (v1.3)
+  'terminal:start': { args: StartTerminalInput; result: TerminalSession }
+  'terminal:input': { args: { sessionId: string; data: string }; result: undefined }
+  'terminal:resize': { args: { sessionId: string; cols: number; rows: number }; result: undefined }
+  'terminal:kill': { args: { sessionId: string }; result: undefined }
+  'terminal:list': { args: undefined; result: TerminalSession[] }
 }
 
 export type IpcInvokeChannel = keyof IpcInvokeMap
@@ -203,6 +210,11 @@ export const IPC_INVOKE_CHANNELS: readonly IpcInvokeChannel[] = [
   'chat:updateSession',
   'chat:stop',
   'app:openExternal',
+  'terminal:start',
+  'terminal:input',
+  'terminal:resize',
+  'terminal:kill',
+  'terminal:list',
 ]
 
 // ---- events (main -> renderer stream) ----
@@ -214,6 +226,8 @@ export interface IpcEventMap {
   'blueprint:stateChanged': { blueprintId: string; from: BlueprintState; to: BlueprintState }
   'chat:event': { sessionId: string; event: AgentEvent }
   'chat:updated': { sessionId: string }
+  'terminal:data': { sessionId: string; data: string }
+  'terminal:exit': { sessionId: string; exitCode: number }
 }
 
 export type IpcEventChannel = keyof IpcEventMap
@@ -225,6 +239,8 @@ export const IPC_EVENT_CHANNELS: readonly IpcEventChannel[] = [
   'blueprint:stateChanged',
   'chat:event',
   'chat:updated',
+  'terminal:data',
+  'terminal:exit',
 ]
 
 // ---- API surface exposed on window.founcode by the preload ----

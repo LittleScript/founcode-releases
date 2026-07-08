@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import type { TerminalSession } from '../../shared/terminal-types'
 import type { Project, Task } from '../../shared/types'
 
 // Claude-app-style IA: New chat / Chats / Projects / Artifacts.
@@ -11,6 +12,7 @@ type View =
   | { name: 'board' }
   | { name: 'task'; taskId: string }
   | { name: 'blueprint'; blueprintId: string }
+  | { name: 'terminal'; session: TerminalSession }
   | { name: 'settings' }
 
 interface AppState {
@@ -40,6 +42,7 @@ interface AppState {
   goProjects: () => void
   goSkills: () => void
   goArtifacts: () => void
+  openTerminal: (session: TerminalSession) => void
   clearError: () => void
 }
 
@@ -112,5 +115,6 @@ export const useAppStore = create<AppState>((set, get) => ({
   goProjects: () => set({ view: { name: 'projects' } }),
   goSkills: () => set({ view: { name: 'skills' } }),
   goArtifacts: () => set({ view: { name: 'artifacts' } }),
+  openTerminal: (session) => set({ view: { name: 'terminal', session } }),
   clearError: () => set({ error: null }),
 }))

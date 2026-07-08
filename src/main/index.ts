@@ -74,6 +74,7 @@ app.whenReady().then(() => {
     services.orchestrator.abortAll()
     services.blueprintOrchestrator.abortAll()
     services.chatOrchestrator.abortAll()
+    services.terminal.killAll()
   })
 
   // License re-validation: at startup and every 6 hours (internally it

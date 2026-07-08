@@ -4,6 +4,7 @@ import type { Task, TaskState } from '../../shared/types'
 import { BlueprintBanner } from '../components/blueprint/BlueprintBanner'
 import { NewBlueprintDialog } from '../components/blueprint/NewBlueprintDialog'
 import { NewTaskDialog } from '../components/NewTaskDialog'
+import { NewTerminalDialog } from '../components/NewTerminalDialog'
 import { PipelineRail } from '../components/PipelineRail'
 import { StateBadge } from '../components/StateBadge'
 import { useAppStore } from '../stores/appStore'
@@ -131,6 +132,7 @@ export function Board() {
   const refreshTasks = useAppStore((s) => s.refreshTasks)
   const [showNewTask, setShowNewTask] = useState(false)
   const [showNewBlueprint, setShowNewBlueprint] = useState(false)
+  const [showTerminal, setShowTerminal] = useState(false)
   const [activeBlueprints, setActiveBlueprints] = useState<Blueprint[]>([])
   // State of the card currently being dragged — highlights valid targets.
   const [dragState, setDragState] = useState<TaskState | null>(null)
@@ -174,6 +176,14 @@ export function Board() {
           <p className="mt-0.5 font-mono text-[10px] text-slate-600">{project?.path}</p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowTerminal(true)}
+            className="btn-ghost"
+            title="Run the agent live in a terminal"
+          >
+            ▟ Terminal
+          </button>
           <button
             type="button"
             onClick={() => setShowNewBlueprint(true)}
@@ -242,6 +252,7 @@ export function Board() {
 
       {showNewTask && <NewTaskDialog onClose={() => setShowNewTask(false)} />}
       {showNewBlueprint && <NewBlueprintDialog onClose={() => setShowNewBlueprint(false)} />}
+      {showTerminal && <NewTerminalDialog onClose={() => setShowTerminal(false)} />}
     </div>
   )
 }
