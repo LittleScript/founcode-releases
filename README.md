@@ -4,18 +4,22 @@
 
 > Private source. Public releases & downloads: [LittleScript/founcode-releases](https://github.com/LittleScript/founcode-releases)
 
-## What it does (v1.2)
+## What it does (v1.3)
+
+**Dual execution** — a disciplined pipeline *and* a live terminal, your choice:
 
 ```
-Chat → Blueprint → Plan → Execute → Verify → Merge
+Chat → Blueprint → Plan → Execute → Verify → Merge      (pipeline: verified builds)
+Agent Terminal — the agent live in a PTY, you steer      (interactive: PowerShell-style)
 ```
 
 - **Chat-first home** — a persistent AI chat that sees the live workspace (projects, blueprints, task states, PRDs) and bridges into the pipeline via action chips: turn a discussion into a Blueprint, queue a mid-flight idea into a running build, pause/resume auto-advance.
 - **Blueprint** — idea → clarifying questions → node-graph structure → PRD → ordered task graph. Greenfield, extend-existing, and document-existing modes.
 - **P-E-V pipeline** — read-only planning you approve, execution in an isolated git worktree, independent verification (build + tests) before review, one-click merge. State machines everywhere, exhaustively tested.
+- **Agent Terminal** — run any agent live in a real terminal (xterm.js + node-pty): it works, asks, and you steer, right inside Founcode. Permission modes (Safe / Auto-edit / Full access), isolated-worktree by default with a **review & merge** gate — freedom during, discipline at the gate. Take over a pipeline task interactively (the agent gets the task's context) and merge through the same gate.
 - **Multi-agent, free** — Claude Code, OpenCode (75+ providers incl. DeepSeek/GLM/Qwen/Ollama, live model catalog from the CLI), Codex, Antigravity. Per-chat and per-task agent+model switching. Keys stay in each CLI, never in Founcode.
 - **10 built-in skills** — Design, Research, Debug, TDD, Security Review, Architecture, Refactor, Performance, Documentation, Code Review. Per task or `/slash` in chat.
-- **Foundry** — a global browser for everything the pipeline produced (plans, diffs, verdicts, logs).
+- **Foundry** — a global browser for everything the pipeline produced (plans, diffs, verdicts, logs, terminal transcripts).
 - **Local-first** — SQLite in `%APPDATA%`, no accounts, no telemetry, works offline. Pro via Lemon Squeezy license key (7-day offline grace).
 - Dark & light themes, NSIS installer, production auto-update (verified end-to-end).
 

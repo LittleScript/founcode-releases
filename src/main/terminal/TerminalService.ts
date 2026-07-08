@@ -3,6 +3,8 @@
 // Worktree isolation + the merge gate come in T4 — for now the session
 // runs in the project's own directory.
 
+import { mkdirSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 import type { PermissionLevel } from '../../shared/settings-types'
 import type {
   StartTerminalInput,
@@ -69,6 +71,44 @@ export class TerminalService {
       throw new Error(
         'Free plan runs one terminal at a time — upgrade to Pro for parallel terminals.',
       )
+    }
+  }
+
+  // Briefing file dropped into the worktree so a taken-over agent knows
+  // exactly what it's continuing (goal, plan, verdict, recent activity).
+  private writeTakeoverContext(worktree: string, taskId: string): void {
+    const task = this.deps.tasks.get(taskId)
+    if (!task) return
+    const plan = this.deps.artifacts.latest(taskId, 'plan')?.content
+    const verdict = this.deps.artifacts.latest(taskId, 'verify_report')?.content
+    const events = this.deps.tasks
+      .listEvents(taskId)
+      .slice(-8)
+      .map((e) => `- ${e.event}`)
+      .join('\n')
+    const md = [
+      `# Continuing: ${task.title}`,
+      '',
+      '## Goal',
+      task.intent,
+      '',
+      ...(plan ? ['## The plan so far', plan, ''] : []),
+      ...(verdict ? ['## Latest verification result', verdict, ''] : []),
+      '## Recent activity',
+      events || '- (none recorded)',
+      '',
+      '---',
+      `This work lives in an isolated git worktree (branch for task ${taskId}). Make your changes here; the user reviews and merges them afterward.`,
+    ].join('\n')
+    try {
+      // Keep it in .founcode/ with a self-ignoring .gitignore so the
+      // briefing never pollutes the diff the user reviews/merges.
+      const dir = join(worktree, '.founcode')
+      mkdirSync(dir, { recursive: true })
+      writeFileSync(join(dir, '.gitignore'), '*\n')
+      writeFileSync(join(dir, 'CONTEXT.md'), md)
+    } catch {
+      // Non-fatal: the agent just won't have the briefing file.
     }
   }
 
@@ -156,10 +196,19 @@ export class TerminalService {
     if (!adapter || !isInteractive(adapter)) {
       throw new Error(`${adapter?.displayName ?? input.agentId} has no interactive terminal.`)
     }
+
+    // Give the agent the task's context so it isn't a blank terminal:
+    // write a briefing file into the worktree and seed the first turn
+    // with a short, injection-safe prompt pointing at it.
+    this.writeTakeoverContext(task.worktree, task.id)
+    const initialPrompt =
+      "You are continuing a task already in progress. Read .founcode/CONTEXT.md in the current folder first — it has the goal, the plan, and what's been done — then help me finish it."
+
     const launch = adapter.launchInteractive({
       cwd: task.worktree,
       permission: input.permission,
       model: input.model,
+      initialPrompt,
     })
     if (!launch) throw new Error(`${adapter.displayName} CLI not found on PATH`)
 

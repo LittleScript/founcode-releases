@@ -47,6 +47,9 @@ export class ClaudeCodeAdapter implements AgentAdapter, InteractiveAgent {
     if (opts.permission === 'safe') args.push('--permission-mode', 'plan')
     else if (opts.permission === 'auto') args.push('--permission-mode', 'acceptEdits')
     else args.push('--dangerously-skip-permissions') // full
+    // `claude "prompt"` seeds the interactive REPL's first turn — how we
+    // hand the agent its context when taking over a task.
+    if (opts.initialPrompt) args.push(opts.initialPrompt)
     return { file: cmd.file, args }
   }
 

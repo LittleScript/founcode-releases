@@ -39,6 +39,9 @@ export interface InteractiveLaunchOptions {
   cwd: string
   permission: PermissionLevel
   model?: string
+  // Seeds the agent's first turn (used when taking over a task so the
+  // agent knows what it's continuing). App-generated, kept short & safe.
+  initialPrompt?: string
 }
 
 // Optional capability: an agent that can run as a live, interactive
