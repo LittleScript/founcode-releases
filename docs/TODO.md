@@ -171,6 +171,14 @@ Visi: frontend Founcode = **chat dengan AI** (seperti ChatGPT) sebagai pintu mas
 
 - [x] **C1–C5 SELESAI — dirilis sebagai v1.1.0 (6 Jul)**: Chat home persisten (migration 007) + action chips (protokol `===ACTIONS===`: blueprint_from_idea/create_task/add_task_to_blueprint/pause_auto/resume_auto/start_next/open_project — bisa STEER blueprint yang sedang jalan) + 6 built-in skills (migration 008 `tasks.skill`, injeksi Plan+Execute, `/slash` di chat, picker di New Task, daftar di Settings) + WorkspaceStrip live (pipeline→chat) + hapus sesi + Agent Setup guide di Settings. Chat E2E Claude asli lolos 6.5s (assistant melihat workspace). 139 test. Release: github .../releases/tag/v1.1.0
 
+## v1.3 — DUAL EXECUTION: Pipeline + Agent Terminal (keputusan Koko 8 Jul)
+
+Founcode menawarkan DUA mode agen: pipeline P-E-V berpagar (build terverifikasi) + **Agent Terminal** interaktif ala PowerShell (agen kerja live, nanya, user setir, permission modes). Desain lengkap: `docs/AGENT-TERMINAL-DESIGN.md`. Status: **diskusi desain — menunggu 4 keputusan Koko** (node-pty vs pipe, default permission, worktree-gate, Free/Pro).
+- [ ] **T0 spike**: node-pty prebuilts muat di Electron 43? + xterm.js render smoke → menentukan jalur (a/b/c)
+- [ ] **Permission modes** (Safe/Auto-edit/Full access) — enum Founcode → flag tiap CLI; dipakai Terminal DAN Execute pipeline (jawaban Koko: "kenapa mesti failed" sebagian karena ini)
+- [ ] **FAILED bisa dipulihkan**: send-back berkomentar dari FAILED (bukan jalan buntu), fix loop lebih pintar
+- [ ] T1–T5 (adapter interaktif, PTY orchestrator, xterm UI, worktree+merge gate, transcript artifact) — setelah keputusan
+
 ## v1.2.0 — SELESAI & DIRILIS (7 Jul)
 
 Rangkuman rilis (di atas v1.1.0 chat-first):
