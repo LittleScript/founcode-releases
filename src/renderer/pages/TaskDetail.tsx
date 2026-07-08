@@ -116,19 +116,47 @@ export function TaskDetail({ taskId }: { taskId: string }) {
           <h1 className="font-semibold text-[17px] text-slate-100 tracking-tight">{task.title}</h1>
           <StateBadge state={task.state} />
           <AgentModelRow task={task} onUpdated={() => useAppStore.getState().refreshTasks()} />
-          {(ACTIVE_STATES as readonly string[]).includes(task.state) && (
-            <button
-              type="button"
-              onClick={() =>
-                window.founcode
-                  .invoke('task:cancel', { taskId: task.id })
-                  .catch((e) => useAppStore.setState({ error: (e as Error).message }))
-              }
-              className="btn-danger ml-auto border border-red-900/60"
-            >
-              ■ Stop
-            </button>
-          )}
+          <div className="ml-auto flex items-center gap-2">
+            {/* Pipeline → terminal bridge: take over the task's worktree
+                interactively when it's not mid-run. */}
+            {task.worktree &&
+              !(ACTIVE_STATES as readonly string[]).includes(task.state) &&
+              task.state !== 'DONE' && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const s = await window.founcode.invoke('terminal:startForTask', {
+                        taskId: task.id,
+                        agentId: task.agentId,
+                        permission: 'auto',
+                        model: task.model ?? undefined,
+                      })
+                      useAppStore.getState().openTerminal(s)
+                    } catch (e) {
+                      useAppStore.setState({ error: (e as Error).message })
+                    }
+                  }}
+                  className="btn-ghost"
+                  title="Continue this task live in a terminal"
+                >
+                  ▟ Take over in Terminal
+                </button>
+              )}
+            {(ACTIVE_STATES as readonly string[]).includes(task.state) && (
+              <button
+                type="button"
+                onClick={() =>
+                  window.founcode
+                    .invoke('task:cancel', { taskId: task.id })
+                    .catch((e) => useAppStore.setState({ error: (e as Error).message }))
+                }
+                className="btn-danger border border-red-900/60"
+              >
+                ■ Stop
+              </button>
+            )}
+          </div>
         </div>
         <p className="mt-1.5 max-w-3xl text-slate-400 text-sm leading-relaxed">{task.intent}</p>
 

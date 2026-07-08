@@ -10,8 +10,11 @@ export interface TerminalSession {
   permission: PermissionLevel
   model: string | null
   // True when the session runs in an isolated git worktree (default);
-  // false when it works directly in the repo.
+  // false when it works directly in the repo (or in a task's worktree).
   isolated: boolean
+  // Set when this terminal took over an existing pipeline task's
+  // worktree (bridge from pipeline → terminal). Back-nav returns here.
+  taskId: string | null
   // Set once the process exits.
   exitCode: number | null
   createdAt: number

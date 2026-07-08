@@ -26,15 +26,21 @@ const LABELS: Record<TaskState, string> = {
 
 const LIVE_STATES: TaskState[] = ['PLANNING', 'EXECUTING', 'VERIFYING']
 
+// Compact labels for the badge (cards are narrow in the 4-col board).
+const BADGE_LABELS: Record<TaskState, string> = {
+  ...LABELS,
+  AWAITING_APPROVAL: 'Approval',
+}
+
 export function StateBadge({ state }: { state: TaskState }) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 font-medium font-mono text-[11px] uppercase tracking-wider ${STYLES[state]}`}
+      className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-2 py-0.5 font-medium font-mono text-[10px] uppercase tracking-wider ${STYLES[state]}`}
     >
       {LIVE_STATES.includes(state) && (
         <span className="live-dot size-1.5 rounded-full bg-current" />
       )}
-      {LABELS[state]}
+      {BADGE_LABELS[state]}
     </span>
   )
 }

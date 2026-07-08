@@ -131,7 +131,10 @@ export function createServices(
   const terminal = new TerminalService({
     registry,
     projects,
+    tasks,
+    artifacts,
     worktrees,
+    getTier: () => license.getTier(),
     broadcastData: (p) => broadcast('terminal:data', p),
     broadcastExit: (p) => broadcast('terminal:exit', p),
   })
@@ -436,6 +439,7 @@ export function registerIpcHandlers(db: Database, dbPath: string, services: Main
 
   // ---- Agent Terminal ----
   handle('terminal:start', (input) => services.terminal.start(input))
+  handle('terminal:startForTask', (input) => services.terminal.startForTask(input))
   handle('terminal:input', ({ sessionId, data }) => {
     services.terminal.write(sessionId, data)
     return undefined

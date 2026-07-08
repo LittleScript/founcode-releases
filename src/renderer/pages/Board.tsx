@@ -102,13 +102,13 @@ function TaskCard({
       } ${task.state === 'DISCARDED' ? 'opacity-60' : ''}`}
     >
       <div className="mb-1 flex items-start justify-between gap-2">
-        <span className="flex items-center gap-1.5 font-medium text-[13px] text-slate-100 leading-snug">
+        <span className="flex min-w-0 items-center gap-1.5 font-medium text-[13px] text-slate-100 leading-snug">
           {task.orderIndex !== null && (
             <span className="shrink-0 rounded-sm border border-accent/30 px-1 font-mono text-[9px] text-accent">
               #{task.orderIndex + 1}
             </span>
           )}
-          {task.title}
+          <span className="truncate">{task.title}</span>
         </span>
         <StateBadge state={task.state} />
       </div>

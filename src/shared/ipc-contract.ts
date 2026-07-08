@@ -15,7 +15,7 @@ import type {
 } from './blueprint-types'
 import type { ChatAction, ChatMessage, ChatSession } from './chat-types'
 import type { LicenseState } from './license-types'
-import type { AppSettings } from './settings-types'
+import type { AppSettings, PermissionLevel } from './settings-types'
 import type { StartTerminalInput, TerminalReview, TerminalSession } from './terminal-types'
 import type {
   AgentEvent,
@@ -147,6 +147,10 @@ export interface IpcInvokeMap {
   'app:openExternal': { args: { url: string }; result: undefined }
   // Agent Terminal (v1.3)
   'terminal:start': { args: StartTerminalInput; result: TerminalSession }
+  'terminal:startForTask': {
+    args: { taskId: string; agentId: string; permission: PermissionLevel; model?: string }
+    result: TerminalSession
+  }
   'terminal:input': { args: { sessionId: string; data: string }; result: undefined }
   'terminal:resize': { args: { sessionId: string; cols: number; rows: number }; result: undefined }
   'terminal:kill': { args: { sessionId: string }; result: undefined }
@@ -214,6 +218,7 @@ export const IPC_INVOKE_CHANNELS: readonly IpcInvokeChannel[] = [
   'chat:stop',
   'app:openExternal',
   'terminal:start',
+  'terminal:startForTask',
   'terminal:input',
   'terminal:resize',
   'terminal:kill',

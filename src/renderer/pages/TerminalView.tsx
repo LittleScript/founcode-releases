@@ -12,6 +12,7 @@ import { useAppStore } from '../stores/appStore'
 // terminal:input. Same phosphor palette as the rest of the app.
 export function TerminalView({ session }: { session: TerminalSession }) {
   const goBoard = useAppStore((s) => s.goBoard)
+  const openTask = useAppStore((s) => s.openTask)
   const hostRef = useRef<HTMLDivElement>(null)
   const [exited, setExited] = useState<number | null>(session.exitCode)
   const [review, setReview] = useState<TerminalReview | null>(null)
@@ -153,10 +154,10 @@ export function TerminalView({ session }: { session: TerminalSession }) {
       <header className="flex items-center gap-3 border-edge border-b bg-surface-raised px-4 py-2.5">
         <button
           type="button"
-          onClick={goBoard}
+          onClick={() => (session.taskId ? openTask(session.taskId) : goBoard())}
           className="rounded-md border border-edge px-2.5 py-1 text-[12px] text-slate-300 transition-colors hover:border-edge-2 hover:bg-surface-hover"
         >
-          ← Back
+          {session.taskId ? '← Back to task' : '← Back'}
         </button>
         <span className="font-mono text-[11px] text-slate-400">
           {session.agentId}
