@@ -173,8 +173,8 @@ Visi: frontend Founcode = **chat dengan AI** (seperti ChatGPT) sebagai pintu mas
 
 ## v1.3 — DUAL EXECUTION: Pipeline + Agent Terminal (keputusan Koko 8 Jul)
 
-Founcode menawarkan DUA mode agen: pipeline P-E-V berpagar (build terverifikasi) + **Agent Terminal** interaktif ala PowerShell (agen kerja live, nanya, user setir, permission modes). Desain lengkap: `docs/AGENT-TERMINAL-DESIGN.md`. Status: **diskusi desain — menunggu 4 keputusan Koko** (node-pty vs pipe, default permission, worktree-gate, Free/Pro).
-- [ ] **T0 spike**: node-pty prebuilts muat di Electron 43? + xterm.js render smoke → menentukan jalur (a/b/c)
+Founcode menawarkan DUA mode agen: pipeline P-E-V berpagar (build terverifikasi) + **Agent Terminal** interaktif ala PowerShell (agen kerja live, nanya, user setir, permission modes). Desain lengkap: `docs/AGENT-TERMINAL-DESIGN.md`. **4 keputusan SELESAI (Koko approve 8 Jul): node-pty, default Auto-edit, worktree+merge-gate, Terminal Free/parallel Pro.**
+- [x] **T0 spike SELESAI (8 Jul)**: `node-pty` MUAT & jalan di Electron 43 (ABI 148) via prebuild N-API — tanpa electron-rebuild/VS Build Tools (properti zero-native seperti node:sqlite). Packaging: asarUnpack `**/node-pty/**/*.node`, real dep externalized, validasi di build paketan (T2)
 - [ ] **Permission modes** (Safe/Auto-edit/Full access) — enum Founcode → flag tiap CLI; dipakai Terminal DAN Execute pipeline (jawaban Koko: "kenapa mesti failed" sebagian karena ini)
 - [ ] **FAILED bisa dipulihkan**: send-back berkomentar dari FAILED (bukan jalan buntu), fix loop lebih pintar
 - [ ] T1–T5 (adapter interaktif, PTY orchestrator, xterm UI, worktree+merge gate, transcript artifact) — setelah keputusan

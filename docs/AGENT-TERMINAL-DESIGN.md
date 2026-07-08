@@ -17,12 +17,17 @@ Today's adapters spawn with **piped stdio + collect-then-return** (one-shot). In
 - **Frontend:** [xterm.js](https://xtermjs.org) renders the agent's native TUI faithfully (ANSI, colors, prompts) — the same stack VS Code's integrated terminal uses.
 - **Backend:** a real PTY so CLIs detect a TTY and enable their interactive mode. On Windows that's **ConPTY**, driven by `node-pty`.
 
-⬥ **Decision 1 — the native-module tension.** `node-pty` is a native module. We deliberately went zero-native (node:sqlite) to avoid node-gyp / Electron-ABI rebuild pain. Options:
-- **(a) node-pty with prebuilt binaries** (`@homebridge/node-pty-prebuilt-multiarch` or similar) — real terminal behavior, but reintroduces one native dep + installer size + must validate prebuilds exist for Electron 43 ABI. *Recommended if prebuilds check out.*
-- **(b) plain stdin/stdout pipes, no PTY** — stays native-free, simpler, but CLIs that require a TTY won't enter interactive mode (many gate prompts on `isatty`). Partial experience.
-- **(c) spawn the agent in the user's real terminal (Windows Terminal / conhost) as a child window** — no embedding; we just launch and track. Loses the "inside Founcode" feel.
+✅ **Decision 1 — RESOLVED (8 Jul, T0 spike): go path (a), `node-pty`.**
 
-→ Plan: **spike node-pty prebuilds first** (one afternoon). If they load in Electron 43, go (a). Else fall back to (b) and document the limitation.
+Spike result: `node-pty` **loads and runs in Electron 43** (Node 24, ABI **148**). Spawned `cmd.exe`, wrote a command, captured real terminal output *with* ANSI control sequences (`[?25l…`). Crucially it worked **despite an ABI mismatch** (system Node ABI 137 vs Electron ABI 148) → node-pty ships **N-API prebuilds** (ABI-stable across Node versions). That means **no electron-rebuild, no VS Build Tools** — the same "zero build tools" property that made us pick node:sqlite. The native-module objection is void.
+
+**Packaging TODO (validate in T2's packaged build):**
+- add `node-pty` as a real dependency (externalized via `externalizeDepsPlugin`, already how main deps work),
+- `asarUnpack` the native binary (`**/node-pty/**/*.node`) in electron-builder so it's loadable from the packaged app,
+- keep `npmRebuild: false` (prebuilds are N-API, no rebuild needed),
+- confirm the `.node` loads in the INSTALLED app, not just dev.
+
+(Rejected: (b) pipe-only — many CLIs gate interactive prompts on `isatty`; (c) external terminal window — loses the embedded feel.)
 
 ## Adapter surface
 
@@ -81,12 +86,12 @@ In Terminal mode the log *is* the terminal: the composer at the bottom writes to
 
 ⬥ **Decision 4 — Free or Pro?** Multi-agent is free (locked earlier). Terminal is a *mode*, so core Terminal = Free. Candidate Pro lever: **multiple concurrent terminals** (parallel), consistent with "parallel capacity = Pro."
 
-## Open decisions summary (need Koko)
+## Decisions — ALL RESOLVED (Koko approved 8 Jul)
 
-1. node-pty prebuilds vs pipe-only — **spike first, then decide**
-2. default permission level = Auto-edit? (recommend yes)
-3. worktree-isolated + merge-gate as default? (recommend yes, repo-direct opt-in)
-4. Terminal core Free, parallel terminals Pro? (recommend yes)
+1. ✅ **node-pty** (path a) — T0 spike proved it loads in Electron 43 via N-API prebuilds, no build tools
+2. ✅ default permission level = **Auto-edit**
+3. ✅ **worktree-isolated + merge-gate** default; repo-direct is an advanced opt-in
+4. ✅ Terminal core **Free**, parallel terminals **Pro**
 
 ## Rough build phases (after decisions)
 
