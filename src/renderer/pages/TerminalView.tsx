@@ -3,7 +3,8 @@ import { FitAddon } from '@xterm/addon-fit'
 import { Terminal } from '@xterm/xterm'
 import { useEffect, useRef, useState } from 'react'
 import { PERMISSION_LABELS } from '../../shared/settings-types'
-import type { TerminalSession } from '../../shared/terminal-types'
+import type { TerminalReview, TerminalSession } from '../../shared/terminal-types'
+import { DiffViewer } from '../components/DiffViewer'
 import { useAppStore } from '../stores/appStore'
 
 // Live agent terminal (v1.3 T2): an xterm.js view bound to a PTY session
@@ -13,6 +14,8 @@ export function TerminalView({ session }: { session: TerminalSession }) {
   const goBoard = useAppStore((s) => s.goBoard)
   const hostRef = useRef<HTMLDivElement>(null)
   const [exited, setExited] = useState<number | null>(session.exitCode)
+  const [review, setReview] = useState<TerminalReview | null>(null)
+  const [busy, setBusy] = useState(false)
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: mount once per session id
   useEffect(() => {
@@ -77,6 +80,74 @@ export function TerminalView({ session }: { session: TerminalSession }) {
 
   const perm = PERMISSION_LABELS[session.permission]
 
+  async function finish() {
+    setBusy(true)
+    try {
+      setReview(await window.founcode.invoke('terminal:finish', { sessionId: session.id }))
+    } catch (error) {
+      useAppStore.setState({ error: (error as Error).message })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function merge() {
+    setBusy(true)
+    try {
+      await window.founcode.invoke('terminal:merge', { sessionId: session.id })
+      goBoard()
+    } catch (error) {
+      useAppStore.setState({ error: (error as Error).message })
+      setBusy(false)
+    }
+  }
+
+  async function discard() {
+    await window.founcode.invoke('terminal:discard', { sessionId: session.id }).catch(() => {})
+    goBoard()
+  }
+
+  // Review screen: the isolated session's diff, with merge / discard.
+  if (review) {
+    return (
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <header className="flex items-center gap-3 border-edge border-b px-6 py-4">
+          <h1 className="font-semibold text-[15px] text-slate-100">Review terminal changes</h1>
+          {review.changed && (
+            <span className="font-mono text-[11px] text-slate-500">
+              {review.filesChanged} file{review.filesChanged === 1 ? '' : 's'} changed
+            </span>
+          )}
+          <div className="ml-auto flex gap-2">
+            <button type="button" onClick={discard} className="btn-danger border border-red-900/60">
+              Discard
+            </button>
+            <button
+              type="button"
+              onClick={merge}
+              disabled={!review.changed || busy}
+              className="btn-primary"
+            >
+              {busy ? 'Merging…' : '✓ Merge into my branch'}
+            </button>
+          </div>
+        </header>
+        {review.changed ? (
+          <DiffViewer diff={review.diff} />
+        ) : (
+          <div className="flex flex-1 items-center justify-center text-center">
+            <div>
+              <p className="text-slate-300 text-sm">The session made no file changes.</p>
+              <button type="button" onClick={discard} className="btn-ghost mt-4">
+                ← Back to board
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-1 flex-col overflow-hidden bg-[#070a0e]">
       <header className="flex items-center gap-3 border-edge border-b bg-surface-raised px-4 py-2.5">
@@ -103,16 +174,23 @@ export function TerminalView({ session }: { session: TerminalSession }) {
         </span>
         <span className="truncate font-mono text-[10px] text-slate-600">{session.cwd}</span>
         <div className="ml-auto flex items-center gap-2">
-          {exited === null ? (
+          {exited === null && (
             <button
               type="button"
               onClick={() => window.founcode.invoke('terminal:kill', { sessionId: session.id })}
-              className="btn-danger border border-red-900/60"
+              className="btn-ghost"
             >
               ■ Stop
             </button>
+          )}
+          {session.isolated ? (
+            <button type="button" onClick={finish} disabled={busy} className="btn-primary">
+              {busy ? 'Preparing…' : 'Finish & review →'}
+            </button>
           ) : (
-            <span className="font-mono text-[11px] text-slate-500">ended · exit {exited}</span>
+            exited !== null && (
+              <span className="font-mono text-[11px] text-slate-500">ended · exit {exited}</span>
+            )
           )}
         </div>
       </header>

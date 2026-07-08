@@ -16,7 +16,7 @@ import type {
 import type { ChatAction, ChatMessage, ChatSession } from './chat-types'
 import type { LicenseState } from './license-types'
 import type { AppSettings } from './settings-types'
-import type { StartTerminalInput, TerminalSession } from './terminal-types'
+import type { StartTerminalInput, TerminalReview, TerminalSession } from './terminal-types'
 import type {
   AgentEvent,
   AgentInfo,
@@ -151,6 +151,9 @@ export interface IpcInvokeMap {
   'terminal:resize': { args: { sessionId: string; cols: number; rows: number }; result: undefined }
   'terminal:kill': { args: { sessionId: string }; result: undefined }
   'terminal:list': { args: undefined; result: TerminalSession[] }
+  'terminal:finish': { args: { sessionId: string }; result: TerminalReview }
+  'terminal:merge': { args: { sessionId: string }; result: undefined }
+  'terminal:discard': { args: { sessionId: string }; result: undefined }
 }
 
 export type IpcInvokeChannel = keyof IpcInvokeMap
@@ -215,6 +218,9 @@ export const IPC_INVOKE_CHANNELS: readonly IpcInvokeChannel[] = [
   'terminal:resize',
   'terminal:kill',
   'terminal:list',
+  'terminal:finish',
+  'terminal:merge',
+  'terminal:discard',
 ]
 
 // ---- events (main -> renderer stream) ----

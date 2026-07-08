@@ -131,6 +131,7 @@ export function createServices(
   const terminal = new TerminalService({
     registry,
     projects,
+    worktrees,
     broadcastData: (p) => broadcast('terminal:data', p),
     broadcastExit: (p) => broadcast('terminal:exit', p),
   })
@@ -448,6 +449,15 @@ export function registerIpcHandlers(db: Database, dbPath: string, services: Main
     return undefined
   })
   handle('terminal:list', () => services.terminal.list())
+  handle('terminal:finish', ({ sessionId }) => services.terminal.finish(sessionId))
+  handle('terminal:merge', ({ sessionId }) => {
+    services.terminal.merge(sessionId)
+    return undefined
+  })
+  handle('terminal:discard', ({ sessionId }) => {
+    services.terminal.discard(sessionId)
+    return undefined
+  })
 
   handle('app:openExternal', ({ url }) => {
     // External links only — never local paths.

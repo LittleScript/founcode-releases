@@ -12,6 +12,7 @@ export function NewTerminalDialog({ onClose }: { onClose: () => void }) {
   const [agentId, setAgentId] = useState('claude-code')
   const [model, setModel] = useState('')
   const [permission, setPermission] = useState<PermissionLevel>('auto')
+  const [isolate, setIsolate] = useState(true)
   const [starting, setStarting] = useState(false)
 
   useEffect(() => {
@@ -31,6 +32,7 @@ export function NewTerminalDialog({ onClose }: { onClose: () => void }) {
         agentId,
         permission,
         model: model || undefined,
+        isolate,
       })
       onClose()
       openTerminal(session)
@@ -103,6 +105,23 @@ export function NewTerminalDialog({ onClose }: { onClose: () => void }) {
             </button>
           ))}
         </div>
+
+        <label className="mb-5 flex cursor-pointer items-start gap-2.5 rounded-lg border border-edge p-3">
+          <input
+            type="checkbox"
+            checked={isolate}
+            onChange={(e) => setIsolate(e.target.checked)}
+            className="mt-0.5 accent-accent"
+          />
+          <span>
+            <span className="font-medium text-slate-200 text-sm">Isolated worktree</span>
+            <span className="mt-0.5 block text-[11px] text-slate-500 leading-snug">
+              {isolate
+                ? 'The agent works in a private copy — review the diff and merge when done. Your checkout stays untouched.'
+                : '⚠ Works directly in the repo — edits land immediately, no review gate.'}
+            </span>
+          </span>
+        </label>
 
         <div className="flex justify-end gap-2">
           <button type="button" onClick={onClose} className="btn-ghost border-transparent">
