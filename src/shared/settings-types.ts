@@ -1,5 +1,16 @@
 // App-wide settings + the model catalog shown in pickers.
 
+// How much an agent may do without asking — shared by Agent Terminal
+// and the Execute phase. Mapped to each CLI's own flags by its adapter.
+//   safe — read-only / plan     auto — edit + run (default)     full — no prompts (YOLO)
+export type PermissionLevel = 'safe' | 'auto' | 'full'
+
+export const PERMISSION_LABELS: Record<PermissionLevel, { label: string; hint: string }> = {
+  safe: { label: 'Safe', hint: 'Read-only — plans and inspects, never edits' },
+  auto: { label: 'Auto-edit', hint: 'Edits files & runs commands (default)' },
+  full: { label: 'Full access', hint: 'No permission prompts — YOLO (isolated worktree)' },
+}
+
 export interface AppSettings {
   defaultAgentId: string
   // Model alias passed to the agent CLI; '' = the CLI's own default.

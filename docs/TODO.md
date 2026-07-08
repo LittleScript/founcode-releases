@@ -175,9 +175,12 @@ Visi: frontend Founcode = **chat dengan AI** (seperti ChatGPT) sebagai pintu mas
 
 Founcode menawarkan DUA mode agen: pipeline P-E-V berpagar (build terverifikasi) + **Agent Terminal** interaktif ala PowerShell (agen kerja live, nanya, user setir, permission modes). Desain lengkap: `docs/AGENT-TERMINAL-DESIGN.md`. **4 keputusan SELESAI (Koko approve 8 Jul): node-pty, default Auto-edit, worktree+merge-gate, Terminal Free/parallel Pro.**
 - [x] **T0 spike SELESAI (8 Jul)**: `node-pty` MUAT & jalan di Electron 43 (ABI 148) via prebuild N-API — tanpa electron-rebuild/VS Build Tools (properti zero-native seperti node:sqlite). Packaging: asarUnpack `**/node-pty/**/*.node`, real dep externalized, validasi di build paketan (T2)
-- [ ] **Permission modes** (Safe/Auto-edit/Full access) — enum Founcode → flag tiap CLI; dipakai Terminal DAN Execute pipeline (jawaban Koko: "kenapa mesti failed" sebagian karena ini)
-- [ ] **FAILED bisa dipulihkan**: send-back berkomentar dari FAILED (bukan jalan buntu), fix loop lebih pintar
-- [ ] T1–T5 (adapter interaktif, PTY orchestrator, xterm UI, worktree+merge gate, transcript artifact) — setelah keputusan
+- [x] **T1 SELESAI (8 Jul)**: node-pty jadi dep resmi + asarUnpack di electron-builder; `PermissionLevel` (safe/auto/full) di shared/settings-types + `PERMISSION_LABELS`; kontrak `InteractiveAgent`/`InteractiveLaunch` + `isInteractive()` di AgentAdapter; **ClaudeCodeAdapter.launchInteractive** (claude tanpa `-p` = REPL live; permission→flag: plan/acceptEdits/dangerously-skip); **PtyManager** (lazy-import node-pty, start/write/resize/kill/killAll, callback onData/onExit). 4 test baru (launch args + PTY integration nyata lolos). 144 test
+- [ ] **T2**: PtyManager → IPC + xterm.js UI + wiring input + kill saat quit + **validasi node-pty di build PAKETAN** (asarUnpack)
+- [ ] **T3**: enum permission ke Terminal + Execute pipeline (adapter lain: Codex/Antigravity/OpenCode launchInteractive)
+- [ ] **T4**: worktree isolasi + "Verify & merge when done" gate
+- [ ] **T5**: transcript artifact + gating Free/Pro paralel
+- [ ] **Win kecil (bisa kapan pun)**: permission modes di Execute pipeline + FAILED→send-back berkomentar
 
 ## v1.2.0 — SELESAI & DIRILIS (7 Jul)
 

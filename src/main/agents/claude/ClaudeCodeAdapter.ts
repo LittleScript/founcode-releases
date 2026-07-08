@@ -8,7 +8,14 @@
 import { type ChildProcess, spawn, spawnSync } from 'node:child_process'
 import { createInterface } from 'node:readline'
 import type { AgentEvent } from '../../../shared/types'
-import type { AgentAdapter, AgentDetection, AgentRunOptions } from '../AgentAdapter'
+import type {
+  AgentAdapter,
+  AgentDetection,
+  AgentRunOptions,
+  InteractiveAgent,
+  InteractiveLaunch,
+  InteractiveLaunchOptions,
+} from '../AgentAdapter'
 
 const FILE_TOOLS: Record<string, 'create' | 'edit' | 'delete'> = {
   Write: 'create',
@@ -21,11 +28,27 @@ interface ResolvedCommand {
   prefixArgs: string[]
 }
 
-export class ClaudeCodeAdapter implements AgentAdapter {
+export class ClaudeCodeAdapter implements AgentAdapter, InteractiveAgent {
   readonly id = 'claude-code'
   readonly displayName = 'Claude Code'
+  readonly supportsInteractive = true
 
   private resolved: ResolvedCommand | null = null
+
+  // Interactive (Agent Terminal): launch `claude` WITHOUT -p so it runs
+  // its live REPL under the PTY. Permission level maps to Claude's own
+  // flags. The command flows through the same .cmd-shim resolution as
+  // batch runs (a PTY spawns cmd.exe fine on Windows).
+  launchInteractive(opts: InteractiveLaunchOptions): InteractiveLaunch | null {
+    const cmd = this.resolve()
+    if (!cmd) return null
+    const args = [...cmd.prefixArgs]
+    if (opts.model) args.push('--model', opts.model)
+    if (opts.permission === 'safe') args.push('--permission-mode', 'plan')
+    else if (opts.permission === 'auto') args.push('--permission-mode', 'acceptEdits')
+    else args.push('--dangerously-skip-permissions') // full
+    return { file: cmd.file, args }
+  }
 
   // `where` finds the real location; .cmd/.bat shims (npm installs) are
   // not directly spawnable on Windows and must go through cmd.exe. Only

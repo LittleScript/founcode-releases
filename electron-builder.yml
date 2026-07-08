@@ -12,8 +12,11 @@ files:
   - out/**
   - package.json
 
-# Zero native modules (node:sqlite) — nothing to rebuild.
+# node-pty ships N-API prebuilds (ABI-stable) — no rebuild needed, but
+# its .node binary must be unpacked from the asar to be loadable.
 npmRebuild: false
+asarUnpack:
+  - "**/node_modules/node-pty/**"
 
 win:
   icon: build/icon.ico
