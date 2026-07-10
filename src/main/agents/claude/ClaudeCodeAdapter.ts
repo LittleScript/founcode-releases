@@ -105,13 +105,34 @@ export class ClaudeCodeAdapter implements AgentAdapter, InteractiveAgent {
     // Code's own ExitPlanMode flow (and spawns explore subagents),
     // breaking the Founcode Plan format contract. Non-listed tools are
     // auto-denied in headless mode.
+    //
+    // Permission levels for write/verify phases control assertiveness:
+    //   safe  — agent asks before each edit (--permission-mode default)
+    //   auto  — agent auto-accepts edits (--permission-mode acceptEdits)
+    //   full  — agent skips all confirmations (--dangerously-skip-permissions)
+    const perm = opts.permission ?? 'auto'
+    const writePermArgs: Record<string, string[]> = {
+      safe: ['--permission-mode', 'default', '--allowedTools', 'Bash'],
+      auto: ['--permission-mode', 'acceptEdits', '--allowedTools', 'Bash'],
+      full: [
+        '--permission-mode',
+        'acceptEdits',
+        '--dangerously-skip-permissions',
+        '--allowedTools',
+        'Bash',
+      ],
+    }
     const modeArgs: Record<string, string[]> = {
       read: ['--allowedTools', 'Read', 'Glob', 'Grep'],
-      // Execute: auto-accept edits and allow shell commands so the agent
-      // can run tests/build inside the isolated worktree.
-      write: ['--permission-mode', 'acceptEdits', '--allowedTools', 'Bash'],
-      // Verify: may read and run tests, but cannot edit files.
-      verify: ['--allowedTools', 'Read', 'Glob', 'Grep', 'Bash'],
+      write: writePermArgs[perm] ?? writePermArgs.auto,
+      verify: [
+        ...(perm === 'full' ? ['--dangerously-skip-permissions'] : []),
+        '--allowedTools',
+        'Read',
+        'Glob',
+        'Grep',
+        'Bash',
+      ],
     }
     const args = [
       ...cmd.prefixArgs,
@@ -127,6 +148,7 @@ export class ClaudeCodeAdapter implements AgentAdapter, InteractiveAgent {
       cwd: opts.cwd,
       windowsHide: true,
       stdio: ['pipe', 'pipe', 'pipe'],
+      env: { ...process.env, ...opts.env },
     })
 
     const killTree = () => {

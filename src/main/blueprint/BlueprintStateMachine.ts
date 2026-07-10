@@ -3,21 +3,11 @@
 // spec flow. Every state persists so the flow resumes after a restart.
 // Design: docs/BLUEPRINT-DESIGN.md §4.2.
 
-export const BLUEPRINT_STATES = [
-  'IDEA', // created, awaiting question generation
-  'QUESTIONS', // questions generated, awaiting user answers
-  'STRUCTURING', // agent building the feature map
-  'STRUCTURE_REVIEW', // map ready, awaiting accept
-  'GENERATING_PRD', // agent writing the PRD
-  'PRD_REVIEW', // PRD ready, awaiting accept (or chat revision)
-  'DECOMPOSING', // agent breaking PRD into tasks
-  'TASK_REVIEW', // task graph ready, awaiting start
-  'IMPLEMENTING', // tasks feeding the P-E-V pipeline
-  'DONE', // all tasks complete
-  'FAILED', // a generative step failed
-] as const
+import type { BlueprintState } from '../../shared/blueprint-types'
+import { BLUEPRINT_STATES } from '../../shared/blueprint-types'
 
-export type BlueprintState = (typeof BLUEPRINT_STATES)[number]
+export type { BlueprintState }
+export { BLUEPRINT_STATES }
 
 export const BLUEPRINT_ACTIONS = [
   'generate_questions', // IDEA -> QUESTIONS

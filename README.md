@@ -23,6 +23,16 @@ Agent Terminal — the agent live in a PTY, you steer      (interactive: PowerSh
 - **Local-first** — SQLite in `%APPDATA%`, no accounts, no telemetry, works offline. Pro via Lemon Squeezy license key (7-day offline grace).
 - Dark & light themes, NSIS installer, production auto-update (verified end-to-end).
 
+## Quick Start
+
+1. Install at least one agent CLI: [Claude Code](https://claude.ai/code), [OpenCode](https://github.com/anomalyco/opencode), or Codex
+2. [Download the latest installer](https://github.com/LittleScript/founcode-releases/releases/latest) — `Founcode-Setup-x.y.z.exe`
+3. Run the installer. SmartScreen may warn — this app isn't signed yet (click "More info" → "Run anyway")
+4. Open Founcode, click **+ Add existing**, pick a git repo
+5. Click **New Task**, describe what you want, pick an agent, and go
+
+[User Guide](docs/USER-GUIDE.md) — full walkthrough of every feature.
+
 ## Docs
 
 | Doc | Contents |

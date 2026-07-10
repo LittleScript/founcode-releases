@@ -10,7 +10,11 @@ import { blueprintActions, useBlueprintStore } from '../stores/blueprintStore'
 
 export function BlueprintStudio({ blueprintId }: { blueprintId: string }) {
   const goBoard = useAppStore((s) => s.goBoard)
-  const { blueprint, questions, suggestions, tasks, open } = useBlueprintStore()
+  const blueprint = useBlueprintStore((s) => s.blueprint)
+  const questions = useBlueprintStore((s) => s.questions)
+  const suggestions = useBlueprintStore((s) => s.suggestions)
+  const tasks = useBlueprintStore((s) => s.tasks)
+  const open = useBlueprintStore((s) => s.open)
 
   useEffect(() => {
     open(blueprintId)

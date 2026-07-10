@@ -169,4 +169,66 @@ export const MIGRATIONS: Migration[] = [
     // Chat management (Claude-app parity): pinned sessions sort first.
     sql: 'ALTER TABLE chat_sessions ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0;',
   },
+  {
+    version: 10,
+    // Persist generative outputs so they survive a restart (the
+    // orchestrator previously kept them in memory only, which meant
+    // questions + suggestions were lost on app restart, leaving the
+    // blueprint permanently stuck in the QUESTIONS state).
+    sql: `
+      ALTER TABLE blueprints ADD COLUMN questions TEXT;
+      ALTER TABLE blueprints ADD COLUMN suggestions TEXT;
+    `,
+  },
+  {
+    version: 11,
+    // Multi-select answers: the old `answers` column stored single-value
+    // selections. After converting to multi-select (answer -> answers
+    // array), we migrate existing single-value answers into arrays.
+    // The column itself stays (JSON blob), but the shape inside changes.
+    // No DDL change needed — just a conceptual migration marker.
+    sql: `
+      UPDATE blueprints SET answers = (
+        SELECT json_group_array(json_object(
+          'question', j.value ->> '$.question',
+          'answers',
+            CASE
+              WHEN j.value ->> '$.answer' IS NOT NULL AND j.value ->> '$.answer' != ''
+              THEN json_array(j.value ->> '$.answer')
+              ELSE json_array()
+            END
+        ))
+        FROM json_each(answers) AS j
+      )
+      WHERE answers IS NOT NULL
+        AND EXISTS (
+          SELECT 1 FROM json_each(answers) AS j
+          WHERE j.value ->> '$.answer' IS NOT NULL
+        )
+    `,
+  },
+  {
+    version: 12,
+    // Per-task permission level for the Execute/Verify phases. Matches
+    // the Terminal permission concept: safe (asks before edits), auto
+    // (default, acceptEdits), full (skip all confirmations).
+    sql: "ALTER TABLE tasks ADD COLUMN permission TEXT NOT NULL DEFAULT 'auto';",
+  },
+  {
+    version: 13,
+    // Missing indices for hot paths: free-tier concurrency check,
+    // blueprint sequential feeding ordering, and orphan recovery.
+    sql: `
+      CREATE INDEX IF NOT EXISTS idx_tasks_state ON tasks(state);
+      CREATE INDEX IF NOT EXISTS idx_tasks_bp_order ON tasks(blueprint_id, order_index);
+      CREATE INDEX IF NOT EXISTS idx_blueprints_state ON blueprints(state);
+    `,
+  },
+  {
+    version: 14,
+    // Dependency graph for parallel execution (Pro tier). Each task may
+    // declare which other tasks it depends on (by order_index, resolved
+    // to task IDs after creation). Independent tasks can run in parallel.
+    sql: 'ALTER TABLE tasks ADD COLUMN depends_on TEXT',
+  },
 ]

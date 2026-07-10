@@ -20,12 +20,7 @@ export class CodexAdapter extends TextCliAdapter implements InteractiveAgent {
   readonly supportsInteractive = true
 
   invocation(opts: AgentRunOptions): CliInvocation {
-    const args = [
-      'exec',
-      '--skip-git-repo-check',
-      '--sandbox',
-      opts.mode === 'read' ? 'read-only' : 'workspace-write',
-    ]
+    const args = ['exec', '--skip-git-repo-check', '--sandbox', sandboxFor(opts)]
     if (opts.model) args.push('--model', opts.model)
     args.push('-') // read the prompt from stdin
     return { args, promptVia: 'stdin' }
@@ -35,14 +30,13 @@ export class CodexAdapter extends TextCliAdapter implements InteractiveAgent {
   launchInteractive(opts: InteractiveLaunchOptions): InteractiveLaunch | null {
     const args: string[] = []
     if (opts.model) args.push('--model', opts.model)
-    args.push(
-      '--sandbox',
-      opts.permission === 'safe'
-        ? 'read-only'
-        : opts.permission === 'full'
-          ? 'danger-full-access'
-          : 'workspace-write',
-    )
+    args.push('--sandbox', sandboxFor(opts))
     return this.buildInteractiveLaunch(args)
   }
+}
+
+function sandboxFor(opts: { mode?: string; permission?: string }): string {
+  if (opts.mode === 'read' || opts.permission === 'safe') return 'read-only'
+  if (opts.permission === 'full') return 'danger-full-access'
+  return 'workspace-write'
 }

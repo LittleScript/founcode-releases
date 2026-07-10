@@ -65,10 +65,10 @@ describe('BlueprintOrchestrator generative flow', () => {
     orch.generateQuestions(bp.id)
     await waitState(bp.id, 'QUESTIONS')
 
-    orch.submitAnswers(bp.id, [{ question: 'Who?', answer: 'Customer' }])
+    orch.submitAnswers(bp.id, [{ question: 'Who?', answers: ['Customer'] }])
     await waitState(bp.id, 'STRUCTURE_REVIEW')
     const loaded = blueprints.get(bp.id)
-    expect(loaded?.answers?.[0]?.answer).toBe('Customer')
+    expect(loaded?.answers?.[0]?.answers).toEqual(['Customer'])
     expect(loaded?.structure?.features.length).toBeGreaterThan(0)
   })
 

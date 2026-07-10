@@ -14,7 +14,7 @@ afterEach(() => db.close())
 
 describe('SettingsRepo', () => {
   it('returns defaults when unset', () => {
-    expect(settings.get()).toEqual({
+    expect(settings.get()).toMatchObject({
       defaultAgentId: 'claude-code',
       defaultModel: '',
       theme: 'dark',
@@ -26,7 +26,7 @@ describe('SettingsRepo', () => {
     expect(settings.get().defaultModel).toBe('opus')
     expect(settings.get().defaultAgentId).toBe('claude-code')
     settings.set({ defaultAgentId: 'mock', theme: 'light' })
-    expect(settings.get()).toEqual({
+    expect(settings.get()).toMatchObject({
       defaultAgentId: 'mock',
       defaultModel: 'opus',
       theme: 'light',

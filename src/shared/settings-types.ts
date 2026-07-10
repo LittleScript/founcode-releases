@@ -1,5 +1,7 @@
 // App-wide settings + the model catalog shown in pickers.
 
+import type { SkillInfo } from './skills-types'
+
 // How much an agent may do without asking — shared by Agent Terminal
 // and the Execute phase. Mapped to each CLI's own flags by its adapter.
 //   safe — read-only / plan     auto — edit + run (default)     full — no prompts (YOLO)
@@ -16,12 +18,26 @@ export interface AppSettings {
   // Model alias passed to the agent CLI; '' = the CLI's own default.
   defaultModel: string
   theme: 'dark' | 'light'
+  // Extra environment variables per agent (e.g. 9Router token for
+  // OpenCode). Stored as JSON: { "opencode": { "KEY": "value" } }.
+  perAgentEnv: Record<string, Record<string, string>>
+  // Pro-only: run verification through 3 independent agents and take a
+  // majority vote (3× token cost).
+  deepVerify: boolean
+  locale: 'en' | 'id'
+  // User-created skill packs (stored as JSON). IDs must be unique; slug
+  // from name, lowercase, no spaces.
+  customSkills: SkillInfo[]
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
   defaultAgentId: 'claude-code',
   defaultModel: '',
   theme: 'dark',
+  perAgentEnv: {},
+  deepVerify: false,
+  locale: 'en',
+  customSkills: [],
 }
 
 // Curated model choices. Aliases (opus/sonnet/haiku) stay valid across

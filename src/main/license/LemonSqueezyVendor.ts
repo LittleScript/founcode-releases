@@ -20,13 +20,22 @@ interface LsResponse {
   meta?: { store_id?: number; product_id?: number } | null
 }
 
+const FETCH_TIMEOUT_MS = 15_000
+
 async function post(path: string, body: Record<string, string>): Promise<LsResponse> {
-  const response = await fetch(`${API}/${path}`, {
-    method: 'POST',
-    headers: { Accept: 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams(body).toString(),
-  })
-  return (await response.json()) as LsResponse
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
+  try {
+    const response = await fetch(`${API}/${path}`, {
+      method: 'POST',
+      headers: { Accept: 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams(body).toString(),
+      signal: controller.signal,
+    })
+    return (await response.json()) as LsResponse
+  } finally {
+    clearTimeout(timeout)
+  }
 }
 
 function checkScope(data: LsResponse): string | null {

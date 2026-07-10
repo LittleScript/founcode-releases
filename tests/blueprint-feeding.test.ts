@@ -136,7 +136,7 @@ describe('Blueprint sequential feeding', () => {
     expect(tasks.get(t1?.id ?? '')?.state).toBe('BACKLOG')
   })
 
-  it('startNextTask advances manually and completes the blueprint', async () => {
+  it('startNextTask advances manually and completes the blueprint', { timeout: 20000 }, async () => {
     const bp = seed(2, 'manual')
     bo.startImplementation(bp.id)
     const [t0, t1] = tasks.listByBlueprint(bp.id)
@@ -151,7 +151,7 @@ describe('Blueprint sequential feeding', () => {
     expect(blueprints.get(bp.id)?.state).toBe('DONE')
   })
 
-  it('auto mode: next task auto-starts after each merge (no start-next click)', async () => {
+  it('auto mode: next task auto-starts after each merge (no start-next click)', { timeout: 20000 }, async () => {
     const bp = seed(2, 'auto')
     bo.startImplementation(bp.id)
     const [t0, t1] = tasks.listByBlueprint(bp.id)

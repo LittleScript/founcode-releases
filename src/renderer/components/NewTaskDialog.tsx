@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { SKILLS } from '../../shared/skills-types'
+import { PERMISSION_LABELS, type PermissionLevel } from '../../shared/settings-types'
+import { allSkills } from '../../shared/skills-types'
 import type { AgentInfo } from '../../shared/types'
 import { useAppStore } from '../stores/appStore'
 import { ModelField } from './ModelField'
@@ -12,6 +13,7 @@ export function NewTaskDialog({ onClose }: { onClose: () => void }) {
   const [agentId, setAgentId] = useState('claude-code')
   const [model, setModel] = useState('')
   const [skill, setSkill] = useState('')
+  const [permission, setPermission] = useState<PermissionLevel>('auto')
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
@@ -45,6 +47,7 @@ export function NewTaskDialog({ onClose }: { onClose: () => void }) {
       agentId,
       model,
       skill: skill || undefined,
+      permission,
     })
     setSubmitting(false)
     onClose()
@@ -113,12 +116,28 @@ export function NewTaskDialog({ onClose }: { onClose: () => void }) {
           id="task-skill"
           value={skill}
           onChange={(e) => setSkill(e.target.value)}
-          className="input-field mb-6"
+          className="input-field mb-4"
         >
           <option value="">None</option>
-          {SKILLS.map((s) => (
+          {allSkills().map((s) => (
             <option key={s.id} value={s.id} title={s.description}>
               {s.name} — {s.description}
+            </option>
+          ))}
+        </select>
+
+        <label className="field-label" htmlFor="task-permission">
+          Permission — how assertive the agent is during execution
+        </label>
+        <select
+          id="task-permission"
+          value={permission}
+          onChange={(e) => setPermission(e.target.value as PermissionLevel)}
+          className="input-field mb-6"
+        >
+          {(['safe', 'auto', 'full'] as PermissionLevel[]).map((p) => (
+            <option key={p} value={p} title={PERMISSION_LABELS[p].hint}>
+              {PERMISSION_LABELS[p].label} — {PERMISSION_LABELS[p].hint}
             </option>
           ))}
         </select>

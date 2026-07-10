@@ -44,4 +44,10 @@ export class AgentRegistry {
     }
     return infos
   }
+
+  // All registered adapters (sync — no CLI detection). Used for deep
+  // verify panel selection; fallback to detection on first use.
+  all(): AgentAdapter[] {
+    return [...this.adapters.values()]
+  }
 }

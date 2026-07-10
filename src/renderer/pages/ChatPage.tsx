@@ -3,7 +3,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { ChatAction, ChatMessage, ChatSession } from '../../shared/chat-types'
 import { MAIN_SIDE_ACTIONS } from '../../shared/chat-types'
-import { SKILLS } from '../../shared/skills-types'
+import { allSkills, setCustomSkills, SKILLS } from '../../shared/skills-types'
 import type { AgentInfo, Task, TaskState } from '../../shared/types'
 import { NewBlueprintDialog } from '../components/blueprint/NewBlueprintDialog'
 import { ModelPicker } from '../components/ModelPicker'
@@ -130,7 +130,7 @@ function SlashMenu({
   selected: number
   onPick: (id: string) => void
 }) {
-  const matches = SKILLS.filter((s) => s.id.startsWith(filter.toLowerCase()))
+  const matches = allSkills().filter((s) => s.id.startsWith(filter.toLowerCase()))
   if (matches.length === 0) return null
   return (
     <div className="rise-in absolute bottom-full left-0 mb-2 w-full max-w-md overflow-hidden rounded-lg border border-edge bg-surface-raised shadow-black/50 shadow-xl">
@@ -163,6 +163,9 @@ const ACTION_LABELS: Record<ChatAction['type'], string> = {
   resume_auto: '▶ Resume auto-advance',
   start_next: '▶ Start next task',
   open_project: '→ Open project',
+  a2a_ask: '↗ Ask another agent',
+  a2a_handoff: '↗ Hand off to agent',
+  a2a_notify: '↗ Notify agent',
 }
 
 function ActionChips({
@@ -244,6 +247,9 @@ export function ChatPage({ sessionId }: { sessionId: string | null }) {
   // Instant optimistic flag; authoritative busy comes per-session from main.
   const [justSent, setJustSent] = useState(false)
   const [ideaDialog, setIdeaDialog] = useState<{ idea: string; title?: string } | null>(null)
+  const [attachOpen, setAttachOpen] = useState(false)
+  const [urlInput, setUrlInput] = useState('')
+  const [urlMode, setUrlMode] = useState(false)
   const [greeting] = useState(() => GREETINGS[Math.floor(Math.random() * GREETINGS.length)])
   const bottomRef = useRef<HTMLDivElement>(null)
 
@@ -284,7 +290,13 @@ export function ChatPage({ sessionId }: { sessionId: string | null }) {
   }, [activeId, reloadSessions, reloadMessages])
 
   useEffect(() => {
-    window.founcode.invoke('agent:listInstalled', undefined).then(setAgents)
+    window.founcode.invoke('agent:listInstalled', undefined).then(setAgents).catch(console.error)
+    window.founcode
+      .invoke('skill:listAll', undefined)
+      .then((all) => {
+        setCustomSkills(all.filter((s) => !SKILLS.some((b) => b.id === s.id)))
+      })
+      .catch(console.error)
   }, [])
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: autoscroll on updates
@@ -332,6 +344,21 @@ export function ChatPage({ sessionId }: { sessionId: string | null }) {
   async function attachFiles() {
     const paths = await window.founcode.invoke('dialog:selectFiles', undefined)
     insertPaths(paths)
+    setAttachOpen(false)
+  }
+
+  async function attachFolder() {
+    const path = await window.founcode.invoke('dialog:selectFolder', undefined)
+    if (path) insertPaths([path])
+    setAttachOpen(false)
+  }
+
+  function attachUrl() {
+    if (!urlInput.trim()) return
+    setDraft((d) => `${d}${d && !d.endsWith('\n') ? '\n' : ''}${urlInput.trim()}\n`)
+    setUrlInput('')
+    setUrlMode(false)
+    setAttachOpen(false)
   }
 
   function insertPaths(paths: string[]) {
@@ -345,7 +372,9 @@ export function ChatPage({ sessionId }: { sessionId: string | null }) {
 
   const slashFilter = draft.match(/^\/(\w*)$/)?.[1] ?? null
   const slashMatches =
-    slashFilter !== null ? SKILLS.filter((s) => s.id.startsWith(slashFilter.toLowerCase())) : []
+    slashFilter !== null
+      ? allSkills().filter((s) => s.id.startsWith(slashFilter.toLowerCase()))
+      : []
 
   function pickSlash(id: string) {
     setDraft(`/${id} `)
@@ -474,14 +503,82 @@ export function ChatPage({ sessionId }: { sessionId: string | null }) {
             />
 
             <div className="flex items-center gap-1 px-2.5 pb-2.5">
-              <button
-                type="button"
-                onClick={() => void attachFiles()}
-                title="Attach files — paths are shared with the agent"
-                className="flex size-8 items-center justify-center rounded-lg text-lg text-slate-400 transition-colors hover:bg-surface-hover hover:text-slate-200"
-              >
-                +
-              </button>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAttachOpen((o) => !o)
+                    setUrlMode(false)
+                  }}
+                  title="Attach files, folders, or URLs"
+                  className="flex size-8 items-center justify-center rounded-lg text-lg text-slate-400 transition-colors hover:bg-surface-hover hover:text-slate-200"
+                >
+                  +
+                </button>
+                {attachOpen && (
+                  <div className="absolute bottom-full left-0 mb-1 w-52 rounded-lg border border-edge bg-surface-raised p-1.5 shadow-xl">
+                    {urlMode ? (
+                      <div className="flex flex-col gap-1.5">
+                        <input
+                          value={urlInput}
+                          onChange={(e) => setUrlInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') attachUrl()
+                            if (e.key === 'Escape') {
+                              setUrlMode(false)
+                              setAttachOpen(false)
+                            }
+                          }}
+                          placeholder="Paste URL…"
+                          className="input-field text-xs"
+                          ref={(el) => el?.focus()}
+                        />
+                        <div className="flex gap-1">
+                          <button
+                            type="button"
+                            onClick={attachUrl}
+                            disabled={!urlInput.trim()}
+                            className="btn-primary flex-1 py-1 text-xs"
+                          >
+                            Add URL
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setUrlMode(false)}
+                            className="btn-ghost flex-1 py-1 text-xs border-transparent"
+                          >
+                            Back
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => void attachFiles()}
+                          className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-[13px] text-slate-200 transition-colors hover:bg-surface-hover"
+                        >
+                          <span className="text-base">📁</span> Files
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void attachFolder()}
+                          className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-[13px] text-slate-200 transition-colors hover:bg-surface-hover"
+                        >
+                          <span className="text-base">📂</span> Folder
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setUrlMode(true)}
+                          className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-[13px] text-slate-200 transition-colors hover:bg-surface-hover"
+                        >
+                          <span className="text-base">🔗</span> URL
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
 
               <div className="ml-auto flex items-center gap-1">
                 {active && (

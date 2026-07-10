@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { Blueprint } from '../../shared/blueprint-types'
 import type { Task, TaskState } from '../../shared/types'
 import { BlueprintBanner } from '../components/blueprint/BlueprintBanner'
@@ -136,6 +136,15 @@ export function Board() {
   const [activeBlueprints, setActiveBlueprints] = useState<Blueprint[]>([])
   // State of the card currently being dragged — highlights valid targets.
   const [dragState, setDragState] = useState<TaskState | null>(null)
+  const [search, setSearch] = useState('')
+
+  const filteredTasks = useMemo(() => {
+    if (!search.trim()) return tasks
+    const q = search.toLowerCase()
+    return tasks.filter(
+      (t) => t.title.toLowerCase().includes(q) || t.intent.toLowerCase().includes(q),
+    )
+  }, [tasks, search])
 
   async function dropOn(groupKey: string, e: React.DragEvent) {
     e.preventDefault()
@@ -163,9 +172,12 @@ export function Board() {
       setActiveBlueprints([])
       return
     }
-    window.founcode.invoke('blueprint:list', { projectId: activeProjectId }).then((list) => {
-      setActiveBlueprints(list.filter((b) => b.state === 'IMPLEMENTING'))
-    })
+    window.founcode
+      .invoke('blueprint:list', { projectId: activeProjectId })
+      .then((list) => {
+        setActiveBlueprints(list.filter((b) => b.state === 'IMPLEMENTING'))
+      })
+      .catch(console.error)
   }, [activeProjectId, tasks])
 
   return (
@@ -176,6 +188,12 @@ export function Board() {
           <p className="mt-0.5 font-mono text-[10px] text-slate-600">{project?.path}</p>
         </div>
         <div className="flex items-center gap-2">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search tasks..."
+            className="input-field w-48 text-xs"
+          />
           <button
             type="button"
             onClick={() => setShowTerminal(true)}
@@ -208,7 +226,7 @@ export function Board() {
 
       <div className="grid flex-1 grid-cols-4 gap-3 overflow-y-auto p-4">
         {GROUPS.map((group, i) => {
-          const columnTasks = tasks.filter((t) => group.states.includes(t.state))
+          const columnTasks = filteredTasks.filter((t) => group.states.includes(t.state))
           const droppable = dragState !== null && DND_MOVES[dragState]?.to === group.key
           return (
             // biome-ignore lint/a11y/noStaticElementInteractions: drop target for the kanban drag

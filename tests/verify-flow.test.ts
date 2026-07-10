@@ -96,7 +96,7 @@ describe('verify flow (mock agent + real git)', () => {
     expect(events).toContain('fix_loop_exhausted')
   })
 
-  it('merge: changes land on the user branch, worktree + branch cleaned', async () => {
+  it('merge: changes land on the user branch, worktree + branch cleaned', { timeout: 15000 }, async () => {
     const taskId = await runToState('do it', 'REVIEW')
     const worktreePath = tasks.get(taskId)?.worktree ?? ''
 

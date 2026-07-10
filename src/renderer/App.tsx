@@ -3,6 +3,7 @@ import type { ChatSession } from '../shared/chat-types'
 import type { AppInfo } from '../shared/types'
 import logoUrl from './assets/logo.png'
 import wordmarkUrl from './assets/wordmark.png'
+import { setLocale } from './i18n'
 import wordmarkDarkUrl from './assets/wordmark-dark.png'
 import { HelpMenu } from './components/HelpMenu'
 import { SessionMenu } from './components/SessionMenu'
@@ -159,8 +160,12 @@ function Sidebar({ info }: { info: AppInfo | null }) {
         <button
           type="button"
           onClick={async () => {
-            const session = await window.founcode.invoke('chat:createSession', {})
-            goChat(session.id)
+            try {
+              const session = await window.founcode.invoke('chat:createSession', {})
+              goChat(session.id)
+            } catch (error) {
+              useAppStore.setState({ error: (error as Error).message })
+            }
           }}
           title="New chat"
           className={`mb-1.5 flex w-full items-center gap-2.5 rounded-md border border-accent/30 py-2 text-left text-[13.5px] text-accent transition-colors hover:border-accent/50 hover:bg-accent/5 ${
@@ -320,9 +325,13 @@ export default function App() {
     init()
     window.founcode.invoke('app:info', undefined).then(setInfo).catch(console.error)
     // Theme applies via the data-theme attribute (tokens remap in CSS).
-    window.founcode.invoke('settings:get', undefined).then((s) => {
-      document.documentElement.dataset.theme = s.theme
-    })
+    window.founcode
+      .invoke('settings:get', undefined)
+      .then((s) => {
+        document.documentElement.dataset.theme = s.theme
+        setLocale(s.locale)
+      })
+      .catch(console.error)
     // Keep the board live: any state change in main refreshes the task list.
     const offState = window.founcode.on('task:stateChanged', () => {
       refreshTasks()
@@ -351,6 +360,22 @@ export default function App() {
       offChatEvents()
     }
   }, [init, refreshTasks])
+
+  // Global keyboard shortcuts
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        e.key === 'n' &&
+        !(e.target as HTMLElement)?.closest('input,textarea,select')
+      ) {
+        e.preventDefault()
+        useAppStore.getState().goChat(null)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   // Blueprint Studio is a focused full-screen wizard — no sidebar.
   if (view.name === 'blueprint') {

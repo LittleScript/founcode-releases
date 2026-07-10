@@ -24,6 +24,9 @@ Supported actions (JSON array, max 3 per reply):
 - {"type":"resume_auto","blueprintId":"<id>"} — resume automatic task-after-task building.
 - {"type":"start_next","blueprintId":"<id>"} — kick off the next queued task now.
 - {"type":"open_project","projectId":"<id>"} — take the user to that project's board.
+- {"type":"a2a_ask","targetSessionId":"<id>","question":"<1-2 sentences>"} — ask another chat session's agent a question. Use when the user mentions another session, e.g. "ask my architecture chat about this."
+- {"type":"a2a_handoff","targetAgentId":"<agent id>","title":"<short>","intent":"<what & why>"} — create a task assigned to a different agent. Use when the work is better suited to another agent.
+- {"type":"a2a_notify","targetSessionId":"<id>","message":"<notification>"} — notify another chat session's agent about something.
 
 Rules:
 - No actions while the user is still exploring — discussion first, action when ready.

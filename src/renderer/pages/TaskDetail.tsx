@@ -16,7 +16,7 @@ function AgentModelRow({ task, onUpdated }: { task: Task; onUpdated: () => void 
   const locked = (ACTIVE_STATES as readonly string[]).includes(task.state) || task.state === 'DONE'
 
   useEffect(() => {
-    window.founcode.invoke('agent:listInstalled', undefined).then(setAgents)
+    window.founcode.invoke('agent:listInstalled', undefined).then(setAgents).catch(console.error)
   }, [])
 
   async function patch(p: { agentId?: string; model?: string }) {
@@ -76,7 +76,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
 
   useEffect(() => {
     if (!storeTask) {
-      window.founcode.invoke('task:get', { taskId }).then(setFetchedTask)
+      window.founcode.invoke('task:get', { taskId }).then(setFetchedTask).catch(console.error)
     }
   }, [taskId, storeTask])
 
@@ -86,7 +86,7 @@ export function TaskDetail({ taskId }: { taskId: string }) {
   useEffect(() => {
     // Refresh artifacts whenever the task changes state (new plan/log).
     if (state) {
-      window.founcode.invoke('task:artifacts', { taskId }).then(setArtifacts)
+      window.founcode.invoke('task:artifacts', { taskId }).then(setArtifacts).catch(console.error)
     }
   }, [taskId, state])
 

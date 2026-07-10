@@ -15,7 +15,7 @@ export function SessionMenu({
 }) {
   const projects = useAppStore((s) => s.projects)
   const [open, setOpen] = useState(false)
-  const [mode, setMode] = useState<'menu' | 'rename' | 'project'>('menu')
+  const [mode, setMode] = useState<'menu' | 'rename' | 'project' | 'delete'>('menu')
   const [title, setTitle] = useState(session.title)
   // Fixed-position coords so the popup escapes the sidebar's clipping
   // (a narrow sidebar was cutting the menu off).
@@ -93,12 +93,21 @@ export function SessionMenu({
               </button>
               <button
                 type="button"
-                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-red-400 transition-colors hover:bg-red-950/30"
+                className={item}
                 onClick={async () => {
-                  await window.founcode.invoke('chat:deleteSession', { sessionId: session.id })
+                  const path = await window.founcode.invoke('chat:exportSession', {
+                    sessionId: session.id,
+                  })
                   setOpen(false)
-                  onDeleted()
+                  if (path !== 'cancelled') onChanged?.()
                 }}
+              >
+                Export as Markdown
+              </button>
+              <button
+                type="button"
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-red-400 transition-colors hover:bg-red-950/30"
+                onClick={() => setMode('delete')}
               >
                 Delete
               </button>
@@ -125,6 +134,34 @@ export function SessionMenu({
               >
                 Save
               </button>
+            </div>
+          )}
+
+          {mode === 'delete' && (
+            <div className="p-3">
+              <p className="mb-3 text-[12px] text-slate-300">
+                Delete &ldquo;{session.title}&rdquo;? This cannot be undone.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await window.founcode.invoke('chat:deleteSession', { sessionId: session.id })
+                    setOpen(false)
+                    onDeleted()
+                  }}
+                  className="btn-danger flex-1 !py-1 text-[12px]"
+                >
+                  Delete
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMode('menu')}
+                  className="btn-ghost flex-1 !py-1 text-[12px] border-transparent"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           )}
 

@@ -1,9 +1,21 @@
 // Blueprint domain types shared between main and renderer.
 // Design: docs/BLUEPRINT-DESIGN.md.
 
-import type { BlueprintState } from '../main/blueprint/BlueprintStateMachine'
+export const BLUEPRINT_STATES = [
+  'IDEA',
+  'QUESTIONS',
+  'STRUCTURING',
+  'STRUCTURE_REVIEW',
+  'GENERATING_PRD',
+  'PRD_REVIEW',
+  'DECOMPOSING',
+  'TASK_REVIEW',
+  'IMPLEMENTING',
+  'DONE',
+  'FAILED',
+] as const
 
-export type { BlueprintState }
+export type BlueprintState = (typeof BLUEPRINT_STATES)[number]
 
 export interface TechPref {
   mode: 'auto' | 'manual'
@@ -25,7 +37,7 @@ export interface QuestionsResult {
 
 export interface BlueprintAnswer {
   question: string
-  answer: string | null // null = skipped
+  answers: string[] // multi-select; empty = skipped
 }
 
 // Feature tree — Product -> Features (phases) -> Sub-features.
@@ -51,6 +63,9 @@ export interface BlueprintTaskSpec {
   intent: string
   feature: string
   priority: 'high' | 'medium' | 'low'
+  // order_index values of tasks this one depends on (resolved to task
+  // IDs after creation).
+  depends_on?: number[]
 }
 
 export type BlueprintMode = 'greenfield' | 'extend' | 'document'

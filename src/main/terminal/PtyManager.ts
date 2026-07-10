@@ -37,6 +37,41 @@ async function loadPty(): Promise<NodePty> {
   return nodePty
 }
 
+const ENV_WHITELIST = [
+  'ALLUSERSPROFILE',
+  'APPDATA',
+  'COMPUTERNAME',
+  'HOMEDRIVE',
+  'HOMEPATH',
+  'LOCALAPPDATA',
+  'PATH',
+  'PATHEXT',
+  'PROCESSOR_ARCHITECTURE',
+  'SYSTEMDRIVE',
+  'SYSTEMROOT',
+  'TEMP',
+  'TMP',
+  'USERNAME',
+  'USERPROFILE',
+  'WINDIR',
+  'NODE_PATH',
+  'NPM_CONFIG_PREFIX',
+  'GIT_SSH',
+  'SSH_AUTH_SOCK',
+  'DISPLAY',
+  'LANG',
+  'LC_ALL',
+  'TERM',
+]
+
+function sanitizedEnv(): Record<string, string> {
+  const env: Record<string, string> = {}
+  for (const key of ENV_WHITELIST) {
+    if (process.env[key] !== undefined) env[key] = process.env[key]
+  }
+  return env
+}
+
 export interface PtyCallbacks {
   onData: (sessionId: string, data: string) => void
   onExit: (sessionId: string, exitCode: number) => void
@@ -58,7 +93,7 @@ export class PtyManager {
       cols: opts.cols ?? 80,
       rows: opts.rows ?? 24,
       cwd: opts.cwd,
-      env: { ...process.env, ...launch.env },
+      env: { ...sanitizedEnv(), ...launch.env },
     })
     this.sessions.set(id, proc)
     proc.onData((data) => this.cb.onData(id, data))

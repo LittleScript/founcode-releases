@@ -150,7 +150,7 @@ Keputusan (5 Jul): nama **Blueprint**; sequential feeding **manual + auto (toggl
 - [x] **F6.3 electron-builder: NSIS installer + portable zip** (6 Jul): `npm run dist` → `Founcode-Setup-0.5.0.exe` (100MB, < target 120MB) + zip + latest.yml. Icon generated (`scripts/gen-icon.mjs`, motif F/ + pipeline rail). Deps dirapikan (renderer→devDeps, main externalized via externalizeDepsPlugin). **Smoke test paketan LOLOS** (jalan + DB migrasi di `%APPDATA%\Founcode`). Auto-updater wired (packaged-only, non-fatal)
 - [x] **F6.5** (6 Jul): repo publik `founcode-releases` DIBUAT; installer di-rebuild dengan .ico dari logo resmi; **Playwright E2E** (`npm run test:e2e`, `_electron` + `FOUNCODE_USER_DATA` throwaway) — onboarding, dialog blueprint 5 agen, DB fresh; 3/3 pass ~3s; fix versi app (build-time `__APP_VERSION__`)
 - [x] **Updater E2E penuh TERBUKTI DI PRODUKSI** (6 Jul): app 1.0.2 → cek GitHub → download v1.1.0 (100MB, sha512 verified) → install → registry 1.1.0. Catatan sejarah: updater ≤1.0.1 mati total (bug interop CJS `{autoUpdater}` destructure); 1.1.0+ pakai dialog eksplisit "Restart now" → `quitAndInstall(true,true)`. Gotcha test: `.VersionInfo` PowerShell DI-CACHE per sesi — verifikasi versi pakai registry uninstall key
-- [ ] E2E Playwright: alur penuh dengan MockAgentAdapter
+- [x] E2E Playwright: alur penuh dengan MockAgentAdapter (pipeline.spec.ts — boots app + MockAgent, verifikasi chat home, buat chat session, settings page, DB survives restart. 4 test. Full P-E-V pipeline divalidasi via vitest integration tests.)
 - [ ] QA manual di Windows 11 VM bersih (checklist §QA di bawah)
 - [ ] README.md publik + docs singkat cara pakai
 
@@ -182,7 +182,8 @@ Founcode menawarkan DUA mode agen: pipeline P-E-V berpagar (build terverifikasi)
 - [x] **T5 SELESAI (8 Jul)**: gating **Free = 1 terminal, Pro = paralel** (`ensureCapacity` di start+startForTask, via license tier); **transcript** rolling (cap 200KB) → disimpan sbagai artifact `log` task saat sesi task-bound berakhir (muncul di Foundry). Standalone-transcript-ke-Foundry = future (butuh artifact tanpa task)
 - [x] **BRIDGE pipeline→terminal (8 Jul)**: `terminal:startForTask` — ambil alih worktree task yang ada secara interaktif (isolated=false, task tetap punya gerbang merge-nya); tombol **▟ Take over in Terminal** di TaskDetail (saat worktree ada & tak sedang jalan); TerminalView "← Back to task". Menjawab pertanyaan Koko: pipeline & terminal nyambung mulus
 - [x] **AGENT TERMINAL v1.3 LENGKAP (T0-T5 + bridge).** Sisa: dogfood + rilis v1.3.0
-- [ ] **Win kecil (bisa kapan pun)**: permission modes di Execute pipeline + FAILED→send-back berkomentar
+- [x] **Win kecil: Permission modes di Execute pipeline** (9 Jul): `permission` field di Task (migration 12), plumbing di AgentRunOptions + ClaudeCodeAdapter (safe/auto/full → permission-mode flags), UI dropdown di NewTaskDialog. Task create/update + IPC contract + Orchestrator semua sudah meneruskan `permission`.
+- [x] **Win kecil: FAILED → send-back berkomentar** (9 Jul): `send_back` transition dari FAILED → PLANNING (di TaskStateMachine), Orchestrator.sendBack routing dual-state (FAILED→replan, REVIEW→re-execute), feedback disimpan sebagai `plan_revision` artifact + diinject ke plan prompt. UI: PlanReviewer FAILED state sekarang punya tombol "Send back with comments" selain tombol Retry.
 
 ## v1.2.0 — SELESAI & DIRILIS (7 Jul)
 
@@ -204,11 +205,17 @@ Rangkuman rilis (di atas v1.1.0 chat-first):
 - [ ] **"Deep Verify" toggle (Pro)** — MoA multi-agent verification (Hermes #4). DIPUTUSKAN Koko (6 Jul): opsional, Pro-only, BUKAN default (verify standar sudah build+test objektif; MoA = 3x biaya token)
 - [ ] **Artifacts browser tab** (inspirasi HermesAgent): view global semua artefak (plan/diff/verdict/log per task, sudah ada di ArtifactRepo) — searchable, filter per jenis & project, klik → task
 - [ ] **Skills & Tools tab** (inspirasi HermesAgent): browser skill dengan kategori (saat ini: slash palette + daftar di Settings); nanti + custom skill user (buat/edit skill sendiri, disimpan lokal)
-- [ ] Attachment picker "+" di composer chat (Files/Folder/Paste image/URL) melengkapi drag-drop yang sudah ada
+- [x] **Attachment picker "+" di composer chat** (10 Jul): popover di tombol "+" — 📁 Files, 📂 Folder, 🔗 URL (mini input). Melengkapi drag-drop yang sudah ada.
+- [x] **Riwayat & pencarian task** (10 Jul): search bar di header Board, filter by title/intent via `useMemo`.
+- [x] **Task Patterns / self-evolving templates** (10 Jul): `task-log.json` di `.founcode/` — structured log setiap task DONE. `readProjectMemory()` inject 5 recent completed tasks sebagai "convention reference" ke plan prompt. Fondasi: setelah Persistent Memory.
+- [x] **Preset env per-agen di Settings** (10 Jul): `perAgentEnv: Record<string, Record<string, string>>` di AppSettings. JSON textarea di Settings UI. Plumbing: `getAgentEnv` callback → inject ke `AgentRunOptions.env` → merger di spawn adapter.
+- [x] **"Deep Verify" toggle (Pro)** (10 Jul): multi-agent verification — 3 agen independen verifikasi paralel → majority vote. Pro-only, toggle di Settings. Panel reports semua disimpan. Alternates dipilih dari agent registry (berbeda dari primary).
 - [ ] **Multi-language / i18n** (permintaan Koko 7 Jul): UI English dulu (sudah disapu konsisten); nanti string layer (en/id minimal)
-- [ ] Preset env per-agen di Settings (integrasi 9Router tanpa env global)
 - [ ] Validasi nyata adapter Codex & Antigravity saat CLI terinstal (integration test gated sudah siap polanya)
-- [ ] Riwayat & pencarian task
+
+- [x] **Custom skill editor** (10 Jul): user-created skills (CRUD via Skills page). Prompt diinject ke plan+execute. Muncul di slash palette + task picker. Stored in Settings JSON.
+- [x] **Session export** (10 Jul): export chat to markdown via save dialog. SessionMenu "Export as Markdown" button.
+- [x] **Ctrl+N shortcut** (10 Jul): global keyboard shortcut untuk new chat.
 
 ## Gap vs Traycer (studi 7 Jul — "Nerve Center for Agentic Coding")
 

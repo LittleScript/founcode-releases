@@ -89,6 +89,7 @@ export abstract class TextCliAdapter implements AgentAdapter {
       cwd: opts.cwd,
       windowsHide: true,
       stdio: ['pipe', 'pipe', 'pipe'],
+      env: { ...process.env, ...opts.env },
     })
 
     const onAbort = () => killTree(child.pid)

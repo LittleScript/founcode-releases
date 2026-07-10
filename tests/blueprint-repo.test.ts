@@ -50,14 +50,14 @@ describe('BlueprintRepo', () => {
   it('round-trips JSON blobs (answers, structure) and prd', () => {
     const bp = create()
     blueprints.update(bp.id, {
-      answers: [{ question: 'Q1?', answer: 'A1' }],
+      answers: [{ question: 'Q1?', answers: ['A1'] }],
       structure: {
         features: [{ name: 'Auth', priority: 'high', subFeatures: [{ name: 'Login' }] }],
       },
       prd: '# PRD\n\nHello',
     })
     const loaded = blueprints.get(bp.id)
-    expect(loaded?.answers).toEqual([{ question: 'Q1?', answer: 'A1' }])
+    expect(loaded?.answers).toEqual([{ question: 'Q1?', answers: ['A1'] }])
     expect(loaded?.structure?.features[0]?.subFeatures[0]?.name).toBe('Login')
     expect(loaded?.prd).toContain('# PRD')
   })

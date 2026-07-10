@@ -1,6 +1,8 @@
 // Domain types shared between main and renderer.
 // Single source of truth — TDD §5.
 
+import type { PermissionLevel } from './settings-types'
+
 export const TASK_STATES = [
   'BACKLOG',
   'PLANNING',
@@ -37,6 +39,9 @@ export interface Task {
   model: string | null
   // Built-in Founcode skill applied to this task's plan+execute prompts.
   skill: string | null
+  permission: PermissionLevel
+  // JSON array of task IDs that must be DONE before this task can start.
+  dependsOn: string[] | null
   retryCount: number
   createdAt: number
   updatedAt: number

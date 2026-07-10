@@ -38,6 +38,7 @@ export interface ChatDeps {
 
 export class ChatOrchestrator {
   private active = new Map<string, AbortController>()
+  private readonly a2aPrefix = '[A2A] '
 
   constructor(private deps: ChatDeps) {}
 
@@ -233,6 +234,37 @@ export class ChatOrchestrator {
         case 'start_next': {
           this.deps.startNextTask(action.blueprintId)
           return { ok: true, message: 'Next task started.' }
+        }
+        case 'a2a_ask': {
+          const target = this.deps.chat.listSessions().find((s) => s.id === action.targetSessionId)
+          if (!target) throw new Error('Target session not found')
+          this.deps.chat.addMessage(target.id, 'assistant', this.a2aPrefix + action.question, [
+            {
+              type: 'a2a_notify',
+              targetSessionId: _sessionId,
+              message: `Re: ${action.question.slice(0, 80)} — answered.`,
+            },
+          ])
+          return { ok: true, message: `Question sent to "${target.title}"` }
+        }
+        case 'a2a_handoff': {
+          const projectId = this.deps.settings.get().defaultAgentId
+            ? this.deps.tasks.list()[0]?.projectId
+            : null
+          if (!projectId) throw new Error('No project available — add a project first')
+          const task = this.deps.tasks.create({
+            projectId,
+            title: action.title,
+            intent: action.intent,
+            agentId: action.targetAgentId,
+          })
+          return { ok: true, message: `Handoff task created: ${task.title}` }
+        }
+        case 'a2a_notify': {
+          const target = this.deps.chat.listSessions().find((s) => s.id === action.targetSessionId)
+          if (!target) throw new Error('Target session not found')
+          this.deps.chat.addMessage(target.id, 'assistant', this.a2aPrefix + action.message, [])
+          return { ok: true, message: `Notified "${target.title}"` }
         }
         default:
           return { ok: false, message: `Action not handled in main: ${action.type}` }

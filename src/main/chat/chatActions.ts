@@ -13,6 +13,9 @@ const KNOWN = new Set([
   'start_next',
   'blueprint_from_idea',
   'open_project',
+  'a2a_ask',
+  'a2a_handoff',
+  'a2a_notify',
 ])
 
 export function parseChatReply(raw: string): { reply: string; actions: ChatAction[] } {

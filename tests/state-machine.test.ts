@@ -29,6 +29,7 @@ const LEGAL: [TaskState, TaskAction, TaskState][] = [
   ['REVIEW', 'send_back', 'EXECUTING'],
   ['REVIEW', 'discard', 'DISCARDED'],
   ['FAILED', 'retry', 'BACKLOG'],
+  ['FAILED', 'send_back', 'PLANNING'],
   ['DISCARDED', 'retry', 'BACKLOG'],
 ]
 
@@ -52,10 +53,10 @@ describe('TaskStateMachine', () => {
     }
   })
 
-  it('DONE is terminal; DISCARDED and FAILED can only be retried', () => {
+  it('DONE is terminal; DISCARDED and FAILED can be retried or sent back', () => {
     expect(legalActions('DONE')).toEqual([])
     expect(legalActions('DISCARDED')).toEqual(['retry'])
-    expect(legalActions('FAILED')).toEqual(['retry'])
+    expect(legalActions('FAILED').sort()).toEqual(['retry', 'send_back'])
   })
 
   it('cancel before execution returns to backlog; after, discards the work', () => {

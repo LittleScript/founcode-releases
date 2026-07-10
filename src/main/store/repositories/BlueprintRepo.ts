@@ -3,10 +3,11 @@ import type {
   Blueprint,
   BlueprintAnswer,
   BlueprintMode,
+  BlueprintQuestion,
+  BlueprintState,
   BlueprintStructure,
   TechPref,
 } from '../../../shared/blueprint-types'
-import type { BlueprintState } from '../../blueprint/BlueprintStateMachine'
 import type { Database } from '../db'
 
 interface BlueprintRow {
@@ -18,6 +19,7 @@ interface BlueprintRow {
   model: string | null
   tech_pref: string
   answers: string | null
+  questions: string | null
   structure: string | null
   prd: string | null
   advance_mode: string
@@ -203,5 +205,31 @@ export class BlueprintRepo {
         'INSERT INTO blueprint_events (blueprint_id, event, detail, created_at) VALUES (?, ?, ?, ?)',
       )
       .run(blueprintId, event, detail === undefined ? null : JSON.stringify(detail), Date.now())
+  }
+
+  getQuestions(id: string): BlueprintQuestion[] {
+    const row = this.db.prepare('SELECT questions FROM blueprints WHERE id = ?').get(id) as
+      | { questions: string | null }
+      | undefined
+    if (!row?.questions) return []
+    return JSON.parse(row.questions) as BlueprintQuestion[]
+  }
+
+  getSuggestions(id: string): string[] {
+    const row = this.db.prepare('SELECT suggestions FROM blueprints WHERE id = ?').get(id) as
+      | { suggestions: string | null }
+      | undefined
+    if (!row?.suggestions) return []
+    return JSON.parse(row.suggestions) as string[]
+  }
+
+  setQuestionsAndSuggestions(
+    id: string,
+    questions: BlueprintQuestion[],
+    suggestions: string[],
+  ): void {
+    this.db
+      .prepare('UPDATE blueprints SET questions = ?, suggestions = ?, updated_at = ? WHERE id = ?')
+      .run(JSON.stringify(questions), JSON.stringify(suggestions), Date.now(), id)
   }
 }

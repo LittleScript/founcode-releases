@@ -37,7 +37,7 @@ export function QuestionsStep({
     const chosen = [...(picked[i] ?? [])]
     const other = others[i]?.trim()
     if (other) chosen.push(other)
-    return { question: q.question, answer: chosen.length ? chosen.join(', ') : null }
+    return { question: q.question, answers: chosen }
   }
 
   async function submit() {
@@ -46,7 +46,7 @@ export function QuestionsStep({
     if (acceptedIdeas.size > 0) {
       answers.push({
         question: 'Additional feature ideas the user wants included',
-        answer: [...acceptedIdeas].join('; '),
+        answers: [...acceptedIdeas],
       })
     }
     await blueprintActions.submitAnswers(blueprintId, answers)

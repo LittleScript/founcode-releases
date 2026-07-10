@@ -1,6 +1,7 @@
 import { nanoid } from 'nanoid'
+import type { PermissionLevel } from '../../../shared/settings-types'
 import type { Task, TaskState } from '../../../shared/types'
-import type { Database } from '../db'
+import { type Database, transaction } from '../db'
 
 interface TaskRow {
   id: string
@@ -16,6 +17,8 @@ interface TaskRow {
   order_index: number | null
   model: string | null
   skill: string | null
+  permission: string
+  depends_on: string | null
   retry_count: number
   created_at: number
   updated_at: number
@@ -36,6 +39,8 @@ function toTask(row: TaskRow): Task {
     orderIndex: row.order_index,
     model: row.model,
     skill: row.skill ?? null,
+    permission: (row.permission ?? 'auto') as PermissionLevel,
+    dependsOn: row.depends_on ? (JSON.parse(row.depends_on) as string[]) : null,
     retryCount: row.retry_count,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -49,9 +54,11 @@ export interface CreateTaskInput {
   agentId: string
   model?: string | null
   skill?: string | null
+  permission?: PermissionLevel
   // Set when the task originates from a Blueprint (sequential feeding).
   blueprintId?: string
   orderIndex?: number
+  dependsOn?: string[] | null
 }
 
 export class TaskRepo {
@@ -73,14 +80,16 @@ export class TaskRepo {
       orderIndex: input.orderIndex ?? null,
       model: input.model ?? null,
       skill: input.skill ?? null,
+      permission: input.permission ?? 'auto',
+      dependsOn: input.dependsOn ?? null,
       retryCount: 0,
       createdAt: now,
       updatedAt: now,
     }
     this.db
       .prepare(
-        `INSERT INTO tasks (id, project_id, title, intent, agent_id, state, branch, worktree, blueprint_id, order_index, model, skill, retry_count, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO tasks (id, project_id, title, intent, agent_id, state, branch, worktree, blueprint_id, order_index, model, skill, permission, depends_on, retry_count, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         task.id,
@@ -95,6 +104,8 @@ export class TaskRepo {
         task.orderIndex,
         task.model,
         task.skill,
+        task.permission,
+        task.dependsOn ? JSON.stringify(task.dependsOn) : null,
         task.retryCount,
         task.createdAt,
         task.updatedAt,
@@ -139,7 +150,12 @@ export class TaskRepo {
   // so they can't change mid-run.
   updateSettings(
     id: string,
-    patch: { agentId?: string; model?: string | null; skill?: string | null },
+    patch: {
+      agentId?: string
+      model?: string | null
+      skill?: string | null
+      permission?: PermissionLevel
+    },
   ): void {
     if (patch.agentId !== undefined) {
       this.db
@@ -155,6 +171,11 @@ export class TaskRepo {
       this.db
         .prepare('UPDATE tasks SET skill = ?, updated_at = ? WHERE id = ?')
         .run(patch.skill === '' ? null : patch.skill, Date.now(), id)
+    }
+    if (patch.permission !== undefined) {
+      this.db
+        .prepare('UPDATE tasks SET permission = ?, updated_at = ? WHERE id = ?')
+        .run(patch.permission, Date.now(), id)
     }
   }
 
@@ -204,5 +225,23 @@ export class TaskRepo {
       detail: r.detail ? JSON.parse(r.detail) : undefined,
       createdAt: r.created_at,
     }))
+  }
+
+  // Atomic batch create, used when a blueprint decomposes into N tasks.
+  // If any task fails, the entire batch is rolled back.
+  createBatch(inputs: CreateTaskInput[]): Task[] {
+    const tasks: Task[] = []
+    transaction(this.db, () => {
+      for (const input of inputs) {
+        tasks.push(this.create(input))
+      }
+    })
+    return tasks
+  }
+
+  setDependsOn(id: string, dependsOn: string[]): void {
+    this.db
+      .prepare('UPDATE tasks SET depends_on = ?, updated_at = ? WHERE id = ?')
+      .run(JSON.stringify(dependsOn), Date.now(), id)
   }
 }

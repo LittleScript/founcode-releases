@@ -47,3 +47,15 @@ export function getSchemaVersion(db: Database): number {
     | undefined
   return row ? Number(row.value) : 0
 }
+
+// Atomic batch: roll back everything if any statement fails.
+export function transaction(db: Database, fn: () => void): void {
+  db.exec('BEGIN')
+  try {
+    fn()
+    db.exec('COMMIT')
+  } catch (error) {
+    db.exec('ROLLBACK')
+    throw error
+  }
+}

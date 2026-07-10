@@ -16,6 +16,7 @@ import type {
 import type { ChatAction, ChatMessage, ChatSession } from './chat-types'
 import type { LicenseState } from './license-types'
 import type { AppSettings, PermissionLevel } from './settings-types'
+import type { SkillInfo } from './skills-types'
 import type { StartTerminalInput, TerminalReview, TerminalSession } from './terminal-types'
 import type {
   AgentEvent,
@@ -47,6 +48,7 @@ export interface IpcInvokeMap {
       agentId: string
       model?: string
       skill?: string
+      permission?: PermissionLevel
     }
     result: Task
   }
@@ -57,7 +59,13 @@ export interface IpcInvokeMap {
   'license:deactivate': { args: undefined; result: LicenseState }
   'task:list': { args: { projectId?: string }; result: Task[] }
   'task:update': {
-    args: { taskId: string; agentId?: string; model?: string; skill?: string }
+    args: {
+      taskId: string
+      agentId?: string
+      model?: string
+      skill?: string
+      permission?: PermissionLevel
+    }
     result: Task
   }
   'task:get': { args: { taskId: string }; result: Task | null }
@@ -158,6 +166,11 @@ export interface IpcInvokeMap {
   'terminal:finish': { args: { sessionId: string }; result: TerminalReview }
   'terminal:merge': { args: { sessionId: string }; result: undefined }
   'terminal:discard': { args: { sessionId: string }; result: undefined }
+  // Custom skills CRUD
+  'skill:listAll': { args: undefined; result: SkillInfo[] }
+  'skill:save': { args: { skill: SkillInfo }; result: SkillInfo[] }
+  'skill:delete': { args: { id: string }; result: SkillInfo[] }
+  'chat:exportSession': { args: { sessionId: string }; result: string }
 }
 
 export type IpcInvokeChannel = keyof IpcInvokeMap
@@ -226,6 +239,10 @@ export const IPC_INVOKE_CHANNELS: readonly IpcInvokeChannel[] = [
   'terminal:finish',
   'terminal:merge',
   'terminal:discard',
+  'skill:listAll',
+  'skill:save',
+  'skill:delete',
+  'chat:exportSession',
 ]
 
 // ---- events (main -> renderer stream) ----

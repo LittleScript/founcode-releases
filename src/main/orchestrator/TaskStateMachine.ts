@@ -41,7 +41,7 @@ const TRANSITIONS: Record<TaskAction, Partial<Record<TaskState, TaskState>>> = {
   verify_failed_retry: { VERIFYING: 'EXECUTING' },
   verify_failed_final: { VERIFYING: 'FAILED' },
   merge: { REVIEW: 'DONE' },
-  send_back: { REVIEW: 'EXECUTING' },
+  send_back: { REVIEW: 'EXECUTING', FAILED: 'PLANNING' },
   discard: { REVIEW: 'DISCARDED' },
   cancel: {
     // No work product exists yet during planning — return to the

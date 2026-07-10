@@ -51,8 +51,6 @@ interface GenResult {
 
 export class BlueprintOrchestrator {
   private active = new Map<string, AbortController>()
-  private questionsCache = new Map<string, BlueprintQuestion[]>()
-  private suggestionsCache = new Map<string, string[]>()
 
   constructor(private deps: BlueprintDeps) {}
 
@@ -61,11 +59,11 @@ export class BlueprintOrchestrator {
   }
 
   getQuestions(blueprintId: string): BlueprintQuestion[] {
-    return this.questionsCache.get(blueprintId) ?? []
+    return this.deps.blueprints.getQuestions(blueprintId) ?? []
   }
 
   getSuggestions(blueprintId: string): string[] {
-    return this.suggestionsCache.get(blueprintId) ?? []
+    return this.deps.blueprints.getSuggestions(blueprintId) ?? []
   }
 
   private apply(blueprintId: string, action: BlueprintAction): Blueprint {
@@ -139,8 +137,11 @@ export class BlueprintOrchestrator {
         const result = await this.collect(blueprintId, bp, prompt)
         const parsed = result.ok ? parseQuestions(result.text) : null
         if (parsed?.value) {
-          this.questionsCache.set(blueprintId, parsed.value.questions)
-          this.suggestionsCache.set(blueprintId, parsed.value.suggestions)
+          this.deps.blueprints.setQuestionsAndSuggestions(
+            blueprintId,
+            parsed.value.questions,
+            parsed.value.suggestions,
+          )
           this.deps.onQuestions?.(blueprintId, parsed.value.questions)
           this.applySafe(blueprintId, 'generate_questions') // IDEA -> QUESTIONS
           return
@@ -174,15 +175,21 @@ export class BlueprintOrchestrator {
       .replace('{{tech_pref}}', techPrefText(bp))
       .replace('{{answers}}', answersText(bp.answers))
       .replace('{{existing_section}}', existingSection(bp))
-    const result = await this.collect(blueprintId, bp, prompt)
-    if (result.ok) {
-      const parsed = parseStructure(result.text)
-      if (parsed.value) {
-        this.deps.blueprints.update(blueprintId, { structure: parsed.value })
-        this.applySafe(blueprintId, 'structure_ready')
-        return
+    try {
+      const result = await this.collect(blueprintId, bp, prompt)
+      if (result.ok) {
+        const parsed = parseStructure(result.text)
+        if (parsed.value) {
+          this.deps.blueprints.update(blueprintId, { structure: parsed.value })
+          this.applySafe(blueprintId, 'structure_ready')
+          return
+        }
+        this.deps.blueprints.recordEvent(blueprintId, 'parse_error', { errors: parsed.errors })
       }
-      this.deps.blueprints.recordEvent(blueprintId, 'parse_error', { errors: parsed.errors })
+    } catch (error) {
+      this.deps.blueprints.recordEvent(blueprintId, 'agent_error', {
+        message: (error as Error).message,
+      })
     }
     this.applySafe(blueprintId, 'generation_failed')
   }
@@ -207,11 +214,17 @@ export class BlueprintOrchestrator {
           .replace('{{answers}}', answersText(bp.answers))
           .replace('{{structure}}', JSON.stringify(bp.structure, null, 2))
           .replace('{{existing_section}}', existingSection(bp))
-    const result = await this.collect(blueprintId, bp, prompt)
-    if (result.ok && result.text.trim()) {
-      this.deps.blueprints.update(blueprintId, { prd: result.text.trim() })
-      this.applySafe(blueprintId, 'prd_ready')
-      return
+    try {
+      const result = await this.collect(blueprintId, bp, prompt)
+      if (result.ok && result.text.trim()) {
+        this.deps.blueprints.update(blueprintId, { prd: result.text.trim() })
+        this.applySafe(blueprintId, 'prd_ready')
+        return
+      }
+    } catch (error) {
+      this.deps.blueprints.recordEvent(blueprintId, 'agent_error', {
+        message: (error as Error).message,
+      })
     }
     this.applySafe(blueprintId, 'generation_failed')
   }
@@ -303,22 +316,31 @@ export class BlueprintOrchestrator {
       .replace('{{prd}}', bp.prd ?? '')
       .replace('{{structure}}', JSON.stringify(bp.structure, null, 2))
       .replace('{{existing_section}}', existingSection(bp))
-    const result = await this.collect(blueprintId, bp, prompt)
-    if (result.ok) {
-      const parsed = parseTaskSpecs(result.text)
-      if (parsed.value) {
-        this.createTasks(bp, parsed.value)
-        this.applySafe(blueprintId, 'tasks_ready')
-        return
+    try {
+      const result = await this.collect(blueprintId, bp, prompt)
+      if (result.ok) {
+        const parsed = parseTaskSpecs(result.text)
+        if (parsed.value) {
+          this.createTasks(bp, parsed.value)
+          this.applySafe(blueprintId, 'tasks_ready')
+          return
+        }
+        this.deps.blueprints.recordEvent(blueprintId, 'parse_error', { errors: parsed.errors })
       }
-      this.deps.blueprints.recordEvent(blueprintId, 'parse_error', { errors: parsed.errors })
+    } catch (error) {
+      this.deps.blueprints.recordEvent(blueprintId, 'agent_error', {
+        message: (error as Error).message,
+      })
     }
     this.applySafe(blueprintId, 'generation_failed')
   }
 
   private createTasks(bp: Blueprint, specs: BlueprintTaskSpec[]): void {
-    specs.forEach((spec, index) => {
-      this.deps.tasks.create({
+    const byOrder = new Map<number, string>()
+
+    // Single transaction: create all tasks, collecting their generated IDs.
+    const created = this.deps.tasks.createBatch(
+      specs.map((spec, index) => ({
         projectId: bp.projectId,
         title: spec.title,
         intent: spec.intent,
@@ -326,8 +348,24 @@ export class BlueprintOrchestrator {
         model: bp.model,
         blueprintId: bp.id,
         orderIndex: index,
-      })
-    })
+      })),
+    )
+    for (const t of created) {
+      if (t.orderIndex !== null) byOrder.set(t.orderIndex, t.id)
+    }
+
+    // Second pass: resolve depends_on indices to task IDs.
+    for (let i = 0; i < specs.length; i++) {
+      const spec = specs[i]
+      const taskId = byOrder.get(i)
+      if (!taskId || !spec.depends_on?.length) continue
+      const resolved = spec.depends_on
+        .map((depIdx) => byOrder.get(depIdx))
+        .filter((id): id is string => id !== undefined)
+      if (resolved.length > 0) {
+        this.deps.tasks.setDependsOn(taskId, resolved)
+      }
+    }
     this.deps.blueprints.recordEvent(bp.id, 'tasks_created', { count: specs.length })
   }
 
@@ -359,26 +397,39 @@ export class BlueprintOrchestrator {
     this.startNextTask(blueprintId)
   }
 
-  // Starts the lowest-order task that hasn't finished yet. Returns false
-  // when there is nothing left to start (all done).
+  // Starts every BACKLOG task whose dependencies are all satisfied.
+  // On the free tier, only one task starts at a time (sequential);
+  // Pro tasks run in parallel when independent. Returns the number of
+  // tasks started.
   startNextTask(blueprintId: string): boolean {
     const tasks = this.deps.tasks.listByBlueprint(blueprintId)
-    // A task is "in flight" if it's neither a fresh Backlog nor terminal.
-    const active = tasks.find((t) => t.state !== 'BACKLOG' && !isTaskTerminal(t.state))
-    if (active) return true // already working one; don't start another
-    const next = tasks.find((t) => t.state === 'BACKLOG')
-    if (!next) {
-      // Nothing queued and nothing active -> blueprint is complete.
-      if (tasks.every((t) => isTaskTerminal(t.state))) {
-        this.applySafe(blueprintId, 'all_tasks_done')
-      }
+    if (tasks.every((t) => isTaskTerminal(t.state) || t.state === 'FAILED')) {
+      this.applySafe(blueprintId, 'all_tasks_done')
       return false
     }
-    this.deps.blueprints.recordEvent(blueprintId, 'task_started', {
-      taskId: next.id,
-      order: next.orderIndex,
-    })
-    this.deps.startTaskPlanning?.(next.id)
+
+    // Candidates: BACKLOG tasks whose dependencies are all satisfied.
+    const done = new Set(tasks.filter((t) => t.state === 'DONE').map((t) => t.id))
+    const candidates = tasks.filter(
+      (t) =>
+        t.state === 'BACKLOG' &&
+        (!t.dependsOn?.length || t.dependsOn.every((depId) => done.has(depId))),
+    )
+
+    if (candidates.length === 0) return false
+
+    // Free tier: one at a time, lowest order_index first.
+    const isPro = this.deps.getTier?.() === 'pro'
+    const toStart = isPro ? candidates : [candidates[0]]
+
+    for (const t of toStart) {
+      this.deps.blueprints.recordEvent(blueprintId, 'task_started', {
+        taskId: t.id,
+        order: t.orderIndex,
+        parallel: isPro,
+      })
+      this.deps.startTaskPlanning?.(t.id)
+    }
     return true
   }
 
@@ -391,12 +442,28 @@ export class BlueprintOrchestrator {
     // user. A discarded/failed task never auto-advances (user decides).
     // Defensive tier check: auto stays Pro even if the mode was set
     // while a license was active.
-    if (task.state === 'DONE' && bp.advanceMode === 'auto' && this.deps.getTier?.() !== 'free') {
+    if (task.state === 'DONE' && bp.advanceMode === 'auto') {
       this.startNextTask(bp.id)
-    } else if (task.state === 'DONE') {
-      // Manual: check whether that was the last one.
+    } else if (task.state === 'DONE' || task.state === 'FAILED' || task.state === 'DISCARDED') {
+      // Check whether every remaining BACKLOG task is blocked (all
+      // deps satisfied? any started?). If none are startable AND
+      // nothing is in-flight, the blueprint is done.
       const tasks = this.deps.tasks.listByBlueprint(bp.id)
-      if (tasks.every((t) => isTaskTerminal(t.state))) {
+      const done = new Set(tasks.filter((t) => t.state === 'DONE').map((t) => t.id))
+      const inFlight = tasks.some(
+        (t) =>
+          t.state !== 'BACKLOG' &&
+          t.state !== 'DONE' &&
+          t.state !== 'DISCARDED' &&
+          t.state !== 'FAILED',
+      )
+      if (inFlight) return
+      const startable = tasks.some(
+        (t) =>
+          t.state === 'BACKLOG' &&
+          (!t.dependsOn?.length || t.dependsOn.every((depId) => done.has(depId))),
+      )
+      if (!startable && tasks.every((t) => isTaskTerminal(t.state) || t.state === 'FAILED')) {
         this.applySafe(bp.id, 'all_tasks_done')
       }
     }
@@ -493,5 +560,7 @@ function techPrefText(bp: Blueprint): string {
 
 function answersText(answers: BlueprintAnswer[] | null): string {
   if (!answers?.length) return '(no answers provided)'
-  return answers.map((a) => `- ${a.question}\n  → ${a.answer ?? '(skipped)'}`).join('\n')
+  return answers
+    .map((a) => `- ${a.question}\n  → ${a.answers.length ? a.answers.join(', ') : '(skipped)'}`)
+    .join('\n')
 }

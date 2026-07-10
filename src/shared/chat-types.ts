@@ -29,20 +29,22 @@ export interface ChatMessage {
 export type ChatAction =
   | { type: 'create_task'; projectId: string; title: string; intent: string }
   | {
-      // Insert a new idea into a blueprint that is already implementing —
-      // it joins the end of the task queue.
       type: 'add_task_to_blueprint'
       blueprintId: string
       title: string
       intent: string
     }
-  | { type: 'pause_auto'; blueprintId: string } // auto-advance -> manual
-  | { type: 'resume_auto'; blueprintId: string } // manual -> auto (Pro)
+  | { type: 'pause_auto'; blueprintId: string }
+  | { type: 'resume_auto'; blueprintId: string }
   | { type: 'start_next'; blueprintId: string }
   // Renderer-side: opens the New-from-Idea dialog pre-filled.
   | { type: 'blueprint_from_idea'; idea: string; title?: string }
   // Renderer-side: navigation.
   | { type: 'open_project'; projectId: string }
+  // A2A: agent-to-agent communication across sessions.
+  | { type: 'a2a_ask'; targetSessionId: string; question: string }
+  | { type: 'a2a_handoff'; targetAgentId: string; title: string; intent: string }
+  | { type: 'a2a_notify'; targetSessionId: string; message: string }
 
 export const MAIN_SIDE_ACTIONS = new Set([
   'create_task',
@@ -50,4 +52,7 @@ export const MAIN_SIDE_ACTIONS = new Set([
   'pause_auto',
   'resume_auto',
   'start_next',
+  'a2a_ask',
+  'a2a_handoff',
+  'a2a_notify',
 ])

@@ -4,6 +4,7 @@ import type { AppSettings } from '../../shared/settings-types'
 import { SKILLS } from '../../shared/skills-types'
 import type { AgentInfo } from '../../shared/types'
 import { ModelField } from '../components/ModelField'
+import { setLocale } from '../i18n'
 import { useAppStore } from '../stores/appStore'
 
 // Per-agent setup guidance — auth always lives in the CLI, not Founcode.
@@ -57,11 +58,18 @@ export function Settings() {
   const [license, setLicense] = useState<LicenseState | null>(null)
   const [keyInput, setKeyInput] = useState('')
   const [licenseBusy, setLicenseBusy] = useState(false)
+  const [envDraft, setEnvDraft] = useState('')
 
   useEffect(() => {
-    window.founcode.invoke('settings:get', undefined).then(setSettings)
-    window.founcode.invoke('agent:listInstalled', undefined).then(setAgents)
-    window.founcode.invoke('license:state', undefined).then(setLicense)
+    window.founcode
+      .invoke('settings:get', undefined)
+      .then((s) => {
+        setSettings(s)
+        setEnvDraft(JSON.stringify(s.perAgentEnv, null, 2))
+      })
+      .catch(console.error)
+    window.founcode.invoke('agent:listInstalled', undefined).then(setAgents).catch(console.error)
+    window.founcode.invoke('license:state', undefined).then(setLicense).catch(console.error)
   }, [])
 
   async function activate() {
@@ -260,6 +268,86 @@ export function Settings() {
                 />
               </div>
             </section>
+
+            {/* Locale */}
+            <section>
+              <h2 className="mb-1 font-medium text-slate-100 text-sm">Language / Bahasa</h2>
+              <p className="mb-3 text-slate-500 text-xs">
+                UI language. Chat and pipeline prompts remain in the language the agent understands.
+              </p>
+              <div className="grid max-w-sm grid-cols-2 gap-2">
+                {(
+                  [
+                    ['en', 'English', 'Default'],
+                    ['id', 'Bahasa Indonesia', 'Terjemahan UI'],
+                  ] as const
+                ).map(([value, label, hint]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => {
+                      patch({ locale: value })
+                      setLocale(value)
+                    }}
+                    className={`rounded-lg border p-3 text-left transition-colors ${
+                      settings.locale === value
+                        ? 'border-accent/50 bg-accent/5'
+                        : 'border-edge hover:border-edge-2'
+                    }`}
+                  >
+                    <div className="font-medium text-slate-200 text-sm">{label}</div>
+                    <div className="mt-0.5 text-[11px] text-slate-500">{hint}</div>
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            {/* Per-agent environment */}
+            <section>
+              <h2 className="mb-1 font-medium text-slate-100 text-sm">
+                Environment variables per agent
+              </h2>
+              <p className="mb-3 text-slate-500 text-xs">
+                Keys like <code>OPENROUTER_API_KEY</code> for OpenCode integrations. Stored locally,
+                merged on launch.
+              </p>
+              <div className="max-w-lg">
+                <textarea
+                  value={envDraft}
+                  onChange={(e) => setEnvDraft(e.target.value)}
+                  rows={6}
+                  placeholder={`{\n  "opencode": {\n    "OPENROUTER_API_KEY": "sk-…"\n  },\n  "codex": {\n    "OPENAI_API_KEY": "sk-…"\n  }\n}`}
+                  className="input-field mb-2 resize-none font-mono text-[12px]"
+                />
+                <button
+                  type="button"
+                  onClick={() => patch({ perAgentEnv: envDraft ? JSON.parse(envDraft) : {} })}
+                  className="btn-primary"
+                >
+                  Save env
+                </button>
+              </div>
+            </section>
+
+            {/* Deep Verify (Pro) */}
+            {license?.tier === 'pro' && (
+              <section>
+                <h2 className="mb-1 font-medium text-slate-100 text-sm">Deep Verify</h2>
+                <p className="mb-2 text-slate-500 text-xs">
+                  Run verification through 3 independent agents and take a majority vote. More
+                  reliable, but costs 3× the tokens per verify.
+                </p>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={settings.deepVerify}
+                    onChange={(e) => patch({ deepVerify: e.target.checked })}
+                    className="size-4 accent-accent"
+                  />
+                  <span className="text-slate-300 text-sm">Enable multi-agent verification</span>
+                </label>
+              </section>
+            )}
 
             {/* License */}
             <section>

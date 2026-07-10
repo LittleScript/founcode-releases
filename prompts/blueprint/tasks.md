@@ -13,6 +13,8 @@ Produce an ordered list of tasks. Rules:
 - Order them so earlier tasks unblock later ones (scaffolding/foundation first, integration later).
 - Tag each with the feature it belongs to and a priority.
 - `intent` should read like a clear instruction to the coding agent, echoing the relevant PRD details.
+- If task B CANNOT be started until task A is complete (e.g. A sets up the database schema B queries), set `depends_on` on B to [A's order_index]. If a task has no dependencies, omit the field.
+- Tasks with no dependencies AND no task depending on the same earlier task can start in parallel.
 - Keep the idea's language.
 
 ## Output
@@ -21,7 +23,7 @@ Reply with ONLY a ```json fence, nothing else. The array order IS the execution 
 ```json
 {
   "tasks": [
-    { "title": "…", "intent": "…", "feature": "…", "priority": "high" }
+    { "title": "…", "intent": "…", "feature": "…", "priority": "high", "depends_on": [0] }
   ]
 }
 ```

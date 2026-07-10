@@ -1,11 +1,13 @@
 // Built-in Founcode skills (v1.1 C3) — curated prompt packs injected
 // into agent runs. Used two ways: per-task (picker in New Task) and
 // in chat via /slash (e.g. "/debug why does login loop?").
+// Custom skills are stored in AppSettings and merged at query time.
 
 export interface SkillInfo {
   id: string
   name: string
   description: string
+  prompt?: string // custom skills have embedded prompts
 }
 
 export const SKILLS: SkillInfo[] = [
@@ -64,11 +66,20 @@ export const SKILLS: SkillInfo[] = [
   },
 ]
 
-export function skillById(id: string | null | undefined): SkillInfo | undefined {
-  return SKILLS.find((s) => s.id === id)
+let customSkills: SkillInfo[] = []
+
+export function setCustomSkills(skills: SkillInfo[]): void {
+  customSkills = skills
 }
 
-// "/debug why is X slow" -> { skillId: 'debug', rest: 'why is X slow' }
+export function allSkills(): SkillInfo[] {
+  return [...SKILLS, ...customSkills]
+}
+
+export function skillById(id: string | null | undefined): SkillInfo | undefined {
+  return allSkills().find((s) => s.id === id)
+}
+
 export function parseSlashSkill(message: string): { skillId: string | null; rest: string } {
   const match = message.match(/^\/(\w+)\s*([\s\S]*)$/)
   if (!match) return { skillId: null, rest: message }

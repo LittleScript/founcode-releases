@@ -1,11 +1,15 @@
 // All ipcMain handlers live here, keyed by the shared IPC contract.
 
 import { existsSync } from 'node:fs'
+import { writeFileSync } from 'node:fs'
 import { basename, join } from 'node:path'
 import { app, BrowserWindow, dialog, ipcMain, safeStorage, shell } from 'electron'
 import type { IpcEventMap, IpcInvokeMap } from '../../shared/ipc-contract'
 import { AgentRegistry } from '../agents/AgentRegistry'
 import { MockAgentAdapter } from '../agents/mock/MockAgentAdapter'
+import { setCustomSkills } from '../../shared/skills-types'
+import { SKILLS } from '../../shared/skills-types'
+import { setCustomSkillPacks } from '../skills/skillPacks'
 import { BlueprintOrchestrator } from '../blueprint/BlueprintOrchestrator'
 import { ChatOrchestrator } from '../chat/ChatOrchestrator'
 import { createGreenfieldRepo } from '../git/createGreenfieldRepo'
@@ -61,6 +65,9 @@ export function createServices(
   const artifacts = new ArtifactRepo(db)
   const blueprints = new BlueprintRepo(db)
   const settings = new SettingsRepo(db)
+  const s = settings.get()
+  setCustomSkills(s.customSkills)
+  setCustomSkillPacks(Object.fromEntries(s.customSkills.map((sk) => [sk.id, sk.prompt ?? ''])))
   const registry = new AgentRegistry()
   // Mock agent is for developing/testing Founcode itself — dev builds only.
   if (!app.isPackaged || process.env.FOUNCODE_DEV_AGENTS === '1') {
@@ -105,6 +112,8 @@ export function createServices(
     onTaskSettled: (task) => blueprintOrchestrator.handleTaskSettled(task),
     shouldAutoApprovePlan: (task) => task.blueprintId !== null,
     getTier: () => license.getTier(),
+    getAgentEnv: (agentId) => settings.get().perAgentEnv[agentId] ?? {},
+    getSettings: () => settings.get(),
   })
   blueprintOrchestrator = new BlueprintOrchestrator({
     projects,
@@ -468,5 +477,64 @@ export function registerIpcHandlers(db: Database, dbPath: string, services: Main
     if (!/^https?:\/\//.test(url)) throw new Error('Only http(s) URLs can be opened')
     void shell.openExternal(url)
     return undefined
+  })
+
+  // Custom skills
+  handle('skill:listAll', () => {
+    const s = services.settings.get()
+    setCustomSkills(s.customSkills)
+    return [...SKILLS, ...s.customSkills]
+  })
+
+  handle('skill:save', ({ skill }) => {
+    const s = services.settings.get()
+    const existing = s.customSkills.findIndex((x) => x.id === skill.id)
+    const next = [...s.customSkills]
+    if (existing >= 0) next[existing] = skill
+    else next.push(skill)
+    services.settings.set({ customSkills: next })
+    return [...SKILLS, ...next]
+  })
+
+  handle('skill:delete', ({ id }) => {
+    const s = services.settings.get()
+    const next = s.customSkills.filter((x) => x.id !== id)
+    services.settings.set({ customSkills: next })
+    return [...SKILLS, ...next]
+  })
+
+  handle('chat:exportSession', ({ sessionId }) => {
+    const session = services.chatOrchestrator.listSessions().find((s) => s.id === sessionId)
+    if (!session) throw new Error('Session not found')
+    const messages = services.chatOrchestrator.listMessages(sessionId)
+    const lines = [
+      `# ${session.title}`,
+      `> Agent: ${session.agentId}${session.model ? ` · ${session.model}` : ''}`,
+      `> Exported: ${new Date().toISOString().slice(0, 16).replace('T', ' ')}`,
+      '',
+    ]
+    for (const m of messages) {
+      const role = m.role === 'user' ? '**You**' : `**${session.agentId}**`
+      lines.push(`### ${role}`)
+      lines.push('')
+      lines.push(m.content)
+      lines.push('')
+      if (m.actions.length > 0) {
+        lines.push(`> Actions: ${m.actions.map((a) => a.type).join(', ')}`)
+        lines.push('')
+      }
+    }
+    const md = lines.join('\n')
+    const name = `${session.title.replace(/[^a-zA-Z0-9]+/g, '-').slice(0, 50)}-${sessionId.slice(0, 6)}.md`
+    return dialog
+      .showSaveDialog(BrowserWindow.getAllWindows()[0] ?? (undefined as never), {
+        defaultPath: name,
+        filters: [{ name: 'Markdown', extensions: ['md'] }],
+      })
+      .then(({ filePath }) => {
+        if (!filePath) return 'cancelled'
+        writeFileSync(filePath, md)
+        return filePath
+      })
   })
 }

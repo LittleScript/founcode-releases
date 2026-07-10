@@ -20,6 +20,12 @@ export interface AgentRunOptions {
   // Optional model alias/id passed to the agent CLI; empty/undefined =
   // the CLI's own default.
   model?: string
+  // Controls how assertive the agent is during write/verify (ignored for
+  // read mode). Matches the Terminal permission levels. Default: 'auto'.
+  permission?: PermissionLevel
+  // Extra env variables merged into the agent's process environment,
+  // e.g. 9Router tokens per agent from Settings.
+  env?: Record<string, string>
 }
 
 export interface AgentDetection {

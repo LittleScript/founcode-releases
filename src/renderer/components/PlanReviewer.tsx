@@ -97,14 +97,58 @@ export function PlanReviewer({ task, planContent }: { task: Task; planContent: s
             ? 'The agent run failed. Check the Log tab for details.'
             : 'This task was stopped and its work discarded. Retry to start over from the backlog.'}
         </p>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => call(() => window.founcode.invoke('task:retry', { taskId: task.id }))}
-          className="btn-primary"
-        >
-          ↻ Retry (back to Backlog)
-        </button>
+        <div className="flex flex-col items-center gap-3">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => call(() => window.founcode.invoke('task:retry', { taskId: task.id }))}
+            className="btn-primary"
+          >
+            ↻ Retry (back to Backlog)
+          </button>
+          {task.state === 'FAILED' &&
+            (!feedbackOpen ? (
+              <button type="button" onClick={() => setFeedbackOpen(true)} className="btn-ghost">
+                ↩ Send back with comments
+              </button>
+            ) : (
+              <div className="flex w-full max-w-md flex-col gap-2 rounded-md border border-edge bg-surface-raised p-3">
+                <textarea
+                  value={feedback}
+                  onChange={(e) => setFeedback(e.target.value)}
+                  rows={3}
+                  placeholder="What went wrong? The agent will receive this and re-plan."
+                  className="input-field resize-none"
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    disabled={!feedback.trim() || busy}
+                    onClick={() =>
+                      call(async () => {
+                        await window.founcode.invoke('task:sendBack', {
+                          taskId: task.id,
+                          feedback: feedback.trim(),
+                        })
+                        setFeedback('')
+                        setFeedbackOpen(false)
+                      })
+                    }
+                    className="btn-primary"
+                  >
+                    Send &amp; Re-plan
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFeedbackOpen(false)}
+                    className="btn-ghost border-transparent"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ))}
+        </div>
       </div>
     )
   }

@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import type { PermissionLevel } from '../../shared/settings-types'
 import type { TerminalSession } from '../../shared/terminal-types'
 import type { Project, Task } from '../../shared/types'
 
@@ -31,6 +32,7 @@ interface AppState {
     agentId: string
     model?: string
     skill?: string
+    permission?: PermissionLevel
   }) => Promise<void>
   refreshTasks: () => Promise<void>
   openTask: (taskId: string) => void
@@ -78,7 +80,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     await get().refreshTasks()
   },
 
-  createTask: async ({ title, intent, agentId, model, skill }) => {
+  createTask: async ({ title, intent, agentId, model, skill, permission }) => {
     const projectId = get().activeProjectId
     if (!projectId) return
     try {
@@ -89,6 +91,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         agentId,
         model,
         skill,
+        permission,
       })
       await get().refreshTasks()
     } catch (error) {

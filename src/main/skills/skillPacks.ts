@@ -24,9 +24,15 @@ const PACKS: Record<string, string> = {
   review,
 }
 
+let customPacks: Record<string, string> = {}
+
+export function setCustomSkillPacks(packs: Record<string, string>): void {
+  customPacks = packs
+}
+
 export function getSkillContent(id: string | null | undefined): string | null {
   if (!id) return null
-  return PACKS[id] ?? null
+  return PACKS[id] ?? customPacks[id] ?? null
 }
 
 // Wrapped section appended to agent prompts when a skill is active.

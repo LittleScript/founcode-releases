@@ -4,6 +4,7 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import executeTemplate from '../../../prompts/execute.md?raw'
+import memoryExtractTemplate from '../../../prompts/memory-extract.md?raw'
 import planTemplate from '../../../prompts/plan.md?raw'
 import verifyTemplate from '../../../prompts/verify.md?raw'
 import type { AgentEvent, Task } from '../../shared/types'
@@ -17,6 +18,49 @@ import type { TaskRepo } from '../store/repositories/TaskRepo'
 import { validatePlan } from './planParser'
 import { MAX_VERIFY_RETRIES, type TaskAction, transition } from './TaskStateMachine'
 import { parseVerdict } from './verdictParser'
+
+function readProjectMemory(projectPath: string): string {
+  const parts: string[] = []
+
+  // Memory file — patterns, decisions, gotchas from past tasks.
+  const memoryPath = join(projectPath, '.founcode', 'memory.md')
+  if (existsSync(memoryPath)) {
+    try {
+      const content = readFileSync(memoryPath, 'utf8')
+      if (content.trim()) {
+        const tail = content.slice(-6000)
+        parts.push(`## Project memory (patterns, decisions, gotchas)\n${tail}`)
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  // Task log — structured history of completed tasks for pattern matching.
+  const logPath = join(projectPath, '.founcode', 'task-log.json')
+  if (existsSync(logPath)) {
+    try {
+      const raw = JSON.parse(readFileSync(logPath, 'utf8')) as {
+        title: string
+        intent: string
+        verdict: string
+        date: string
+      }[]
+      const done = raw.filter((t) => t.verdict === 'pass')
+      if (done.length > 0) {
+        const recent = done.slice(-5)
+        const lines = recent.map((t) => `- **${t.title}** (${t.date}): ${t.intent.slice(0, 120)}`)
+        parts.push(
+          `## Recently completed in this project\nThese tasks were planned and merged successfully — follow their conventions and avoid redoing their work:\n${lines.join('\n')}`,
+        )
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  return parts.length > 0 ? `\n${parts.join('\n\n')}\n` : ''
+}
 
 export const PLAN_TIMEOUT_MS = 15 * 60 * 1000
 export const EXEC_TIMEOUT_MS = 30 * 60 * 1000
@@ -43,8 +87,11 @@ export interface OrchestratorDeps {
   // Blueprint tasks skip the per-task plan-approval gate (the PRD review
   // was the human gate; review returns at the verify/merge step).
   shouldAutoApprovePlan?: (task: Task) => boolean
-  // Free tier runs one task at a time; Pro runs in parallel.
   getTier?: () => 'free' | 'pro'
+  // Per-agent environment variables from Settings, merged into spawn.
+  getAgentEnv?: (agentId: string) => Record<string, string>
+  // Deep Verify check — Pro-only multi-agent verification.
+  getSettings?: () => { deepVerify: boolean }
 }
 
 interface CollectResult {
@@ -122,6 +169,8 @@ export class Orchestrator {
     const updated = this.applyAction(taskId, 'merge')
     this.cleanupWorktree(taskId)
     this.deps.onTaskSettled?.(updated)
+    // Post-merge: extract learnings asynchronously — non-blocking, best-effort.
+    void this.extractMemory(taskId)
     return updated
   }
 
@@ -134,8 +183,19 @@ export class Orchestrator {
 
   sendBack(taskId: string, feedback: string): Task {
     this.ensureCapacity()
+    const task = this.deps.tasks.get(taskId)
+    if (!task) throw new Error(`Task not found: ${taskId}`)
     const updated = this.applyAction(taskId, 'send_back')
-    void this.runExecution(taskId, feedback)
+    // Save the feedback as a plan_revision artifact so it is injected into
+    // the plan prompt whether we are re-planning (FAILED) or re-executing
+    // (REVIEW).
+    this.deps.artifacts.add(taskId, 'plan_revision', feedback)
+    this.deps.tasks.recordEvent(taskId, 'send_back', { feedback })
+    if (task.state === 'FAILED') {
+      void this.runPlanning(taskId, feedback)
+    } else {
+      void this.runExecution(taskId, feedback)
+    }
     return updated
   }
 
@@ -274,6 +334,7 @@ export class Orchestrator {
         prompt,
         mode: 'write',
         model: task.model ?? undefined,
+        permission: task.permission,
         abortSignal: controller.signal,
       })
       this.deps.artifacts.add(taskId, 'log', result.log)
@@ -323,14 +384,31 @@ export class Orchestrator {
       return
     }
 
+    const isPro = this.deps.getTier?.() === 'pro'
+    const deepVerify = isPro && this.deps.getSettings?.()?.deepVerify
+
+    if (deepVerify) {
+      await this.runDeepVerify(taskId, task, adapter, plan.content, diff.content)
+    } else {
+      await this.runSingleVerify(taskId, task, adapter, plan.content, diff.content)
+    }
+  }
+
+  private async runSingleVerify(
+    taskId: string,
+    task: Task,
+    adapter: AgentAdapter,
+    planContent: string,
+    diffContent: string,
+  ): Promise<void> {
     const controller = new AbortController()
     this.active.set(taskId, controller)
     const timeout = setTimeout(() => controller.abort(), VERIFY_TIMEOUT_MS)
 
     try {
       const basePrompt = verifyTemplate
-        .replace('{{plan}}', plan.content)
-        .replace('{{diff}}', diff.content.slice(0, 200_000))
+        .replace('{{plan}}', planContent)
+        .replace('{{diff}}', diffContent.slice(0, 200_000))
 
       let lastRaw: string | undefined
       let parseErrors: string[] = []
@@ -343,10 +421,11 @@ export class Orchestrator {
             : `${basePrompt}\n\n## Format correction required\nYour previous report's json verdict failed validation:\n${parseErrors.map((e) => `- ${e}`).join('\n')}\nReply with the FULL report again, ending with a valid \`\`\`json verdict fence.`
 
         const result = await this.collect(taskId, adapter, {
-          cwd: task.worktree,
+          cwd: task.worktree ?? '',
           prompt,
           mode: 'verify',
           model: task.model ?? undefined,
+          permission: task.permission,
           abortSignal: controller.signal,
         })
         this.deps.artifacts.add(taskId, 'log', result.log)
@@ -415,6 +494,122 @@ export class Orchestrator {
     }
   }
 
+  // Deep Verify (Pro): run verification through 3 independent agents and
+  // take a majority vote. All reports are saved so the user can compare.
+  private async runDeepVerify(
+    taskId: string,
+    task: Task,
+    primaryAdapter: AgentAdapter,
+    planContent: string,
+    diffContent: string,
+  ): Promise<void> {
+    const alternates = this.deps.registry
+      .all()
+      .filter((a) => a.id !== primaryAdapter.id)
+      .slice(0, 2)
+
+    if (alternates.length === 0) {
+      // Fallback: run single verify — Deep Verify requires ≥2 installed
+      // agents, and the primary is the only one available.
+      this.deps.tasks.recordEvent(taskId, 'deep_verify_skipped', {
+        reason: 'only one agent installed',
+      })
+      await this.runSingleVerify(taskId, task, primaryAdapter, planContent, diffContent)
+      return
+    }
+
+    const controller = new AbortController()
+    this.active.set(taskId, controller)
+    const timeout = setTimeout(() => controller.abort(), VERIFY_TIMEOUT_MS)
+
+    try {
+      const panel = [primaryAdapter, ...alternates].slice(0, 3)
+      const panelIds = panel.map((a) => a.id)
+      this.deps.tasks.recordEvent(taskId, 'deep_verify_started', { agents: panelIds })
+
+      const basePrompt = verifyTemplate
+        .replace('{{plan}}', planContent)
+        .replace('{{diff}}', diffContent.slice(0, 200_000))
+
+      // Run all panelists in parallel.
+      const runs = panel.map((adapter) =>
+        this.collect(taskId, adapter, {
+          cwd: task.worktree ?? '',
+          prompt: basePrompt,
+          mode: 'verify' as const,
+          model: task.model ?? undefined,
+          permission: task.permission,
+          abortSignal: controller.signal,
+        }),
+      )
+      const results = await Promise.all(runs)
+
+      if (controller.signal.aborted) return
+
+      // Parse all verdicts. Unparseable → treat as abstain.
+      const verdicts = results.map((r, i) => {
+        const parsed = r.resultText
+          ? parseVerdict(r.resultText)
+          : { verdict: null, errors: [] as string[] }
+        return {
+          agentId: panel[i].id,
+          agentName: panel[i].displayName,
+          report: r.resultText ?? '',
+          verdict: parsed.verdict,
+        }
+      })
+
+      // Save all reports.
+      this.deps.artifacts.add(
+        taskId,
+        'verify_report',
+        JSON.stringify({
+          deep: true,
+          reports: verdicts,
+        }),
+      )
+
+      // Majority vote: pass/pass_with_warnings count as "approve",
+      // fail/null count as "reject".
+      const approves = verdicts.filter(
+        (v) => v.verdict?.verdict === 'pass' || v.verdict?.verdict === 'pass_with_warnings',
+      ).length
+      const rejects = verdicts.length - approves
+
+      if (approves > rejects) {
+        this.deps.tasks.recordEvent(taskId, 'deep_verify_result', {
+          approves,
+          rejects,
+          verdict: 'pass',
+        })
+        this.applyActionSafe(taskId, 'verify_passed')
+      } else {
+        this.deps.tasks.recordEvent(taskId, 'deep_verify_result', {
+          approves,
+          rejects,
+          verdict: 'fail',
+        })
+        // Collect fix_instructions from the rejecting panelists.
+        const fixInstructions = verdicts
+          .filter((v) => v.verdict?.fix_instructions)
+          .map((v) => `[${v.agentId}]: ${v.verdict!.fix_instructions}`)
+          .join('\n')
+        this.settleVerdict(taskId, {
+          verdict: 'fail',
+          fix_instructions: fixInstructions || 'Verification failed — see panel reports.',
+        })
+      }
+    } catch (error) {
+      if (!controller.signal.aborted) {
+        this.note(taskId, (error as Error).message)
+        this.applyActionSafe(taskId, 'verify_failed_final')
+      }
+    } finally {
+      clearTimeout(timeout)
+      this.active.delete(taskId)
+    }
+  }
+
   private async runPlanning(taskId: string, feedback?: string): Promise<void> {
     const task = this.deps.tasks.get(taskId)
     if (!task) return
@@ -443,8 +638,10 @@ export class Orchestrator {
           task,
           feedback,
           formatErrors,
-          // Blueprint context (PRD etc.) + the task's active skill pack.
-          (this.deps.getPlanContext?.(task) ?? '') + skillSection(task.skill),
+          // Blueprint context (PRD etc.) + project memory + skill pack.
+          (this.deps.getPlanContext?.(task) ?? '') +
+            readProjectMemory(project.path) +
+            skillSection(task.skill),
         )
         const result = await this.collect(taskId, adapter, {
           cwd: project.path,
@@ -514,14 +711,19 @@ export class Orchestrator {
     let exitCode = -1
     let resultText: string | undefined
 
+    // Inject per-agent env from Settings (e.g. 9Router tokens).
+    const task = this.deps.tasks.get(taskId)
+    const agentEnv = task ? this.deps.getAgentEnv?.(task.agentId) : undefined
+    const finalOpts = agentEnv ? { ...opts, env: { ...opts.env, ...agentEnv } } : opts
+
     // Run separator: logs accumulate across attempts and agent
     // switches — every run announces who is doing what (QA: an old
     // Claude line looked like the wrong agent was running).
-    const header = `━━ ${opts.mode} run · ${adapter.id}${opts.model ? ` · ${opts.model}` : ''} ━━`
+    const header = `━━ ${finalOpts.mode} run · ${adapter.id}${finalOpts.model ? ` · ${finalOpts.model}` : ''} ━━`
     this.deps.broadcastAgentEvent({ taskId, event: { type: 'text', content: header } })
     logLines.push(header)
 
-    for await (const event of adapter.run(opts)) {
+    for await (const event of adapter.run(finalOpts)) {
       this.deps.broadcastAgentEvent({ taskId, event })
       if (event.type === 'text') logLines.push(event.content)
       else if (event.type === 'tool_use') logLines.push(`[tool] ${event.name} ${event.detail}`)
@@ -555,6 +757,82 @@ export class Orchestrator {
       this.applyAction(taskId, action)
     } catch {
       this.deps.tasks.recordEvent(taskId, 'transition_skipped', { action })
+    }
+  }
+
+  // Post-merge memory extraction: runs a read-only agent over the plan,
+  // diff, and verdict to extract patterns, decisions, gotchas, and stack
+  // notes. Writes them to the project's .founcode/memory.md. Best-effort
+  // and non-blocking — failures are logged as task events.
+  private async extractMemory(taskId: string): Promise<void> {
+    try {
+      const task = this.deps.tasks.get(taskId)
+      const project = task ? this.deps.projects.get(task.projectId) : undefined
+      const plan = this.deps.artifacts.latest(taskId, 'plan')
+      const diff = this.deps.artifacts.latest(taskId, 'diff')
+      const verdict = this.deps.artifacts.latest(taskId, 'verify_report')
+      const adapter = task ? this.deps.registry.get(task.agentId) : undefined
+      if (!task || !project || !plan || !adapter) return
+
+      const prompt = memoryExtractTemplate
+        .replace('{{task_title}}', task.title)
+        .replace('{{task_intent}}', task.intent)
+        .replace('{{plan}}', plan.content.slice(0, 8000))
+        .replace('{{diff}}', (diff?.content ?? '').slice(0, 6000))
+        .replace('{{verdict}}', (verdict?.content ?? 'no verdict').slice(0, 3000))
+
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 3 * 60 * 1000)
+      const parts: string[] = []
+
+      try {
+        for await (const event of adapter.run({
+          cwd: project.path,
+          prompt,
+          mode: 'read',
+          abortSignal: controller.signal,
+        })) {
+          if (event.type === 'text') parts.push(event.content)
+        }
+      } finally {
+        clearTimeout(timeout)
+      }
+
+      const output = parts.join('\n')
+      if (!output.trim()) return
+
+      // Append to the project's memory file. Each extraction adds its
+      // sections; the file grows over time (no dedup yet — patterns
+      // repeating means they've been confirmed across tasks).
+      const founcodeDir = join(project.path, '.founcode')
+      mkdirSync(founcodeDir, { recursive: true })
+      const memoryPath = join(founcodeDir, 'memory.md')
+      const header = `\n## ${task.title} (${new Date().toISOString().slice(0, 10)})\n`
+      appendFileSync(memoryPath, `${header}${output}\n`)
+
+      // Structured task log: records every completed task so future plan
+      // prompts can reference recent work (pattern matching / anti-dup).
+      const logPath = join(founcodeDir, 'task-log.json')
+      const logEntry = {
+        title: task.title,
+        intent: task.intent.slice(0, 300),
+        verdict: verdict ? 'pass' : 'unknown',
+        date: new Date().toISOString().slice(0, 10),
+      }
+      let log: (typeof logEntry)[] = []
+      if (existsSync(logPath)) {
+        try {
+          log = JSON.parse(readFileSync(logPath, 'utf8'))
+        } catch {
+          /* corrupt — start fresh */
+        }
+      }
+      log.push(logEntry)
+      writeFileSync(logPath, JSON.stringify(log, null, 2))
+    } catch (error) {
+      this.deps.tasks.recordEvent(taskId, 'memory_extract_failed', {
+        message: (error as Error).message,
+      })
     }
   }
 }
