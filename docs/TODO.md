@@ -201,8 +201,8 @@ Rangkuman rilis (di atas v1.1.0 chat-first):
 - [x] ~~Adapter OpenAI Codex CLI / Gemini CLI / OpenCode~~ → DITARIK ke F6.2 atas keputusan Koko (selesai 6 Jul; Gemini CLI mati → diganti Antigravity)
 - [x] **v1.1 — Persistent Memory + Post-merge Extraction** (dari analisis Hermes, prioritas #1): `.founcode/memory.md` (pattern kode, keputusan arsitektur, gotcha) + `user.md` (preferensi) di repo user; setelah merge, agent kecil read-mode baca plan+diff+verdict (semua sudah ada di ArtifactRepo) → update memory async; inject ke plan prompt via `getPlanContext` bersama PRD. Fondasi untuk patterns & drift-check
 - [x] **v1.2 — Dependency graph + Parallel dispatch (Pro)** (Hermes #3): decompose prompt hasilkan `depends_on`; task independen jalan paralel (Pro), dependen auto-block; gagal → block children. Pairing natural dengan monetisasi parallel capacity
-- [ ] **Artifacts browser tab** (inspirasi HermesAgent): view global semua artefak (plan/diff/verdict/log per task, sudah ada di ArtifactRepo) — searchable, filter per jenis & project, klik → task
-- [ ] **Skills & Tools tab** (inspirasi HermesAgent): browser skill dengan kategori (saat ini: slash palette + daftar di Settings); nanti + custom skill user (buat/edit skill sendiri, disimpan lokal)
+- [x] **Artifacts browser tab** (inspirasi HermesAgent): view global semua artefak (plan/diff/verdict/log per task, sudah ada di ArtifactRepo) — searchable, filter per jenis & project, klik → task
+- [x] **Skills & Tools tab** (inspirasi HermesAgent): browser skill dengan kategori (saat ini: slash palette + daftar di Settings); nanti + custom skill user (buat/edit skill sendiri, disimpan lokal)
 - [x] **Attachment picker "+" di composer chat** (10 Jul): popover di tombol "+" — 📁 Files, 📂 Folder, 🔗 URL (mini input). Melengkapi drag-drop yang sudah ada.
 - [x] **Riwayat & pencarian task** (10 Jul): search bar di header Board, filter by title/intent via `useMemo`.
 - [x] **Task Patterns / self-evolving templates** (10 Jul): `task-log.json` di `.founcode/` — structured log setiap task DONE. `readProjectMemory()` inject 5 recent completed tasks sebagai "convention reference" ke plan prompt. Fondasi: setelah Persistent Memory.
@@ -218,7 +218,7 @@ Rangkuman rilis (di atas v1.1.0 chat-first):
 ## Gap vs Traycer (studi 7 Jul — "Nerve Center for Agentic Coding")
 
 Sudah setara: BYO subscription multi-agen ✓, built-in skills ✓, shared context per task (PRD injection) ✓, switch model per chat ✓, local runtimes via OpenCode ✓. Yang BELUM ada di kita:
-- [ ] **A2A (agent-to-agent) communication** — agen saling tanya/review/hand-off antar chat/task ("walkie-talkie"). Fondasi kita cocok (chat sessions + action protocol); desain: agen bisa post pesan ke sesi lain / spawn sub-task. Kandidat v1.4
+- [x] **A2A (agent-to-agent) communication** — agen saling tanya/review/hand-off antar chat/task ("walkie-talkie"). Fondasi kita cocok (chat sessions + action protocol); desain: agen bisa post pesan ke sesi lain / spawn sub-task.
 - [ ] **Multiplayer workspaces / cloud sync** — kolaborasi tim + lanjut kerja lintas device. BUTUH backend + akun = bertentangan dengan local-first; posisikan sebagai **cloud opsional** (v2) & justifikasi tier Team
 - [ ] **Direct API connector (tanpa CLI)** — user punya API key DeepSeek/OpenAI tapi ogah pasang OpenCode: chat-mode bisa dilayani HTTP langsung (runner sendiri); P-E-V tetap butuh CLI agentic. Kandidat v1.3 (chat-only)
 - [ ] Adapter **Cursor** (Traycer punya; cek dulu apakah cursor CLI headless tersedia)
