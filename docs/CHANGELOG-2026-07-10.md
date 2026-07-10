@@ -1,7 +1,7 @@
 # CHANGELOG — 10 Juli 2026
 
 Audit + perbaikan + fitur baru Founcode dari sesi audit menyeluruh.
-**32 file diubah, 2 file baru, +606/-130 lines.**
+**58+ file diubah, 4 file baru, +2108/-196 lines.**
 
 ---
 

@@ -3,7 +3,7 @@
 Checklist implementasi, urut per fase. Satu fase harus **selesai + lolos exit criteria** sebelum lanjut.
 Konvensi: `[ ]` belum, `[x]` selesai, `[~]` sedang dikerjakan, `[-]` dibatalkan/ditunda.
 
-Basis: PRD v1.0 + TDD v1.0. Terakhir diperbarui: 3 Juli 2026.
+Basis: PRD v1.0 + TDD v1.0. Terakhir diperbarui: 10 Juli 2026.
 
 ---
 
@@ -199,10 +199,8 @@ Rangkuman rilis (di atas v1.1.0 chat-first):
 ## P1 — Fast Follow (setelah v1.0, JANGAN dikerjakan lebih awal)
 
 - [x] ~~Adapter OpenAI Codex CLI / Gemini CLI / OpenCode~~ → DITARIK ke F6.2 atas keputusan Koko (selesai 6 Jul; Gemini CLI mati → diganti Antigravity)
-- [ ] **v1.1 — Persistent Memory + Post-merge Extraction** (dari analisis Hermes, prioritas #1): `.founcode/memory.md` (pattern kode, keputusan arsitektur, gotcha) + `user.md` (preferensi) di repo user; setelah merge, agent kecil read-mode baca plan+diff+verdict (semua sudah ada di ArtifactRepo) → update memory async; inject ke plan prompt via `getPlanContext` bersama PRD. Fondasi untuk patterns & drift-check
-- [ ] **v1.2 — Dependency graph + Parallel dispatch (Pro)** (Hermes #3): decompose prompt hasilkan `depends_on`; task independen jalan paralel (Pro), dependen auto-block; gagal → block children. Pairing natural dengan monetisasi parallel capacity
-- [ ] **v1.3 — Task Patterns / self-evolving templates** (Hermes #2): `.founcode/patterns/*.md` dari N task sukses yang mirip → inject sebagai starting point plan (klaim hemat token 30-85%). Butuh data dari v1.1 dulu
-- [ ] **"Deep Verify" toggle (Pro)** — MoA multi-agent verification (Hermes #4). DIPUTUSKAN Koko (6 Jul): opsional, Pro-only, BUKAN default (verify standar sudah build+test objektif; MoA = 3x biaya token)
+- [x] **v1.1 — Persistent Memory + Post-merge Extraction** (dari analisis Hermes, prioritas #1): `.founcode/memory.md` (pattern kode, keputusan arsitektur, gotcha) + `user.md` (preferensi) di repo user; setelah merge, agent kecil read-mode baca plan+diff+verdict (semua sudah ada di ArtifactRepo) → update memory async; inject ke plan prompt via `getPlanContext` bersama PRD. Fondasi untuk patterns & drift-check
+- [x] **v1.2 — Dependency graph + Parallel dispatch (Pro)** (Hermes #3): decompose prompt hasilkan `depends_on`; task independen jalan paralel (Pro), dependen auto-block; gagal → block children. Pairing natural dengan monetisasi parallel capacity
 - [ ] **Artifacts browser tab** (inspirasi HermesAgent): view global semua artefak (plan/diff/verdict/log per task, sudah ada di ArtifactRepo) — searchable, filter per jenis & project, klik → task
 - [ ] **Skills & Tools tab** (inspirasi HermesAgent): browser skill dengan kategori (saat ini: slash palette + daftar di Settings); nanti + custom skill user (buat/edit skill sendiri, disimpan lokal)
 - [x] **Attachment picker "+" di composer chat** (10 Jul): popover di tombol "+" — 📁 Files, 📂 Folder, 🔗 URL (mini input). Melengkapi drag-drop yang sudah ada.
@@ -210,7 +208,7 @@ Rangkuman rilis (di atas v1.1.0 chat-first):
 - [x] **Task Patterns / self-evolving templates** (10 Jul): `task-log.json` di `.founcode/` — structured log setiap task DONE. `readProjectMemory()` inject 5 recent completed tasks sebagai "convention reference" ke plan prompt. Fondasi: setelah Persistent Memory.
 - [x] **Preset env per-agen di Settings** (10 Jul): `perAgentEnv: Record<string, Record<string, string>>` di AppSettings. JSON textarea di Settings UI. Plumbing: `getAgentEnv` callback → inject ke `AgentRunOptions.env` → merger di spawn adapter.
 - [x] **"Deep Verify" toggle (Pro)** (10 Jul): multi-agent verification — 3 agen independen verifikasi paralel → majority vote. Pro-only, toggle di Settings. Panel reports semua disimpan. Alternates dipilih dari agent registry (berbeda dari primary).
-- [ ] **Multi-language / i18n** (permintaan Koko 7 Jul): UI English dulu (sudah disapu konsisten); nanti string layer (en/id minimal)
+- [x] **Multi-language / i18n** (permintaan Koko 7 Jul): UI English dulu (sudah disapu konsisten); nanti string layer (en/id minimal)
 - [ ] Validasi nyata adapter Codex & Antigravity saat CLI terinstal (integration test gated sudah siap polanya)
 
 - [x] **Custom skill editor** (10 Jul): user-created skills (CRUD via Skills page). Prompt diinject ke plan+execute. Muncul di slash palette + task picker. Stored in Settings JSON.
