@@ -18,7 +18,6 @@ export function TerminalView({ session }: { session: TerminalSession }) {
   const [review, setReview] = useState<TerminalReview | null>(null)
   const [busy, setBusy] = useState(false)
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: mount once per session id
   useEffect(() => {
     const host = hostRef.current
     if (!host) return

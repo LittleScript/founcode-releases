@@ -3,10 +3,10 @@ import type { ChatSession } from '../shared/chat-types'
 import type { AppInfo } from '../shared/types'
 import logoUrl from './assets/logo.png'
 import wordmarkUrl from './assets/wordmark.png'
-import { setLocale } from './i18n'
 import wordmarkDarkUrl from './assets/wordmark-dark.png'
 import { HelpMenu } from './components/HelpMenu'
 import { SessionMenu } from './components/SessionMenu'
+import { setLocale } from './i18n'
 import { ArtifactsPage } from './pages/ArtifactsPage'
 import { BlueprintStudio } from './pages/BlueprintStudio'
 import { Board } from './pages/Board'
@@ -278,7 +278,6 @@ function Sidebar({ info }: { info: AppInfo | null }) {
         )}
       </div>
 
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: resize handle — drag in to collapse, out to expand */}
       <div
         onPointerDown={() => {
           dragging.current = true

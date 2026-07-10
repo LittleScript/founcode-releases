@@ -1,11 +1,26 @@
-# CHANGELOG — 10 Juli 2026
+# CHANGELOG — Founcode
 
-Audit + perbaikan + fitur baru Founcode dari sesi audit menyeluruh.
-**58+ file diubah, 4 file baru, +2108/-196 lines.**
+## v1.3.1 — 10 Juli 2026
+
+Release patch: sync dokumentasi, fix lint, centang item selesai di TODO.
+
+### Docs
+- **TODO.md**: centang 8 item P1 yg sudah dikerjakan (Persistent Memory, Dep Graph, Task Patterns, Deep Verify, i18n, Artifacts browser, Skills tab, A2A), hapus 2 duplikat, update header date.
+- **CHANGELOG**: update header stats (32→58+ files, 2→4 new files, +606→+2108 lines).
+- **README.md**: bump versi ke v1.3, tandai perubahan.
+
+### Fixes
+- **Biome lint**: 0 errors — fix non-null assertion (`Orchestrator.ts`), hapus suppression comment stale (`App.tsx`, `TerminalView.tsx`), sort import (`handlers.ts`, `App.tsx`, `ChatPage.tsx`).
+- **Bump version**: `1.3.0` → `1.3.1`.
 
 ---
 
-## Statistik Final
+## v1.3.0 — 8 Juli 2026
+
+Agent Terminal (dual execution), audit + perbaikan + fitur baru.
+**58+ file diubah, 4 file baru, +2108/-196 lines.**
+
+### Statistik Final
 
 | Check | Status |
 |---|---|

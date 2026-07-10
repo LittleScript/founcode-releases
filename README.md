@@ -4,7 +4,7 @@
 
 > Private source. Public releases & downloads: [LittleScript/founcode-releases](https://github.com/LittleScript/founcode-releases)
 
-## What it does (v1.3)
+## What it does (v1.3.1)
 
 **Dual execution** — a disciplined pipeline *and* a live terminal, your choice:
 

@@ -592,7 +592,7 @@ export class Orchestrator {
         // Collect fix_instructions from the rejecting panelists.
         const fixInstructions = verdicts
           .filter((v) => v.verdict?.fix_instructions)
-          .map((v) => `[${v.agentId}]: ${v.verdict!.fix_instructions}`)
+          .map((v) => `[${v.agentId}]: ${v.verdict?.fix_instructions}`)
           .join('\n')
         this.settleVerdict(taskId, {
           verdict: 'fail',
